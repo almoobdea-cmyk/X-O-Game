@@ -1,0 +1,467 @@
+<title>قارئ الحركات</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
+<style>
+/* Layout: a reading desk. One column of running Arabic text at the top (the thing being read), tools beneath it, the grammar table as a ruled ledger. */
+:root {
+  --bg: #f6f3ec;          /* warm paper */
+  --panel: #fffdf8;
+  --ink: #1f1a14;
+  --ink-soft: #5c5247;
+  --rule: #d9d0c1;
+  --accent: #8a3b12;      /* oxide red used for harakat emphasis */
+  --accent-soft: #f1dccf;
+  --ok: #2e6b3f;
+  --warn: #9a6a00;
+  --bad: #a3321f;
+  --code: #ece6da;
+  --font-arabic: 'Amiri', 'Noto Naskh Arabic', 'Scheherazade New', serif;
+  --font-ui: 'IBM Plex Sans Arabic', 'Noto Sans Arabic', system-ui, sans-serif;
+  --font-latin: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #171411; --panel: #211d19; --ink: #efe8dc; --ink-soft: #b7ab9b; --rule: #3a322a;
+    --accent: #e08a5c; --accent-soft: #3a2519; --ok: #7fc08f; --warn: #e0b24a; --bad: #e3836f; --code: #2a251f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #171411; --panel: #211d19; --ink: #efe8dc; --ink-soft: #b7ab9b; --rule: #3a322a;
+  --accent: #e08a5c; --accent-soft: #3a2519; --ok: #7fc08f; --warn: #e0b24a; --bad: #e3836f; --code: #2a251f;
+  color-scheme: dark;
+}
+html { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-ui); font-size: 15px; line-height: 1.7;
+  direction: rtl; min-height: 100%;
+}
+.wrap {
+  max-width: 980px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 56px;
+  display: grid; gap: 28px;
+}
+header { display: grid; gap: 6px; }
+header h1 { font-family: var(--font-arabic); font-weight: 700; font-size: 2.4rem; margin: 0; line-height: 1.3; text-wrap: balance; }
+header p { margin: 0; color: var(--ink-soft); max-width: 62ch; }
+.eyebrow { font-size: .78rem; letter-spacing: .08em; color: var(--accent); text-transform: uppercase; }
+section { display: grid; gap: 14px; }
+h2 { font-size: 1.05rem; font-weight: 600; margin: 0; display: flex; align-items: baseline; gap: 10px; }
+h2 small { color: var(--ink-soft); font-weight: 400; font-size: .85rem; }
+textarea {
+  width: 100%; box-sizing: border-box; min-height: 110px; resize: vertical; border: 1px solid var(--rule); border-radius: 6px;
+  background: var(--panel); color: var(--ink); font-family: var(--font-arabic); font-size: 1.45rem; line-height: 2; padding: 12px 14px;
+}
+textarea:focus, button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  border: 1px solid var(--rule); background: var(--panel); color: var(--ink); border-radius: 999px; padding: 4px 12px; cursor: pointer;
+  font-family: var(--font-arabic); font-size: 1.05rem; line-height: 1.6;
+}
+.chip:hover { border-color: var(--accent); }
+button.primary {
+  background: var(--accent); color: #fff; border: 0; border-radius: 6px; padding: 10px 20px; font: 600 1rem var(--font-ui); cursor: pointer;
+}
+button.primary:disabled { opacity: .55; cursor: wait; }
+button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); border-radius: 6px; padding: 7px 14px; font: 500 .92rem var(--font-ui); cursor: pointer; }
+label.opt { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-soft); font-size: .92rem; }
+select { font: inherit; font-size: .92rem; border: 1px solid var(--rule); border-radius: 6px; background: var(--panel); color: var(--ink); padding: 4px 8px; }
+.panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 16px 18px; display: grid; gap: 10px; min-width: 0; }
+.tashkeel { font-family: var(--font-arabic); font-size: 2.1rem; line-height: 2.1; margin: 0; text-wrap: balance; }
+.tashkeel mark { background: var(--accent-soft); color: inherit; border-radius: 3px; padding: 0 2px; }
+.reading { font-family: var(--font-latin); direction: ltr; text-align: left; font-size: 1.02rem; color: var(--ink); background: var(--code); border-radius: 6px; padding: 10px 12px; overflow-x: auto; white-space: pre-wrap; }
+.status { font-size: .9rem; color: var(--ink-soft); min-height: 1.4em; }
+.status.bad { color: var(--bad); }
+.status.ok { color: var(--ok); }
+.status.warn { color: var(--warn); }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: .95rem; }
+th, td { text-align: right; vertical-align: top; padding: 9px 10px; border-bottom: 1px solid var(--rule); }
+th { font-weight: 600; color: var(--ink-soft); font-size: .82rem; letter-spacing: .02em; white-space: nowrap; }
+td.ar { font-family: var(--font-arabic); font-size: 1.35rem; line-height: 1.8; white-space: nowrap; }
+td.lat { font-family: var(--font-latin); direction: ltr; text-align: left; white-space: nowrap; }
+td.sign { color: var(--accent); }
+td.reason { color: var(--ink-soft); min-width: 18ch; }
+.pill { display: inline-block; border-radius: 999px; padding: 1px 9px; font-size: .78rem; border: 1px solid var(--rule); color: var(--ink-soft); }
+.pill.ok { color: var(--ok); border-color: var(--ok); }
+.pill.bad { color: var(--bad); border-color: var(--bad); }
+.pill.warn { color: var(--warn); border-color: var(--warn); }
+.score { font-size: 1.6rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.diff { font-family: var(--font-arabic); font-size: 1.25rem; }
+.diff .g { color: var(--ok); } .diff .p { color: var(--bad); }
+details { border-top: 1px solid var(--rule); padding-top: 8px; color: var(--ink-soft); font-size: .9rem; }
+summary { cursor: pointer; color: var(--ink); }
+.foot { color: var(--ink-soft); font-size: .85rem; border-top: 1px solid var(--rule); padding-top: 14px; }
+@media (prefers-reduced-motion: no-preference) { button.primary { transition: opacity .15s; } }
+@media (max-width: 560px) { .tashkeel { font-size: 1.7rem; } header h1 { font-size: 2rem; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">نموذج مبسّط للاختبار</div>
+    <h1>قارئ الحركات</h1>
+    <p>يشكّل الجملة بالفصحى أو بالسعودية البيضاء، ويبيّن وظيفة كلّ كلمة وإعرابها، ثم يقرأها قراءةً صوتية بأحكام الوصل والوقف والإدغام وأصوات اللهجة، ويُخرج نصًّا جاهزًا لإرساله إلى ElevenLabs. التشكيل يقوم به نموذج Claude بقواعد المهارة، أمّا القراءة الصوتية والوقفات فمحرّك قواعد حتميّ يعمل في الصفحة نفسها.</p>
+  </header>
+
+  <section>
+    <h2>النصّ <small>فصحى بلا تشكيل أو بتشكيل جزئي</small></h2>
+    <textarea id="input" spellcheck="false" aria-label="النص العربي">ذهب الطالب إلى المدرسة صباحا</textarea>
+    <div class="chips" id="chips" aria-label="أمثلة"></div>
+    <div class="row">
+      <button class="primary" id="run">شكّل وأعرب واقرأ</button>
+      <button class="ghost" id="stop" hidden>إيقاف</button>
+      <label class="opt">اللهجة
+        <select id="mode"><option value="auto">تلقائي</option><option value="fusha">فصحى</option><option value="saudi">سعودية بيضاء</option></select>
+      </label>
+      <label class="opt"><input type="checkbox" id="pause" checked> أحكام الوقف في نهاية الجمل</label>
+      <label class="opt">النطق
+        <select id="scheme"><option value="latin">لاتيني مُنقَّط</option><option value="ipa">IPA</option></select>
+      </label>
+    </div>
+    <div class="status" id="status"></div>
+  </section>
+
+  <section class="panel" id="result">
+    <h2>التشكيل الكامل <small id="resultTag">مثال محسوب مسبقًا</small></h2>
+    <p class="tashkeel" id="tashkeel"></p>
+    <div class="row">
+      <button class="ghost" id="copyTashkeel">نسخ النصّ المشكّل</button>
+      <span class="status" id="copyStatus"></span>
+    </div>
+    <h2>القراءة الصوتية <small>من المحرّك الحتميّ، لا من النموذج</small></h2>
+    <div class="reading" id="reading"></div>
+    <div class="status" id="readingStatus"></div>
+    <h2>النصّ الجاهز لـ ElevenLabs <small>الترقيم إلى وقفات حسب عائلة النموذج</small></h2>
+    <div class="row">
+      <label class="opt">عائلة النموذج
+        <select id="family"><option value="v3">Eleven v4 / v3 (ترقيم فقط)</option><option value="v2">Multilingual v2 / Flash (وسوم break)</option></select>
+      </label>
+      <button class="ghost" id="copyTts">نسخ النصّ الجاهز</button>
+      <span class="status" id="ttsStatus"></span>
+    </div>
+    <p class="tashkeel" id="tts" style="font-size:1.4rem;line-height:1.9"></p>
+    <div class="status" id="prosodyLine"></div>
+    <h2>الصوت <small>التوليد عبر حسابك في ElevenLabs، والمعاينة بصوت المتصفح</small></h2>
+    <div class="row">
+      <button class="primary" id="speak">ولّد الصوت في ElevenLabs</button>
+      <button class="ghost" id="preview">معاينة سريعة بصوت المتصفح</button>
+      <label class="opt">النموذج الصوتي
+        <select id="ttsModel"><option value="eleven_v4">Eleven v4</option><option value="eleven_v3">Eleven v3</option><option value="eleven_multilingual_v2">Multilingual v2</option><option value="eleven_flash_v2_5">Flash v2.5</option></select>
+      </label>
+    </div>
+    <div class="status" id="speakStatus"></div>
+    <div id="speakLinks" class="row"></div>
+    <h2 id="tableTitle">الإعراب</h2>
+    <div class="tablewrap">
+      <table id="table">
+        <thead><tr><th>الكلمة</th><th>النطق</th><th>النوع</th><th>الموقع الإعرابي</th><th>العلامة</th><th>السبب</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <details id="notesBox" hidden><summary>ملاحظات النموذج</summary><p id="notes"></p></details>
+  </section>
+
+  <section class="panel">
+    <h2>جولة التحقق <small>مجموعتان ذهبيتان: 20 جملة فصحى و12 جملة سعودية بيضاء</small></h2>
+    <p style="margin:0;color:var(--ink-soft)">تُرسل جمل المجموعة بلا تشكيل في طلب واحد، ثم تُقارَن إجابة النموذج بالتشكيل الذهبي كلمةً كلمة. تُحتسب الكلمة صحيحة إذا تطابقت حروفها وكلّ حركاتها.</p>
+    <div class="row">
+      <label class="opt">المجموعة
+        <select id="testSet"><option value="fusha">الفصحى (20)</option><option value="saudi">السعودية البيضاء (12)</option></select>
+      </label>
+      <button class="primary" id="runTests">شغّل جولة التحقق</button>
+      <span class="score" id="score"></span>
+      <span class="status" id="testStatus"></span>
+    </div>
+    <div class="tablewrap" id="testTableWrap" hidden>
+      <table id="testTable">
+        <thead><tr><th>#</th><th>الذهبي</th><th>إجابة النموذج</th><th>النتيجة</th><th>الظاهرة المختبرة</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="foot">
+    الاصطلاح: تشكيل كامل بعلامة الإعراب على آخر الكلمة بلا تسكين للوقف؛ ألف «ال» وهمزة الوصل وحروف المدّ عارية. النطق اللاتيني: ʾ همزة، ʿ عين، ḥ حاء، ṣ ض ṭ ẓ للمطبقات، th ذ dh kh sh gh للمركّبة، والمدّ بالخطّ العلوي. الشرطة بعد «ال» تفصل أداة التعريف، والإدغام يظهر بتكرار الحرف الشمسي. في الوضع السعودي: ق تُقرأ g، وـَيْ ē، وـَوْ ō، والتاء المربوطة a، وآخر الكلمة ساكن.
+  </div>
+</div>
+
+<script>
+/*__ENGINE__*/
+/*__SCORER__*/
+const PROMPT = "__PROMPT__";
+const PROMPT_SAUDI = "__PROMPT_SAUDI__";
+const TESTSET = "__TESTSET__";
+const TESTSET_SAUDI = "__TESTSET_SAUDI__";
+const SAUDI_MARKERS = ['وش', 'إيش', 'ايش', 'ليش', 'وين', 'الحين', 'أبغى', 'ابغى', 'أبي', 'تبي', 'تبغى', 'يبغى', 'مو', 'بس', 'مرة', 'اللي', 'هذي', 'هذول', 'بكرة', 'زين', 'خلاص', 'يلا', 'شوي', 'عشان', 'لين', 'راح', 'كذا', 'هنا', 'وشو', 'ماله', 'معليش', 'طيب'];
+const FUSHA_MARKERS = ['إن', 'إنّ', 'سوف', 'لن', 'لم', 'ليس', 'الذي', 'التي', 'الذين', 'هذه', 'ماذا', 'لماذا', 'أين', 'كيف', 'حيث', 'إذ', 'قد', 'ثم', 'ثمّ'];
+function detectMode(text) {
+  const words = text.replace(/[\u064B-\u0652\u0670]/g, '').split(/\s+/).map(w => w.replace(/^[وف]/, '')).filter(Boolean);
+  let s = 0, f = 0;
+  for (const w of words) { if (SAUDI_MARKERS.includes(w)) s++; if (FUSHA_MARKERS.includes(w)) f++; }
+  if (/[\u064B-\u064D]/.test(text) && !/جدًّا|جدا|تقريبًا|طبعًا|أبدًا|مثلًا/.test(text)) f++;
+  return s >= 1 && s >= f ? 'saudi' : 'fusha';
+}
+
+// A precomputed example so the page is complete at rest, before any model call.
+const EXAMPLE = {
+  tashkeel: "ذَهَبَ الطَّالِبُ إِلَى الْمَدْرَسَةِ صَبَاحًا",
+  mode: "fusha",
+  words: [
+    { word: "ذهب", tashkeel: "ذَهَبَ", pos: "فعل", role: "فعل ماضٍ", sign: "مبني على الفتح", reason: "الماضي مبني على الفتح ما لم يتصل به ضمير رفع متحرك أو واو الجماعة." },
+    { word: "الطالب", tashkeel: "الطَّالِبُ", pos: "اسم", role: "فاعل مرفوع", sign: "الضمة الظاهرة على آخره", reason: "اسم ظاهر وقع بعد الفعل وأسند إليه الفعل، والطاء شمسية فأُدغمت فيها لام التعريف." },
+    { word: "إلى", tashkeel: "إِلَى", pos: "حرف", role: "حرف جر", sign: "مبني على السكون", reason: "حروف الجر مبنية لا محل لها من الإعراب." },
+    { word: "المدرسة", tashkeel: "الْمَدْرَسَةِ", pos: "اسم", role: "اسم مجرور بإلى", sign: "الكسرة الظاهرة على آخره", reason: "ما بعد حرف الجر مجرور، والميم قمرية فاللام ساكنة ظاهرة." },
+    { word: "صباحا", tashkeel: "صَبَاحًا", pos: "اسم", role: "ظرف زمان (مفعول فيه) منصوب", sign: "الفتحة الظاهرة، مع تنوين الفتح", reason: "نكرة دالة على زمن وقوع الفعل، منصوبة على الظرفية." }
+  ],
+  notes: ""
+};
+
+const $ = (id) => document.getElementById(id);
+const els = { input: $('input'), run: $('run'), stop: $('stop'), status: $('status'), tashkeel: $('tashkeel'), reading: $('reading'),
+  readingStatus: $('readingStatus'), tbody: $('table').querySelector('tbody'), notes: $('notes'), notesBox: $('notesBox'), pause: $('pause'),
+  scheme: $('scheme'), resultTag: $('resultTag'), copy: $('copyTashkeel'), copyStatus: $('copyStatus'), chips: $('chips'),
+  mode: $('mode'), family: $('family'), tts: $('tts'), copyTts: $('copyTts'), ttsStatus: $('ttsStatus'), prosodyLine: $('prosodyLine'), tableTitle: $('tableTitle'), testSet: $('testSet'),
+  speak: $('speak'), preview: $('preview'), ttsModel: $('ttsModel'), speakStatus: $('speakStatus'), speakLinks: $('speakLinks'),
+  runTests: $('runTests'), score: $('score'), testStatus: $('testStatus'), testTbody: $('testTable').querySelector('tbody'), testWrap: $('testTableWrap') };
+
+let current = EXAMPLE;
+let sample = null;
+let mcp = null;
+let ctl = null;
+// Dialect comes from the voice: library voices whose accent label matches each mode.
+const VOICES = { fusha: { id: 'rPNcQ53R703tTmtue1AT', name: 'Mazen Lawand (فصحى)' }, saudi: { id: 'yXEnnEln9armDCyhkXcA', name: 'Jeddawi Echo (سعودي)' } };
+const MCP_SERVER = 'ElevenLabs';
+const MCP_COPY = {
+  server_not_connected: 'أضف ElevenLabs من إعدادات claude.ai ← Connectors ثم أعد المحاولة.',
+  needs_reauth: 'أعد ربط ElevenLabs من إعدادات claude.ai ← Connectors.',
+  not_in_manifest: 'لم يُسمح لهذه الصفحة باستخدام ElevenLabs. اسمح لها من قائمة الصلاحيات.',
+  approval_required: 'يحتاج التوليد إلى موافقتك؛ اضغط الزرّ مرة أخرى ووافق.',
+  blocked_by_policy: 'سياسة المؤسسة تمنع هذه الأداة.',
+  tool_error: 'رفض ElevenLabs الطلب. تأكد أن الصوت مضاف إلى مكتبتك وأن الرصيد كافٍ.',
+  server_unavailable: 'ElevenLabs لا يستجيب الآن. حاول بعد قليل.',
+  cancelled: '',
+};
+const mcpCopy = (code) => MCP_COPY[code] ?? 'تعذّر الاتصال بـ ElevenLabs. حاول مرة أخرى.';
+function collectUrls(obj, out = new Set(), depth = 0) {
+  if (!obj || depth > 6) return out;
+  if (typeof obj === 'string') { if (/^https?:\/\//.test(obj)) out.add(obj); return out; }
+  if (Array.isArray(obj)) { obj.forEach(x => collectUrls(x, out, depth + 1)); return out; }
+  if (typeof obj === 'object') { for (const [k, v] of Object.entries(obj)) if (/url|href|audio|src/i.test(k) || typeof v === 'object') collectUrls(v, out, depth + 1); }
+  return out;
+}
+
+const ERROR_COPY = {
+  not_granted: 'لم يُسمح لهذه الصفحة باستخدام Claude. اسمح لها من قائمة الصلاحيات ثم أعد المحاولة.',
+  sampling_disabled: 'Claude غير متاح لهذا الحساب.',
+  rate_limited: 'طلبات كثيرة في وقت قصير أو بلغتَ حدّ الاستخدام. انتظر قليلًا ثم أعد المحاولة.',
+  session_expired: 'انتهت الجلسة. سجّل الدخول من جديد.',
+  invalid_json: 'ردّ النموذج لم يكن JSON صالحًا. أعد المحاولة أو قصّر النصّ.',
+  refused: 'رفض النموذج هذا النصّ. غيّر الصياغة.',
+  empty_completion: 'لم يُنتج النموذج شيئًا. قصّر النصّ وأعد المحاولة.',
+  prompt_too_large: 'النصّ طويل جدًا. قسّمه.',
+  upstream_error: 'تعطّل الاتصال مؤقتًا. أعد المحاولة.',
+  cancelled: '',
+};
+const copyFor = (code) => ERROR_COPY[code] ?? ERROR_COPY.upstream_error;
+
+function render(res, tag) {
+  current = res;
+  els.resultTag.textContent = tag;
+  els.tashkeel.textContent = res.tashkeel;
+  const pause = els.pause.checked, scheme = els.scheme.value;
+  const dialect = res.mode === 'saudi' ? 'saudi' : 'fusha';
+  const { reading, warnings } = readText(res.tashkeel, { pause, scheme, dialect });
+  els.tts.textContent = toTtsText(res.tashkeel, { family: els.family.value });
+  const segs = prosody(res.tashkeel);
+  const typeName = { statement: 'خبرية', question: 'استفهامية', exclamation: 'تعجبية', continue: 'متصلة' };
+  els.prosodyLine.textContent = segs.map(sg => `«${sg.text.slice(0, 18)}${sg.text.length > 18 ? '…' : ''}» ${typeName[sg.type]}، وقفة ${sg.pauseMs} مللي ثانية`).join(' · ');
+  els.tableTitle.textContent = dialect === 'saudi' ? 'وظائف الكلمات (لا إعراب في اللهجة)' : 'الإعراب';
+  els.reading.textContent = reading;
+  const incomplete = completenessReport(res.tashkeel, { dialect });
+  const msgs = [];
+  if (incomplete.length) msgs.push('حروف بلا حركة: ' + incomplete.map(c => c.word).join('، '));
+  if (warnings.length) msgs.push(warnings.join(' · '));
+  els.readingStatus.textContent = msgs.length ? msgs.join(' | ') : 'التشكيل كامل: كلّ حرف يحمل علامته.';
+  els.readingStatus.className = 'status ' + (msgs.length ? 'warn' : 'ok');
+  els.tbody.replaceChildren();
+  for (const w of res.words || []) {
+    const tr = document.createElement('tr');
+    const r = readWord(w.tashkeel || w.word, { atPause: false, scheme, dialect }).reading;
+    const cells = [
+      ['ar', w.tashkeel || w.word], ['lat', r], ['', w.pos || ''], ['', w.role || ''], ['sign', w.sign || ''], ['reason', w.reason || ''],
+    ];
+    for (const [cls, text] of cells) { const td = document.createElement('td'); if (cls) td.className = cls; td.textContent = text; tr.appendChild(td); }
+    els.tbody.appendChild(tr);
+  }
+  const notes = (res.notes || '').trim();
+  els.notesBox.hidden = !notes;
+  els.notes.textContent = notes;
+}
+
+function rerender() { render(current, els.resultTag.textContent); }
+els.pause.addEventListener('change', rerender);
+els.scheme.addEventListener('change', rerender);
+els.family.addEventListener('change', rerender);
+els.ttsModel.addEventListener('change', () => { els.family.value = /^eleven_v[34]/.test(els.ttsModel.value) ? 'v3' : 'v2'; rerender(); });
+
+// Example chips from the test set
+for (const [set, mode] of [[TESTSET, 'fusha'], [TESTSET_SAUDI, 'saudi']]) {
+  for (const item of set) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = item.bare;
+    b.title = mode === 'saudi' ? 'سعودية بيضاء' : 'فصحى';
+    b.addEventListener('click', () => { els.input.value = item.bare; els.mode.value = mode; els.input.focus(); });
+    els.chips.appendChild(b);
+  }
+}
+
+els.copy.addEventListener('click', async () => {
+  const text = els.tashkeel.textContent;
+  try { await navigator.clipboard.writeText(text); els.copyStatus.textContent = 'نُسخ.'; }
+  catch { const range = document.createRange(); range.selectNodeContents(els.tashkeel); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(range); els.copyStatus.textContent = 'حُدّد النصّ؛ انسخه يدويًا.'; }
+  setTimeout(() => { els.copyStatus.textContent = ''; }, 2500);
+});
+
+els.copyTts.addEventListener('click', async () => {
+  const text = els.tts.textContent;
+  try { await navigator.clipboard.writeText(text); els.ttsStatus.textContent = 'نُسخ.'; }
+  catch { const range = document.createRange(); range.selectNodeContents(els.tts); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(range); els.ttsStatus.textContent = 'حُدّد النصّ؛ انسخه يدويًا.'; }
+  setTimeout(() => { els.ttsStatus.textContent = ''; }, 2500);
+});
+
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+els.speak.addEventListener('click', async () => {
+  const text = els.tts.textContent.trim();
+  if (!text) return;
+  if (!mcp) { els.speakStatus.textContent = 'التوليد يحتاج فتح الصفحة في claude.ai مع ربط ElevenLabs. استعمل المعاينة بصوت المتصفح.'; els.speakStatus.className = 'status warn'; return; }
+  const mode = current.mode === 'saudi' ? 'saudi' : 'fusha';
+  const voice = VOICES[mode];
+  els.speak.disabled = true; els.speakLinks.replaceChildren();
+  els.speakStatus.textContent = `يولّد بصوت ${voice.name} على ${els.ttsModel.value}… (يُخصم من رصيدك في ElevenLabs)`; els.speakStatus.className = 'status';
+  try {
+    const started = await mcp.callTool(MCP_SERVER, 'creative_generate_speech', {
+      prompt: text, model_id: els.ttsModel.value, voice_id: voice.id, generations_count: 1,
+      context: 'Arabic harakat reader demo: speak the vocalized text with a dialect-matched voice',
+    });
+    const run = started.payload || {};
+    const flowUrl = run.flow_url || run.url;
+    if (flowUrl) { const a = document.createElement('a'); a.href = flowUrl; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'افتح التوليد في ElevenLabs'; els.speakLinks.appendChild(a); }
+    let status = run; let tries = 0;
+    while (!status.all_completed && !status.has_failures && tries < 30 && run.flow_id && run.session_ids) {
+      await sleep(Math.max(3000, (status.poll_after_seconds || 4) * 1000));
+      const r = await mcp.callTool(MCP_SERVER, 'creative_get_flow_run_status', { flow_id: run.flow_id, session_ids: run.session_ids, context: 'poll speech generation' }, { cache: false });
+      status = r.payload || {}; tries++;
+      els.speakStatus.textContent = `جارٍ التوليد… (${tries})`;
+    }
+    if (status.has_failures) { els.speakStatus.textContent = 'فشل التوليد في ElevenLabs. افتح الرابط لمعرفة السبب.'; els.speakStatus.className = 'status bad'; }
+    else if (status.all_completed) {
+      els.speakStatus.textContent = 'اكتمل التوليد. الصوت يُشغَّل من صفحة ElevenLabs (المتصفح يمنع تشغيله داخل هذه الصفحة).'; els.speakStatus.className = 'status ok';
+      for (const u of collectUrls(status.generations)) { if (u === flowUrl) continue; const a = document.createElement('a'); a.href = u; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'ملف الصوت'; els.speakLinks.appendChild(a); }
+    } else { els.speakStatus.textContent = 'ما زال التوليد جاريًا؛ افتح الرابط لمتابعته.'; els.speakStatus.className = 'status warn'; }
+  } catch (e) {
+    els.speakStatus.textContent = mcpCopy(e.code); els.speakStatus.className = 'status ' + (e.code === 'cancelled' ? '' : 'bad');
+  } finally { els.speak.disabled = false; }
+});
+
+els.preview.addEventListener('click', () => {
+  if (!('speechSynthesis' in window)) { els.speakStatus.textContent = 'المتصفح لا يدعم النطق.'; els.speakStatus.className = 'status warn'; return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(els.tashkeel.textContent);
+  const ar = speechSynthesis.getVoices().filter(v => /^ar/i.test(v.lang));
+  const pick = ar.find(v => /SA/i.test(v.lang)) || ar[0];
+  if (pick) u.voice = pick; u.lang = pick ? pick.lang : 'ar-SA'; u.rate = 0.95;
+  els.speakStatus.textContent = pick ? `معاينة بصوت المتصفح: ${pick.name}. هذا ليس ElevenLabs؛ غرضه التحقق من الحركات والوقفات فقط.` : 'لا يوجد صوت عربي مثبّت في هذا المتصفح؛ ستُقرأ بصوت افتراضي.';
+  els.speakStatus.className = 'status';
+  speechSynthesis.speak(u);
+});
+
+function setBusy(busy, msg) {
+  els.run.disabled = busy; els.runTests.disabled = busy; els.stop.hidden = !busy;
+  els.status.textContent = msg || ''; els.status.className = 'status';
+}
+
+els.stop.addEventListener('click', () => ctl?.abort());
+
+els.run.addEventListener('click', async () => {
+  const text = els.input.value.replace(/\s+/g, ' ').trim();
+  if (!text) { els.status.textContent = 'اكتب جملة أولًا.'; els.status.className = 'status bad'; return; }
+  if (!sample) { els.status.textContent = 'النموذج غير متاح في هذا العرض. تعمل القراءة الصوتية فقط على نصّ مشكّل.'; els.status.className = 'status warn';
+    render({ tashkeel: text, mode: els.mode.value === 'saudi' ? 'saudi' : 'fusha', words: text.split(' ').map(w => ({ word: w, tashkeel: w })) }, 'بلا نموذج: قراءة النصّ كما أُدخل'); return; }
+  const mode = els.mode.value === 'auto' ? detectMode(text) : els.mode.value;
+  ctl = new AbortController();
+  setBusy(true, mode === 'saudi' ? 'النموذج يشكّل الجملة بالسعودية البيضاء… نحو دقيقة.' : 'النموذج يحلّل الجملة نحويًا ويشكّلها… قد يستغرق هذا نحو دقيقة.');
+  try {
+    const res = await sample.json((mode === 'saudi' ? PROMPT_SAUDI : PROMPT) + text, { modelTier: 'default', signal: ctl.signal });
+    if (!res || typeof res.tashkeel !== 'string') throw { code: 'invalid_json', message: 'missing tashkeel' };
+    res.mode = mode;
+    render(res, mode === 'saudi' ? 'إجابة النموذج (سعودية بيضاء)' : 'إجابة النموذج (فصحى)');
+    setBusy(false, '');
+  } catch (e) {
+    setBusy(false, copyFor(e.code));
+    if (e.code && e.code !== 'cancelled') els.status.className = 'status bad';
+  }
+});
+
+function diffMarkup(gold, pred) {
+  const span = document.createElement('span'); span.className = 'diff';
+  const g = normalizeWord(gold), p = normalizeWord(pred);
+  if (g === p) { span.textContent = pred; return span; }
+  const a = document.createElement('span'); a.className = 'p'; a.textContent = pred || '—';
+  span.appendChild(a);
+  return span;
+}
+
+els.runTests.addEventListener('click', async () => {
+  if (!sample) { els.testStatus.textContent = 'النموذج غير متاح في هذا العرض.'; els.testStatus.className = 'status warn'; return; }
+  ctl = new AbortController();
+  setBusy(true, '');
+  const saudiSet = els.testSet.value === 'saudi';
+  const SET = saudiSet ? TESTSET_SAUDI : TESTSET;
+  els.testStatus.textContent = `النموذج يشكّل ${SET.length} جملة في طلب واحد… نحو دقيقة أو دقيقتين.`; els.testStatus.className = 'status';
+  els.score.textContent = '';
+  const list = SET.map((it, i) => `${i + 1}. ${it.bare}`).join('\n');
+  const prompt = (saudiSet ? PROMPT_SAUDI : PROMPT).replace(/صيغة الإخراج:[\s\S]*$/, '') +
+    `صيغة الإخراج: أجب بمصفوفة JSON واحدة من ${SET.length} سلسلة نصية بالترتيب، كلّ سلسلة هي الجملة المقابلة مشكّلة تشكيلًا كاملًا بالاصطلاح أعلاه، بلا أي نص آخر.\n\nالجمل:\n${list}\n`;
+  try {
+    const preds = await sample.json(prompt, { modelTier: 'default', signal: ctl.signal, cache: false });
+    if (!Array.isArray(preds)) throw { code: 'invalid_json', message: 'not an array' };
+    const res = scoreAll(SET, preds.map(String));
+    els.score.textContent = `${res.correct}/${res.total} كلمة · ${(res.accuracy * 100).toFixed(1)}%`;
+    els.testTbody.replaceChildren();
+    res.rows.forEach((row, i) => {
+      const it = SET[i];
+      const tr = document.createElement('tr');
+      const ok = row.mismatches.length === 0;
+      const tds = [
+        ['', String(it.id)], ['ar', it.gold], ['ar', null], ['', null], ['reason', it.tests],
+      ];
+      tds.forEach(([cls, text], k) => {
+        const td = document.createElement('td'); if (cls) td.className = cls;
+        if (k === 2) td.appendChild(diffMarkup(it.gold, preds[i] ?? ''));
+        else if (k === 3) { const pill = document.createElement('span'); pill.className = 'pill ' + (ok ? 'ok' : 'bad'); pill.textContent = ok ? 'مطابق' : `${row.correct}/${row.total}`; td.appendChild(pill); }
+        else td.textContent = text;
+        tr.appendChild(td);
+      });
+      els.testTbody.appendChild(tr);
+    });
+    els.testWrap.hidden = false;
+    els.testStatus.textContent = res.accuracy >= 0.95 ? 'اجتاز: دقّة الكلمات 95% أو أكثر.' : 'انظر الصفوف الحمراء؛ الاختلافات غالبًا في علامة الإعراب الأخيرة أو همزة الوصل.';
+    els.testStatus.className = 'status ' + (res.accuracy >= 0.95 ? 'ok' : 'warn');
+    setBusy(false, '');
+  } catch (e) {
+    setBusy(false, '');
+    els.testStatus.textContent = copyFor(e.code); els.testStatus.className = 'status ' + (e.code === 'cancelled' ? '' : 'bad');
+  }
+});
+
+// Initial render, then light up the model when the runtime answers.
+render(EXAMPLE, 'مثال محسوب مسبقًا');
+(async () => {
+  try { sample = window.claude?.use ? await window.claude.use('sample') : null; } catch { sample = null; }
+  try { mcp = window.claude?.use ? await window.claude.use('mcp') : null; } catch { mcp = null; }
+  if (!sample) { els.status.textContent = 'النموذج غير متاح في هذا العرض؛ افتح الصفحة في claude.ai لتجربة التشكيل. القراءة الصوتية تعمل بلا نموذج.'; els.status.className = 'status warn'; }
+})();
+</script>
