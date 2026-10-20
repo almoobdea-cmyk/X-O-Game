@@ -43,10 +43,11 @@ export function scoreAll(items, predictions) {
 const isMain = typeof process !== 'undefined' && process.argv[1] && /score\.mjs$/.test(process.argv[1]);
 if (isMain) {
   const here = dirname(fileURLToPath(import.meta.url));
-  const testset = JSON.parse(readFileSync(join(here, '..', 'assets', 'testset.json'), 'utf8'));
   const file = process.argv[2];
-  if (!file) { console.error('usage: node score.mjs predictions.json'); process.exit(2); }
-  const { predictions } = JSON.parse(readFileSync(file, 'utf8'));
+  if (!file) { console.error('usage: node score.mjs predictions.json [testset.json] [key]'); process.exit(2); }
+  const testset = JSON.parse(readFileSync(process.argv[3] || join(here, '..', 'assets', 'testset.json'), 'utf8'));
+  const data = JSON.parse(readFileSync(file, 'utf8'));
+  const predictions = (process.argv[4] ? data[process.argv[4]] : data).predictions;
   const res = scoreAll(testset.items, predictions);
   console.log(`word accuracy: ${res.correct}/${res.total} = ${(res.accuracy * 100).toFixed(1)}%`);
   for (const row of res.rows) {

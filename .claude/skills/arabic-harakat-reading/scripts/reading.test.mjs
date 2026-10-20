@@ -89,3 +89,41 @@ test('readWord reports elision flag', () => {
   assert.equal(readWord('الْبَيْتِ', { afterVowel: true }).elided, true);
   assert.equal(readWord('الْبَيْتِ', { afterVowel: false }).elided, false);
 });
+
+import { prosody, toTtsText } from './reading.mjs';
+const testsetSaudi = JSON.parse(readFileSync(join(here, '..', 'assets', 'testset-saudi.json'), 'utf8'));
+
+test('Saudi white readings at pause', () => {
+  for (const item of testsetSaudi.items) {
+    const { reading, warnings } = readText(item.gold, { pause: true, dialect: 'saudi' });
+    assert.equal(reading, item.reading_pause, `saudi item ${item.id}`);
+    assert.deepEqual(warnings, [], `saudi item ${item.id} warnings`);
+    assert.deepEqual(completenessReport(item.gold, { dialect: 'saudi' }), [], `saudi gold ${item.id} must be complete`);
+  }
+});
+
+test('Saudi white keeps q in religious and legal words, drops final hamza, reads ta marbuta as a', () => {
+  assert.equal(readText('الْقُرْآنْ', { dialect: 'saudi' }).reading, 'al-qurʾān');
+  assert.equal(readText('قَالْ', { dialect: 'saudi' }).reading, 'gāl');
+  assert.equal(readText('سَمَاءْ', { dialect: 'saudi' }).reading, 'samā');
+  assert.equal(readText('مَدْرَسَةْ الْبَنَاتْ', { dialect: 'saudi' }).reading, 'madrasat al-banāt');
+  assert.equal(readText('أَبَدًا', { dialect: 'saudi' }).reading, 'abadan');
+  assert.equal(readText('يَوْمْ', { dialect: 'saudi', scheme: 'ipa' }).reading, 'joːm');
+});
+
+test('prosody segments and pause timing', () => {
+  const segs = prosody('ذَهَبَ الطَّالِبُ، ثُمَّ رَجَعَ. هَلْ رَأَيْتَهُ؟ نَعَمْ...');
+  assert.equal(segs.length, 4);
+  assert.equal(segs[0].pauseMs, 250); assert.equal(segs[0].type, 'continue');
+  assert.equal(segs[1].pauseMs, 600); assert.equal(segs[1].type, 'statement');
+  assert.equal(segs[2].type, 'question');
+  assert.equal(segs[3].pauseMs, 800);
+  assert.equal(prosody('بلا ترقيم')[0].type, 'statement');
+});
+
+test('ElevenLabs-ready text per model family', () => {
+  const t = 'أَهْلًا؛ كَيْفَ حَالُكَ؟ بِخَيْرٍ...';
+  assert.equal(toTtsText(t, { family: 'v3' }), 'أَهْلًا؛ كَيْفَ حَالُكَ؟ بِخَيْرٍ…');
+  assert.equal(toTtsText(t, { family: 'v2' }), 'أَهْلًا؛ <break time="0.4s" /> كَيْفَ حَالُكَ؟ بِخَيْرٍ. <break time="0.8s" />');
+  assert.equal(toTtsText('بلا ترقيم'), 'بلا ترقيم.');
+});

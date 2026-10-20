@@ -104,7 +104,7 @@ summary { cursor: pointer; color: var(--ink); }
   <header>
     <div class="eyebrow">نموذج مبسّط للاختبار</div>
     <h1>قارئ الحركات</h1>
-    <p>يشكّل الجملة الفصيحة تشكيلًا كاملًا، ويبيّن إعراب كلّ كلمة وسببه، ثم يقرأها قراءةً صوتية بأحكام الوصل والوقف والإدغام. التشكيل والإعراب يقوم بهما نموذج Claude بقواعد المهارة، أمّا القراءة الصوتية فمحرّك قواعد حتميّ يعمل في الصفحة نفسها.</p>
+    <p>يشكّل الجملة بالفصحى أو بالسعودية البيضاء، ويبيّن وظيفة كلّ كلمة وإعرابها، ثم يقرأها قراءةً صوتية بأحكام الوصل والوقف والإدغام وأصوات اللهجة، ويُخرج نصًّا جاهزًا لإرساله إلى ElevenLabs. التشكيل يقوم به نموذج Claude بقواعد المهارة، أمّا القراءة الصوتية والوقفات فمحرّك قواعد حتميّ يعمل في الصفحة نفسها.</p>
   </header>
 
   <section>
@@ -114,6 +114,9 @@ summary { cursor: pointer; color: var(--ink); }
     <div class="row">
       <button class="primary" id="run">شكّل وأعرب واقرأ</button>
       <button class="ghost" id="stop" hidden>إيقاف</button>
+      <label class="opt">اللهجة
+        <select id="mode"><option value="auto">تلقائي</option><option value="fusha">فصحى</option><option value="saudi">سعودية بيضاء</option></select>
+      </label>
       <label class="opt"><input type="checkbox" id="pause" checked> أحكام الوقف في نهاية الجمل</label>
       <label class="opt">النطق
         <select id="scheme"><option value="latin">لاتيني مُنقَّط</option><option value="ipa">IPA</option></select>
@@ -132,7 +135,17 @@ summary { cursor: pointer; color: var(--ink); }
     <h2>القراءة الصوتية <small>من المحرّك الحتميّ، لا من النموذج</small></h2>
     <div class="reading" id="reading"></div>
     <div class="status" id="readingStatus"></div>
-    <h2>الإعراب</h2>
+    <h2>النصّ الجاهز لـ ElevenLabs <small>الترقيم إلى وقفات حسب عائلة النموذج</small></h2>
+    <div class="row">
+      <label class="opt">عائلة النموذج
+        <select id="family"><option value="v3">Eleven v4 / v3 (ترقيم فقط)</option><option value="v2">Multilingual v2 / Flash (وسوم break)</option></select>
+      </label>
+      <button class="ghost" id="copyTts">نسخ النصّ الجاهز</button>
+      <span class="status" id="ttsStatus"></span>
+    </div>
+    <p class="tashkeel" id="tts" style="font-size:1.4rem;line-height:1.9"></p>
+    <div class="status" id="prosodyLine"></div>
+    <h2 id="tableTitle">الإعراب</h2>
     <div class="tablewrap">
       <table id="table">
         <thead><tr><th>الكلمة</th><th>النطق</th><th>النوع</th><th>الموقع الإعرابي</th><th>العلامة</th><th>السبب</th></tr></thead>
@@ -143,9 +156,12 @@ summary { cursor: pointer; color: var(--ink); }
   </section>
 
   <section class="panel">
-    <h2>جولة التحقق <small>20 جملة ذهبية تغطي الرفع والنصب والجرّ والجزم والعلامات الفرعية</small></h2>
-    <p style="margin:0;color:var(--ink-soft)">تُرسل الجمل العشرون بلا تشكيل في طلب واحد، ثم تُقارَن إجابة النموذج بالتشكيل الذهبي كلمةً كلمة. تُحتسب الكلمة صحيحة إذا تطابقت حروفها وكلّ حركاتها.</p>
+    <h2>جولة التحقق <small>مجموعتان ذهبيتان: 20 جملة فصحى و12 جملة سعودية بيضاء</small></h2>
+    <p style="margin:0;color:var(--ink-soft)">تُرسل جمل المجموعة بلا تشكيل في طلب واحد، ثم تُقارَن إجابة النموذج بالتشكيل الذهبي كلمةً كلمة. تُحتسب الكلمة صحيحة إذا تطابقت حروفها وكلّ حركاتها.</p>
     <div class="row">
+      <label class="opt">المجموعة
+        <select id="testSet"><option value="fusha">الفصحى (20)</option><option value="saudi">السعودية البيضاء (12)</option></select>
+      </label>
       <button class="primary" id="runTests">شغّل جولة التحقق</button>
       <span class="score" id="score"></span>
       <span class="status" id="testStatus"></span>
@@ -159,7 +175,7 @@ summary { cursor: pointer; color: var(--ink); }
   </section>
 
   <div class="foot">
-    الاصطلاح: تشكيل كامل بعلامة الإعراب على آخر الكلمة بلا تسكين للوقف؛ ألف «ال» وهمزة الوصل وحروف المدّ عارية. النطق اللاتيني: ʾ همزة، ʿ عين، ḥ حاء، ṣ ض ṭ ẓ للمطبقات، th ذ dh kh sh gh للمركّبة، والمدّ بالخطّ العلوي. الشرطة بعد «ال» تفصل أداة التعريف، والإدغام يظهر بتكرار الحرف الشمسي.
+    الاصطلاح: تشكيل كامل بعلامة الإعراب على آخر الكلمة بلا تسكين للوقف؛ ألف «ال» وهمزة الوصل وحروف المدّ عارية. النطق اللاتيني: ʾ همزة، ʿ عين، ḥ حاء، ṣ ض ṭ ẓ للمطبقات، th ذ dh kh sh gh للمركّبة، والمدّ بالخطّ العلوي. الشرطة بعد «ال» تفصل أداة التعريف، والإدغام يظهر بتكرار الحرف الشمسي. في الوضع السعودي: ق تُقرأ g، وـَيْ ē، وـَوْ ō، والتاء المربوطة a، وآخر الكلمة ساكن.
   </div>
 </div>
 
@@ -167,11 +183,23 @@ summary { cursor: pointer; color: var(--ink); }
 /*__ENGINE__*/
 /*__SCORER__*/
 const PROMPT = "__PROMPT__";
+const PROMPT_SAUDI = "__PROMPT_SAUDI__";
 const TESTSET = "__TESTSET__";
+const TESTSET_SAUDI = "__TESTSET_SAUDI__";
+const SAUDI_MARKERS = ['وش', 'إيش', 'ايش', 'ليش', 'وين', 'الحين', 'أبغى', 'ابغى', 'أبي', 'تبي', 'تبغى', 'يبغى', 'مو', 'بس', 'مرة', 'اللي', 'هذي', 'هذول', 'بكرة', 'زين', 'خلاص', 'يلا', 'شوي', 'عشان', 'لين', 'راح', 'كذا', 'هنا', 'وشو', 'ماله', 'معليش', 'طيب'];
+const FUSHA_MARKERS = ['إن', 'إنّ', 'سوف', 'لن', 'لم', 'ليس', 'الذي', 'التي', 'الذين', 'هذه', 'ماذا', 'لماذا', 'أين', 'كيف', 'حيث', 'إذ', 'قد', 'ثم', 'ثمّ'];
+function detectMode(text) {
+  const words = text.replace(/[\u064B-\u0652\u0670]/g, '').split(/\s+/).map(w => w.replace(/^[وف]/, '')).filter(Boolean);
+  let s = 0, f = 0;
+  for (const w of words) { if (SAUDI_MARKERS.includes(w)) s++; if (FUSHA_MARKERS.includes(w)) f++; }
+  if (/[\u064B-\u064D]/.test(text) && !/جدًّا|جدا|تقريبًا|طبعًا|أبدًا|مثلًا/.test(text)) f++;
+  return s >= 1 && s >= f ? 'saudi' : 'fusha';
+}
 
 // A precomputed example so the page is complete at rest, before any model call.
 const EXAMPLE = {
   tashkeel: "ذَهَبَ الطَّالِبُ إِلَى الْمَدْرَسَةِ صَبَاحًا",
+  mode: "fusha",
   words: [
     { word: "ذهب", tashkeel: "ذَهَبَ", pos: "فعل", role: "فعل ماضٍ", sign: "مبني على الفتح", reason: "الماضي مبني على الفتح ما لم يتصل به ضمير رفع متحرك أو واو الجماعة." },
     { word: "الطالب", tashkeel: "الطَّالِبُ", pos: "اسم", role: "فاعل مرفوع", sign: "الضمة الظاهرة على آخره", reason: "اسم ظاهر وقع بعد الفعل وأسند إليه الفعل، والطاء شمسية فأُدغمت فيها لام التعريف." },
@@ -186,6 +214,7 @@ const $ = (id) => document.getElementById(id);
 const els = { input: $('input'), run: $('run'), stop: $('stop'), status: $('status'), tashkeel: $('tashkeel'), reading: $('reading'),
   readingStatus: $('readingStatus'), tbody: $('table').querySelector('tbody'), notes: $('notes'), notesBox: $('notesBox'), pause: $('pause'),
   scheme: $('scheme'), resultTag: $('resultTag'), copy: $('copyTashkeel'), copyStatus: $('copyStatus'), chips: $('chips'),
+  mode: $('mode'), family: $('family'), tts: $('tts'), copyTts: $('copyTts'), ttsStatus: $('ttsStatus'), prosodyLine: $('prosodyLine'), tableTitle: $('tableTitle'), testSet: $('testSet'),
   runTests: $('runTests'), score: $('score'), testStatus: $('testStatus'), testTbody: $('testTable').querySelector('tbody'), testWrap: $('testTableWrap') };
 
 let current = EXAMPLE;
@@ -211,9 +240,15 @@ function render(res, tag) {
   els.resultTag.textContent = tag;
   els.tashkeel.textContent = res.tashkeel;
   const pause = els.pause.checked, scheme = els.scheme.value;
-  const { reading, warnings } = readText(res.tashkeel, { pause, scheme });
+  const dialect = res.mode === 'saudi' ? 'saudi' : 'fusha';
+  const { reading, warnings } = readText(res.tashkeel, { pause, scheme, dialect });
+  els.tts.textContent = toTtsText(res.tashkeel, { family: els.family.value });
+  const segs = prosody(res.tashkeel);
+  const typeName = { statement: 'خبرية', question: 'استفهامية', exclamation: 'تعجبية', continue: 'متصلة' };
+  els.prosodyLine.textContent = segs.map(sg => `«${sg.text.slice(0, 18)}${sg.text.length > 18 ? '…' : ''}» ${typeName[sg.type]}، وقفة ${sg.pauseMs} مللي ثانية`).join(' · ');
+  els.tableTitle.textContent = dialect === 'saudi' ? 'وظائف الكلمات (لا إعراب في اللهجة)' : 'الإعراب';
   els.reading.textContent = reading;
-  const incomplete = completenessReport(res.tashkeel);
+  const incomplete = completenessReport(res.tashkeel, { dialect });
   const msgs = [];
   if (incomplete.length) msgs.push('حروف بلا حركة: ' + incomplete.map(c => c.word).join('، '));
   if (warnings.length) msgs.push(warnings.join(' · '));
@@ -222,7 +257,7 @@ function render(res, tag) {
   els.tbody.replaceChildren();
   for (const w of res.words || []) {
     const tr = document.createElement('tr');
-    const r = readWord(w.tashkeel || w.word, { atPause: false, scheme }).reading;
+    const r = readWord(w.tashkeel || w.word, { atPause: false, scheme, dialect }).reading;
     const cells = [
       ['ar', w.tashkeel || w.word], ['lat', r], ['', w.pos || ''], ['', w.role || ''], ['sign', w.sign || ''], ['reason', w.reason || ''],
     ];
@@ -237,12 +272,16 @@ function render(res, tag) {
 function rerender() { render(current, els.resultTag.textContent); }
 els.pause.addEventListener('change', rerender);
 els.scheme.addEventListener('change', rerender);
+els.family.addEventListener('change', rerender);
 
 // Example chips from the test set
-for (const item of TESTSET) {
-  const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = item.bare;
-  b.addEventListener('click', () => { els.input.value = item.bare; els.input.focus(); });
-  els.chips.appendChild(b);
+for (const [set, mode] of [[TESTSET, 'fusha'], [TESTSET_SAUDI, 'saudi']]) {
+  for (const item of set) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = item.bare;
+    b.title = mode === 'saudi' ? 'سعودية بيضاء' : 'فصحى';
+    b.addEventListener('click', () => { els.input.value = item.bare; els.mode.value = mode; els.input.focus(); });
+    els.chips.appendChild(b);
+  }
 }
 
 els.copy.addEventListener('click', async () => {
@@ -250,6 +289,13 @@ els.copy.addEventListener('click', async () => {
   try { await navigator.clipboard.writeText(text); els.copyStatus.textContent = 'نُسخ.'; }
   catch { const range = document.createRange(); range.selectNodeContents(els.tashkeel); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(range); els.copyStatus.textContent = 'حُدّد النصّ؛ انسخه يدويًا.'; }
   setTimeout(() => { els.copyStatus.textContent = ''; }, 2500);
+});
+
+els.copyTts.addEventListener('click', async () => {
+  const text = els.tts.textContent;
+  try { await navigator.clipboard.writeText(text); els.ttsStatus.textContent = 'نُسخ.'; }
+  catch { const range = document.createRange(); range.selectNodeContents(els.tts); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(range); els.ttsStatus.textContent = 'حُدّد النصّ؛ انسخه يدويًا.'; }
+  setTimeout(() => { els.ttsStatus.textContent = ''; }, 2500);
 });
 
 function setBusy(busy, msg) {
@@ -263,13 +309,15 @@ els.run.addEventListener('click', async () => {
   const text = els.input.value.replace(/\s+/g, ' ').trim();
   if (!text) { els.status.textContent = 'اكتب جملة أولًا.'; els.status.className = 'status bad'; return; }
   if (!sample) { els.status.textContent = 'النموذج غير متاح في هذا العرض. تعمل القراءة الصوتية فقط على نصّ مشكّل.'; els.status.className = 'status warn';
-    render({ tashkeel: text, words: text.split(' ').map(w => ({ word: w, tashkeel: w })) }, 'بلا نموذج: قراءة النصّ كما أُدخل'); return; }
+    render({ tashkeel: text, mode: els.mode.value === 'saudi' ? 'saudi' : 'fusha', words: text.split(' ').map(w => ({ word: w, tashkeel: w })) }, 'بلا نموذج: قراءة النصّ كما أُدخل'); return; }
+  const mode = els.mode.value === 'auto' ? detectMode(text) : els.mode.value;
   ctl = new AbortController();
-  setBusy(true, 'النموذج يحلّل الجملة نحويًا ويشكّلها… قد يستغرق هذا نحو دقيقة.');
+  setBusy(true, mode === 'saudi' ? 'النموذج يشكّل الجملة بالسعودية البيضاء… نحو دقيقة.' : 'النموذج يحلّل الجملة نحويًا ويشكّلها… قد يستغرق هذا نحو دقيقة.');
   try {
-    const res = await sample.json(PROMPT + text, { modelTier: 'default', signal: ctl.signal });
+    const res = await sample.json((mode === 'saudi' ? PROMPT_SAUDI : PROMPT) + text, { modelTier: 'default', signal: ctl.signal });
     if (!res || typeof res.tashkeel !== 'string') throw { code: 'invalid_json', message: 'missing tashkeel' };
-    render(res, 'إجابة النموذج');
+    res.mode = mode;
+    render(res, mode === 'saudi' ? 'إجابة النموذج (سعودية بيضاء)' : 'إجابة النموذج (فصحى)');
     setBusy(false, '');
   } catch (e) {
     setBusy(false, copyFor(e.code));
@@ -290,19 +338,21 @@ els.runTests.addEventListener('click', async () => {
   if (!sample) { els.testStatus.textContent = 'النموذج غير متاح في هذا العرض.'; els.testStatus.className = 'status warn'; return; }
   ctl = new AbortController();
   setBusy(true, '');
-  els.testStatus.textContent = 'النموذج يشكّل العشرين جملة في طلب واحد… نحو دقيقة أو دقيقتين.'; els.testStatus.className = 'status';
+  const saudiSet = els.testSet.value === 'saudi';
+  const SET = saudiSet ? TESTSET_SAUDI : TESTSET;
+  els.testStatus.textContent = `النموذج يشكّل ${SET.length} جملة في طلب واحد… نحو دقيقة أو دقيقتين.`; els.testStatus.className = 'status';
   els.score.textContent = '';
-  const list = TESTSET.map((it, i) => `${i + 1}. ${it.bare}`).join('\n');
-  const prompt = PROMPT.replace(/صيغة الإخراج:[\s\S]*$/, '') +
-    `صيغة الإخراج: أجب بمصفوفة JSON واحدة من ${TESTSET.length} سلسلة نصية بالترتيب، كلّ سلسلة هي الجملة المقابلة مشكّلة تشكيلًا كاملًا، بلا أي نص آخر.\n\nالجمل:\n${list}\n`;
+  const list = SET.map((it, i) => `${i + 1}. ${it.bare}`).join('\n');
+  const prompt = (saudiSet ? PROMPT_SAUDI : PROMPT).replace(/صيغة الإخراج:[\s\S]*$/, '') +
+    `صيغة الإخراج: أجب بمصفوفة JSON واحدة من ${SET.length} سلسلة نصية بالترتيب، كلّ سلسلة هي الجملة المقابلة مشكّلة تشكيلًا كاملًا بالاصطلاح أعلاه، بلا أي نص آخر.\n\nالجمل:\n${list}\n`;
   try {
     const preds = await sample.json(prompt, { modelTier: 'default', signal: ctl.signal, cache: false });
     if (!Array.isArray(preds)) throw { code: 'invalid_json', message: 'not an array' };
-    const res = scoreAll(TESTSET, preds.map(String));
+    const res = scoreAll(SET, preds.map(String));
     els.score.textContent = `${res.correct}/${res.total} كلمة · ${(res.accuracy * 100).toFixed(1)}%`;
     els.testTbody.replaceChildren();
     res.rows.forEach((row, i) => {
-      const it = TESTSET[i];
+      const it = SET[i];
       const tr = document.createElement('tr');
       const ok = row.mismatches.length === 0;
       const tds = [

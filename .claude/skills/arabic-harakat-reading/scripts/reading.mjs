@@ -22,6 +22,12 @@ const VOWELS = {
   ipa: { a: 'a', u: 'u', i: 'i', aa: 'aː', uu: 'uː', ii: 'iː' },
 };
 
+// Saudi white dialect: words that keep /q/ even though the dialect reads qaf as /g/
+const QAF_KEEP = new Set(['قرآن', 'القرآن', 'قانون', 'القانون', 'قوانين', 'القوانين', 'قانوني', 'قانونية', 'القدس', 'القيامة', 'مقدس', 'المقدس', 'القاهرة', 'قاضي', 'القاضي']);
+const LONG_E = { latin: 'ē', ipa: 'eː' };
+const LONG_O = { latin: 'ō', ipa: 'oː' };
+const HAMZA_LETTERS = new Set('ءأإؤئ');
+
 const FATHA = 'َ', DAMMA = 'ُ', KASRA = 'ِ', SUKUN = 'ْ', SHADDA = 'ّ';
 const FATHATAN = 'ً', DAMMATAN = 'ٌ', KASRATAN = 'ٍ', MADDA = 'ٓ', DAGGER = 'ٰ';
 const MARKS = new Set([FATHA, DAMMA, KASRA, SUKUN, SHADDA, FATHATAN, DAMMATAN, KASRATAN, MADDA, DAGGER, 'ٔ', 'ٕ', 'ٖ']);
@@ -87,7 +93,7 @@ function restoreArticleAlif(units) {
 }
 
 /** Report letters that lack a required mark. Returns [] when the word is fully vocalized. */
-export function checkCompleteness(word) {
+export function checkCompleteness(word, { dialect = 'fusha' } = {}) {
   const units = segment(word);
   restoreArticleAlif(units);
   applyExceptions(units);
@@ -111,8 +117,9 @@ export function checkCompleteness(word) {
     if (u.ch === 'و' && prevVowel === 'u' && !marks.length) { prevVowel = 'uu'; continue; }
     if (u.ch === 'ي' && prevVowel === 'i' && !marks.length) { prevVowel = 'ii'; continue; }
     if (!hasVowel && !hasSukun) {
-      // shadda alone (no vowel) on the final letter is acceptable as a pausal form
-      if (!(hasShadda && isLast)) problems.push({ index: i, letter: u.ch, issue: 'لا حركة ولا سكون' });
+      // shadda alone (no vowel) on the final letter is acceptable as a pausal form; a bare final ة is the Saudi convention
+      const saudiTa = dialect === 'saudi' && u.ch === 'ة' && isLast;
+      if (!(hasShadda && isLast) && !saudiTa) problems.push({ index: i, letter: u.ch, issue: 'لا حركة ولا سكون' });
     }
     prevVowel = marks.find(m => SHORT[m]) ? SHORT[marks.find(m => SHORT[m])] : null;
   }
@@ -120,10 +127,16 @@ export function checkCompleteness(word) {
 }
 
 /** Read one word. `atPause` applies waqf rules; `afterVowel` elides hamzat wasl. */
-export function readWord(word, { atPause = false, afterVowel = false, scheme = 'latin' } = {}) {
-  const C = scheme === 'ipa' ? IPA : LATIN;
+export function readWord(word, { atPause = false, afterVowel = false, scheme = 'latin', dialect = 'fusha' } = {}) {
+  const saudi = dialect === 'saudi';
+  let C = scheme === 'ipa' ? IPA : LATIN;
   const V = VOWELS[scheme] || VOWELS.latin;
   const units = segment(word);
+  if (saudi) {
+    const skeleton = units.map(u => u.ch).join('');
+    const keepQ = QAF_KEEP.has(skeleton) || PREFIXES.some(p => skeleton.startsWith(p) && QAF_KEEP.has(skeleton.slice(p.length)));
+    if (!keepQ) C = { ...C, 'ق': scheme === 'ipa' ? 'ɡ' : 'g' };
+  }
   if (!units.some(u => ARABIC_LETTER.test(u.ch))) return { reading: word, elided: false, warnings: [] };
   restoreArticleAlif(units);
   applyExceptions(units);
@@ -253,15 +266,28 @@ export function readWord(word, { atPause = false, afterVowel = false, scheme = '
     if (ch === 'ي' && !marks.length && prevVowel === 'i') { lengthen('i'); continue; }
     if (ch === 'و' && !marks.length && prevVowel === 'uu' && isLast) { continue; } // عَمْرٌو style silent waw
 
+    // Saudi white: diphthongs ـَيْ → ē and ـَوْ → ō
+    if (saudi && (ch === 'و' || ch === 'ي') && sukun && !shadda && prevVowel === 'a' && out.endsWith(V.a)) {
+      out = out.slice(0, out.length - V.a.length) + (ch === 'و' ? LONG_O[scheme] : LONG_E[scheme]);
+      prevVowel = ch === 'و' ? 'oo' : 'ee';
+      continue;
+    }
+    // Saudi white: a word-final hamza is not pronounced (سما، جا، شي)
+    if (saudi && HAMZA_LETTERS.has(ch) && isLast) { prevVowel = null; continue; }
+
     // Consonants
     let base = C[ch] || ch;
     if (ch === 'ء' || ch === 'أ' || ch === 'إ' || ch === 'ؤ' || ch === 'ئ') base = hamza();
-    if (ch === 'ة') base = (atPause && isLast) ? 'h' : 't';
+    if (saudi && ch === 'ئ' && prevVowel && shortMark) base = C['ي'];
+    if (ch === 'ة') {
+      if (saudi) base = (shortMark || sukun) ? 't' : '';   // مضافة → t، وإلا فالفتحة قبلها هي النطق
+      else base = (atPause && isLast) ? 'h' : 't';
+    }
     emittedLetter = true;
 
     if (isLast && atPause) {
       out += (shadda ? base : '') + base;
-      if (ch !== 'ة' && tanweenMark === FATHATAN) { out += V.aa; prevVowel = 'aa'; }
+      if (ch !== 'ة' && tanweenMark === FATHATAN) { out += saudi ? V.a + 'n' : V.aa; prevVowel = saudi ? null : 'aa'; }
       else prevVowel = null;
       continue;
     }
@@ -277,11 +303,18 @@ export function readWord(word, { atPause = false, afterVowel = false, scheme = '
     }
   }
 
+  // Saudi white: a word-final ـِي / ـُو is short (تَبِي tabi، أَبُو abu); the alif fariqa form (رَاحُوا rāḥū) keeps its length
+  if (saudi && lastLetterIndex >= 0) {
+    const L = units[lastLetterIndex];
+    if ((L.ch === 'ي' && out.endsWith(V.ii)) ) out = out.slice(0, out.length - V.ii.length) + V.i;
+    else if (L.ch === 'و' && out.endsWith(V.uu)) out = out.slice(0, out.length - V.uu.length) + V.u;
+    else if (L.ch === 'ى' && out.endsWith(V.aa)) out = out.slice(0, out.length - V.aa.length) + V.a;
+  }
   return { reading: out, elided, warnings };
 }
 
 /** Read a full text. Pauses before punctuation and at the end when `pause` is true. */
-export function readText(text, { pause = true, scheme = 'latin' } = {}) {
+export function readText(text, { pause = true, scheme = 'latin', dialect = 'fusha' } = {}) {
   const tokens = text.normalize('NFC').replace(/\s+/g, ' ').trim().split(' ');
   const parts = [];
   const warnings = [];
@@ -297,7 +330,7 @@ export function readText(text, { pause = true, scheme = 'latin' } = {}) {
     if (!tok) { parts.push(leadStr + punct); afterVowel = false; continue; }
     const isLastTok = t === tokens.length - 1;
     const atPause = pause && (isLastTok || /[.!?؟،,;؛:…]/.test(punct));
-    const r = readWord(tok, { atPause, afterVowel, scheme });
+    const r = readWord(tok, { atPause, afterVowel, scheme, dialect });
     warnings.push(...r.warnings);
     let piece = r.reading;
     if (r.elided && parts.length) {
@@ -306,15 +339,53 @@ export function readText(text, { pause = true, scheme = 'latin' } = {}) {
       piece = null;
     }
     if (piece !== null) parts.push(leadStr + piece + punct); else parts[parts.length - 1] += punct;
-    afterVowel = !atPause && /[aiuāīūː]$/.test(r.reading.replace(/[-'ʾʿ]+$/, ''));
+    afterVowel = !atPause && /[aiuāīūēōː]$/.test(r.reading.replace(/[-'ʾʿ]+$/, ''));
   }
   // Fix doubled-consonant marker from sun-letter assimilation: "ṭ-ṭālibu" is desired, so nothing to do.
   return { reading: parts.join(' '), warnings };
 }
 
-export function completenessReport(text) {
+/** Punctuation → pauses and sentence type. Returns segments the acoustic layer can time. */
+const PAUSE_MS = { '،': 250, ',': 250, '؛': 400, ';': 400, ':': 400, '.': 600, '؟': 600, '?': 600, '!': 600, '…': 800, '—': 200 };
+export function prosody(text) {
+  const norm = text.normalize('NFC').replace(/\.{3}/g, '…').replace(/\s+/g, ' ').trim();
+  const segments = [];
+  const re = /([^،,؛;:.؟?!…—]+)([،,؛;:.؟?!…—]+)?/g;
+  let m;
+  while ((m = re.exec(norm)) !== null) {
+    const body = m[1].trim();
+    if (!body) continue;
+    const punct = (m[2] || '').trim();
+    const last = punct ? punct[punct.length - 1] : '';
+    let type = 'continue';
+    if (last === '؟' || last === '?') type = 'question';
+    else if (last === '!') type = 'exclamation';
+    else if (last === '.' || last === '…') type = 'statement';
+    const pauseMs = punct ? Math.max(...[...punct].map(c => PAUSE_MS[c] || 0)) : 0;
+    segments.push({ text: body, punct, pauseMs, type });
+  }
+  if (segments.length && !segments[segments.length - 1].punct) { segments[segments.length - 1].type = 'statement'; segments[segments.length - 1].pauseMs = PAUSE_MS['.']; }
+  return segments;
+}
+
+/** Text ready for ElevenLabs. `family` 'v3' covers eleven_v3/eleven_v4 (punctuation only); 'v2' covers multilingual_v2/flash/turbo (<break> tags for long pauses). */
+export function toTtsText(text, { family = 'v3' } = {}) {
+  const segs = prosody(text);
+  if (!segs.length) return '';
+  const pieces = segs.map((sg, i) => {
+    let p = sg.punct || (i === segs.length - 1 ? '.' : '');
+    if (family === 'v2') {
+      if (/…/.test(p)) p = p.replace(/…/g, '.') + ' <break time="0.8s" />';
+      else if (/[؛;:]/.test(p)) p = p + ' <break time="0.4s" />';
+    }
+    return sg.text + p;
+  });
+  return pieces.join(' ').replace(/\s+/g, ' ').trim();
+}
+
+export function completenessReport(text, { dialect = 'fusha' } = {}) {
   const words = text.normalize('NFC').split(/\s+/).filter(Boolean);
-  return words.map(w => ({ word: w, problems: checkCompleteness(w.replace(PUNCT_END, '')) })).filter(x => x.problems.length);
+  return words.map(w => ({ word: w, problems: checkCompleteness(w.replace(PUNCT_END, ''), { dialect }) })).filter(x => x.problems.length);
 }
 
 // CLI
@@ -323,11 +394,12 @@ if (isMain) {
   const args = process.argv.slice(2);
   const scheme = args.includes('--ipa') ? 'ipa' : 'latin';
   const pause = !args.includes('--no-pause');
+  const dialect = args.includes('--saudi') ? 'saudi' : 'fusha';
   const text = args.filter(a => !a.startsWith('--')).join(' ');
-  if (!text) { console.error('usage: node reading.mjs [--ipa] [--no-pause] "نصّ مشكّل"'); process.exit(2); }
-  const { reading, warnings } = readText(text, { pause, scheme });
+  if (!text) { console.error('usage: node reading.mjs [--ipa] [--no-pause] [--saudi] "نصّ مشكّل"'); process.exit(2); }
+  const { reading, warnings } = readText(text, { pause, scheme, dialect });
   console.log(reading);
-  const incomplete = completenessReport(text);
+  const incomplete = completenessReport(text, { dialect });
   for (const w of warnings) console.error('تحذير: ' + w);
   for (const c of incomplete) console.error(`ناقص التشكيل: ${c.word} → ${c.problems.map(p => p.letter).join(' ')}`);
 }
