@@ -60,6 +60,20 @@ if (cmd === 'say') {
     writeFileSync(f, encodeWav(r.samples));
     console.log(`${f}\t${r.engine}\t${r.stats.durationMs}ms\t${it.gold}`);
   }
+} else if (cmd === 'phonemes') {
+  // JSON phone plans for a list of lines (stdin or file), used by the Python training pipeline
+  const file = opt('--file');
+  const mode = opt('--mode', 'auto');
+  const src = file ? readFileSync(file, 'utf8') : readFileSync(0, 'utf8');
+  const lines = src.split(/\r?\n/).filter(l => l.trim());
+  const { phonemize } = await import('./src/phonemize.mjs');
+  const { detectMode } = await import('./src/mode.mjs');
+  const out = lines.map(line => {
+    const m = mode === 'auto' ? detectMode(line) : mode;
+    const r = phonemize(line, { mode: m });
+    return { text: line, mode: m, phones: r.phones.map(p => p.p + (p.geminate ? 'ː' : '')), durations: r.phones.map(p => p.dur) };
+  });
+  process.stdout.write(JSON.stringify(out) + '\n');
 } else {
-  console.log('commands: say | script | enroll | demo');
+  console.log('commands: say | script | enroll | demo | phonemes');
 }
