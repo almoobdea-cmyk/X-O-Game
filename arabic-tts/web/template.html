@@ -1,0 +1,230 @@
+<title>ناطق</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
+<style>
+/* Layout: a studio console. Script on top, voice rack beneath, meters as text. Dark-first: this is a sound tool. */
+:root {
+  --bg: #14181c; --panel: #1c2228; --ink: #e8ecef; --ink-soft: #9aa6b1; --rule: #2d3740;
+  --accent: #e4b85a; --accent-ink: #1a1408; --accent-soft: #3a3120; --ok: #7cc98a; --warn: #e6c16a; --bad: #e88b7a; --code: #232b33;
+  --font-arabic: 'Amiri', 'Noto Naskh Arabic', serif; --font-ui: 'IBM Plex Sans Arabic', 'Noto Sans Arabic', system-ui, sans-serif; --font-mono: ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) { --bg: #f3f1ec; --panel: #ffffff; --ink: #1b1f23; --ink-soft: #5b6670; --rule: #d8d3c8; --accent: #9a6b10; --accent-ink: #fff; --accent-soft: #f1e4c4; --ok: #2f7d45; --warn: #8f6a00; --bad: #a63a28; --code: #ebe7df; color-scheme: light; }
+}
+:root[data-theme="light"] { --bg: #f3f1ec; --panel: #ffffff; --ink: #1b1f23; --ink-soft: #5b6670; --rule: #d8d3c8; --accent: #9a6b10; --accent-ink: #fff; --accent-soft: #f1e4c4; --ok: #2f7d45; --warn: #8f6a00; --bad: #a63a28; --code: #ebe7df; color-scheme: light; }
+html { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-ui); font-size: 15px; line-height: 1.7; direction: rtl; min-height: 100%; }
+.wrap { max-width: 960px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 56px; display: grid; gap: 26px; }
+header { display: grid; gap: 6px; }
+header h1 { font-family: var(--font-arabic); font-weight: 700; font-size: 2.5rem; margin: 0; line-height: 1.3; }
+header p { margin: 0; color: var(--ink-soft); max-width: 64ch; }
+.eyebrow { font-size: .78rem; letter-spacing: .08em; color: var(--accent); }
+section.panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 16px 18px; display: grid; gap: 12px; min-width: 0; }
+h2 { font-size: 1.05rem; font-weight: 600; margin: 0; display: flex; gap: 10px; align-items: baseline; }
+h2 small { color: var(--ink-soft); font-weight: 400; font-size: .85rem; }
+textarea { width: 100%; box-sizing: border-box; min-height: 100px; resize: vertical; border: 1px solid var(--rule); border-radius: 6px; background: var(--code); color: var(--ink); font-family: var(--font-arabic); font-size: 1.4rem; line-height: 2; padding: 12px 14px; }
+textarea:focus, button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+button.primary { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 6px; padding: 10px 20px; font: 600 1rem var(--font-ui); cursor: pointer; }
+button.primary:disabled { opacity: .55; cursor: wait; }
+button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); border-radius: 6px; padding: 7px 14px; font: 500 .92rem var(--font-ui); cursor: pointer; }
+label.opt { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-soft); font-size: .92rem; }
+select, input[type=number] { font: inherit; font-size: .92rem; border: 1px solid var(--rule); border-radius: 6px; background: var(--code); color: var(--ink); padding: 4px 8px; }
+input[type=number] { width: 5.5em; font-variant-numeric: tabular-nums; }
+.status { font-size: .9rem; color: var(--ink-soft); min-height: 1.4em; }
+.status.ok { color: var(--ok); } .status.bad { color: var(--bad); } .status.warn { color: var(--warn); }
+.phones { font-family: var(--font-mono); direction: ltr; text-align: left; background: var(--code); border-radius: 6px; padding: 10px 12px; font-size: .95rem; white-space: pre-wrap; overflow-x: auto; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { border: 1px solid var(--rule); background: var(--code); color: var(--ink); border-radius: 999px; padding: 4px 12px; cursor: pointer; font-family: var(--font-arabic); font-size: 1.05rem; }
+.chip:hover { border-color: var(--accent); }
+.scriptgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.scriptgrid div { background: var(--code); border-radius: 6px; padding: 4px 10px; font-family: var(--font-arabic); font-size: 1.15rem; display: flex; justify-content: space-between; gap: 8px; }
+.scriptgrid span { color: var(--ink-soft); font-family: var(--font-mono); font-size: .8rem; }
+.meter { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+.meter div { background: var(--code); border-radius: 6px; padding: 8px 10px; }
+.meter b { display: block; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+.meter span { color: var(--ink-soft); font-size: .8rem; }
+canvas { width: 100%; height: 90px; background: var(--code); border-radius: 6px; display: block; }
+.foot { color: var(--ink-soft); font-size: .85rem; border-top: 1px solid var(--rule); padding-top: 14px; }
+@media (max-width: 560px) { header h1 { font-size: 2rem; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">محرّك مستقلّ، لا نموذج خارجي</div>
+    <h1>ناطق</h1>
+    <p>يحوّل النصّ العربي المشكّل إلى صوت داخل هذه الصفحة: مركّب تردّدات صيغية للنطق الصحيح بالفصحى والسعودية البيضاء، وتركيب بالوصل من وحدات صوتك المسجّل لإعادة نبرتك. كلّ شيء يعمل في المتصفح بلا خادم ولا نموذج.</p>
+  </header>
+
+  <section class="panel">
+    <h2>النصّ <small>مشكّل تشكيلًا كاملًا؛ غير المشكّل يُقرأ كما كُتب</small></h2>
+    <textarea id="input" spellcheck="false">ذَهَبَ الطَّالِبُ إِلَى الْمَدْرَسَةِ صَبَاحًا، ثُمَّ رَجَعَ. هَلْ رَأَيْتَهُ؟</textarea>
+    <div class="chips" id="chips"></div>
+    <div class="row">
+      <button class="primary" id="speak">انطق</button>
+      <button class="ghost" id="stop">أوقف</button>
+      <label class="opt">اللهجة <select id="mode"><option value="auto">تلقائي</option><option value="fusha">فصحى</option><option value="saudi">سعودية بيضاء</option></select></label>
+      <label class="opt">الصوت <select id="voiceSel"><option value="default">الافتراضي (مركّب)</option></select></label>
+      <label class="opt">طبقة الصوت <input type="number" id="f0" value="118" min="60" max="400"> Hz</label>
+      <label class="opt">السرعة <input type="number" id="rate" value="1.0" min="0.6" max="1.6" step="0.1"></label>
+    </div>
+    <div class="status" id="status"></div>
+    <canvas id="wave" width="900" height="90"></canvas>
+    <div class="meter">
+      <div><b id="mDur">—</b><span>المدّة (ث)</span></div>
+      <div><b id="mPhones">—</b><span>الأصوات</span></div>
+      <div><b id="mEngine">—</b><span>المحرّك</span></div>
+      <div><b id="mMode">—</b><span>اللهجة</span></div>
+    </div>
+    <div class="phones" id="phones"></div>
+  </section>
+
+  <section class="panel">
+    <h2>تسجيل نبرة الصوت <small>سجّل الكلمات التالية بأيّ مسجّل، ثم ارفع الملفات هنا</small></h2>
+    <p style="margin:0;color:var(--ink-soft)">اقرأ كلّ كلمة وحدها بنبرتك المعتادة مع نصف ثانية صمت بينها. ارفع ملفًا واحدًا لكلّ كلمة باسم رقمها (01.wav … 48.wav)، أو تسجيلًا واحدًا للكلّ بالترتيب فيُقطَّع على الصمت. صيغة WAV. المتصفح يمنع التسجيل المباشر داخل الصفحة.</p>
+    <div class="scriptgrid" id="scriptGrid"></div>
+    <div class="row">
+      <label class="opt">ملفات التسجيل <input type="file" id="recFiles" accept=".wav,audio/wav" multiple></label>
+      <label class="opt">اسم الصوت <input type="text" id="voiceName" value="صوتي" style="font:inherit;border:1px solid var(--rule);border-radius:6px;background:var(--code);color:var(--ink);padding:4px 8px"></label>
+      <button class="primary" id="enroll">ابنِ الصوت</button>
+    </div>
+    <div class="status" id="enrollStatus"></div>
+    <div class="meter" id="profileMeter" hidden>
+      <div><b id="pF0">—</b><span>طبقة الصوت الأساسية Hz</span></div>
+      <div><b id="pRange">—</b><span>مدى النغمة</span></div>
+      <div><b id="pScale">—</b><span>مقياس التردّدات الصيغية</span></div>
+      <div><b id="pRate">—</b><span>السرعة</span></div>
+      <div><b id="pUnits">—</b><span>الوحدات المحفوظة</span></div>
+      <div><b id="pCov">—</b><span>الأصوات المغطّاة</span></div>
+    </div>
+    <div class="row">
+      <button class="ghost" id="exportVoice" hidden>احفظ الصوت (JSON)</button>
+      <label class="opt">استيراد صوت محفوظ <input type="file" id="importVoice" accept=".json,application/json"></label>
+    </div>
+  </section>
+
+  <div class="foot">
+    الإخراج 16 كيلوهرتز أحادي. النطق من محرّك القواعد نفسه الذي في مهارة «قارئ الحركات»: الوصل والوقف والإدغام وأصوات اللهجة. الصوت المركّب افتراضيًا آلي الطابع؛ الصوت المسجّل يعيد نبرتك وطبقتك وسرعتك ووحداتك الصوتية. لا يُرسَل شيء خارج الصفحة.
+  </div>
+</div>
+
+<script>
+/*__ENGINE__*/
+const SCRIPT = "__SCRIPT__";
+
+const $ = (id) => document.getElementById(id);
+const els = { input: $('input'), speak: $('speak'), stop: $('stop'), mode: $('mode'), voiceSel: $('voiceSel'), f0: $('f0'), rate: $('rate'), status: $('status'), wave: $('wave'),
+  mDur: $('mDur'), mPhones: $('mPhones'), mEngine: $('mEngine'), mMode: $('mMode'), phones: $('phones'), chips: $('chips'), scriptGrid: $('scriptGrid'), recFiles: $('recFiles'), voiceName: $('voiceName'),
+  enroll: $('enroll'), enrollStatus: $('enrollStatus'), profileMeter: $('profileMeter'), exportVoice: $('exportVoice'), importVoice: $('importVoice') };
+const voices = new Map();
+let audioCtx = null, playing = null, downloads = null;
+
+const EXAMPLES = [
+  ['ذَهَبَ الطَّالِبُ إِلَى الْمَدْرَسَةِ صَبَاحًا، ثُمَّ رَجَعَ. هَلْ رَأَيْتَهُ؟', 'fusha'],
+  ['إِنَّ الْمُعَلِّمِينَ مُخْلِصُونَ فِي عَمَلِهِمْ.', 'fusha'],
+  ['السَّلَامُ عَلَيْكُمْ وَرَحْمَةُ اللَّهِ.', 'fusha'],
+  ['وِشْ رَايِكْ نْرُوحْ السُّوقْ بُكْرَة؟', 'saudi'],
+  ['بَسْ خَلَاصْ، لَا تِزْعَلْ، الطَّقْسْ حَارْ مَرَّة الْيَوْمْ.', 'saudi'],
+  ['كَيْفْ حَالِكْ يَا أَبُو خَالِدْ؟', 'saudi'],
+];
+for (const [t, m] of EXAMPLES) { const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = t; b.addEventListener('click', () => { els.input.value = t; els.mode.value = m; }); els.chips.appendChild(b); }
+for (const it of SCRIPT) { const d = document.createElement('div'); d.innerHTML = `<span>${String(it.id).padStart(2, '0')}${it.mode === 'saudi' ? ' س' : ''}</span>`; d.prepend(document.createTextNode(it.text)); els.scriptGrid.appendChild(d); }
+
+function drawWave(x) {
+  const c = els.wave, g = c.getContext('2d'); g.clearRect(0, 0, c.width, c.height);
+  g.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#e4b85a'; g.lineWidth = 1; g.beginPath();
+  const step = Math.max(1, Math.floor(x.length / c.width));
+  for (let i = 0; i < c.width; i++) { let mx = 0; for (let k = i * step; k < (i + 1) * step && k < x.length; k++) mx = Math.max(mx, Math.abs(x[k])); g.moveTo(i, c.height / 2 - mx * c.height / 2); g.lineTo(i, c.height / 2 + mx * c.height / 2); }
+  g.stroke();
+}
+
+function play(samples) {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  stopPlayback();
+  const buf = audioCtx.createBuffer(1, samples.length, SR);
+  buf.copyToChannel(samples instanceof Float32Array ? samples : Float32Array.from(samples), 0);
+  const src = audioCtx.createBufferSource(); src.buffer = buf; src.connect(audioCtx.destination); src.start(); playing = src;
+  src.onended = () => { if (playing === src) playing = null; };
+}
+function stopPlayback() { if (playing) { try { playing.stop(); } catch {} playing = null; } }
+els.stop.addEventListener('click', stopPlayback);
+
+els.speak.addEventListener('click', () => {
+  const text = els.input.value.trim(); if (!text) return;
+  els.speak.disabled = true; els.status.textContent = 'يركّب…'; els.status.className = 'status';
+  setTimeout(() => {
+    try {
+      const voice = voices.get(els.voiceSel.value) || null;
+      const profile = { f0Base: Number(els.f0.value) || 118, rate: Number(els.rate.value) || 1 };
+      const r = synthesize(text, { mode: els.mode.value, voice, profile });
+      drawWave(r.samples);
+      els.mDur.textContent = (r.stats.durationMs / 1000).toFixed(2); els.mPhones.textContent = r.plan.phones.filter(p => p.p !== '_').length;
+      els.mEngine.textContent = r.engine === 'concat' ? `وصل (${r.stats.unitCount} وحدة${r.stats.fallbackCount ? `، ${r.stats.fallbackCount} مركّبة` : ''})` : 'مركّب';
+      els.mMode.textContent = r.mode === 'saudi' ? 'سعودية بيضاء' : 'فصحى';
+      els.phones.textContent = r.plan.phones.map(p => p.p === '_' ? `[${p.dur}ms]` : p.p + (p.geminate ? 'ː' : '')).join(' ');
+      play(r.samples);
+      els.status.textContent = '';
+    } catch (e) { els.status.textContent = 'تعذّر التركيب: ' + (e.message || e); els.status.className = 'status bad'; }
+    els.speak.disabled = false;
+  }, 20);
+});
+
+function readFileBuf(file) { return new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(new Uint8Array(fr.result)); fr.onerror = rej; fr.readAsArrayBuffer(file); }); }
+
+els.enroll.addEventListener('click', async () => {
+  const files = Array.from(els.recFiles.files || []);
+  if (!files.length) { els.enrollStatus.textContent = 'ارفع ملفات التسجيل أولًا.'; els.enrollStatus.className = 'status warn'; return; }
+  els.enroll.disabled = true; els.enrollStatus.textContent = 'يحلّل التسجيلات…'; els.enrollStatus.className = 'status';
+  try {
+    let items = [];
+    if (files.length === 1 && !/^\d+/.test(files[0].name)) {
+      const { samples } = decodeWav(await readFileBuf(files[0]));
+      const r = splitRecording(samples, SCRIPT);
+      if (!r.ok) throw new Error(`وُجد ${r.found} مقطعًا والمتوقع ${r.expected}. سجّل الكلمات بملفات منفصلة أو اترك صمتًا أوضح بينها.`);
+      items = r.items;
+    } else {
+      for (const f of files) { const id = parseInt(f.name, 10); const it = SCRIPT.find(s => s.id === id); if (!it) continue; items.push({ ...it, samples: decodeWav(await readFileBuf(f)).samples }); }
+      if (!items.length) throw new Error('لم يُعرف أيّ ملف. سمِّ الملفات بأرقام الكلمات: 01.wav …');
+    }
+    const enrolled = items.map(it => enrollItem(it));
+    const voice = buildVoice(enrolled, { name: els.voiceName.value || 'صوتي' });
+    const key = 'v' + Date.now(); voices.set(key, voice);
+    const o = document.createElement('option'); o.value = key; o.textContent = voice.profile.name; els.voiceSel.appendChild(o); els.voiceSel.value = key;
+    els.f0.value = voice.profile.f0Base; els.rate.value = voice.profile.rate;
+    showProfile(voice.profile);
+    els.enrollStatus.textContent = `بُني الصوت من ${items.length} تسجيلًا. اضغط «انطق» لسماعه.`; els.enrollStatus.className = 'status ok';
+    els.exportVoice.hidden = !downloads; els.exportVoice.dataset.key = key;
+  } catch (e) { els.enrollStatus.textContent = e.message || String(e); els.enrollStatus.className = 'status bad'; }
+  els.enroll.disabled = false;
+});
+
+function showProfile(p) {
+  els.profileMeter.hidden = false;
+  $('pF0').textContent = p.f0Base; $('pRange').textContent = p.f0Range; $('pScale').textContent = p.formantScale; $('pRate').textContent = p.rate; $('pUnits').textContent = p.unitCount; $('pCov').textContent = p.phonesCovered.length;
+}
+
+els.exportVoice.addEventListener('click', async () => {
+  const voice = voices.get(els.exportVoice.dataset.key); if (!voice || !downloads) return;
+  try { await downloads.save({ filename: (voice.profile.name || 'voice') + '.json', data: serializeVoice(voice) }); els.enrollStatus.textContent = 'حُفظ.'; }
+  catch (e) { els.enrollStatus.textContent = e.code === 'cancelled' ? '' : 'لم يُحفظ الملف.'; }
+});
+
+els.importVoice.addEventListener('change', async () => {
+  const f = els.importVoice.files && els.importVoice.files[0]; if (!f) return;
+  try {
+    const text = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsText(f); });
+    const voice = deserializeVoice(text);
+    const key = 'i' + Date.now(); voices.set(key, voice);
+    const o = document.createElement('option'); o.value = key; o.textContent = voice.profile.name || f.name; els.voiceSel.appendChild(o); els.voiceSel.value = key;
+    els.f0.value = voice.profile.f0Base; els.rate.value = voice.profile.rate; showProfile(voice.profile);
+    els.enrollStatus.textContent = `استُورد الصوت «${voice.profile.name}».`; els.enrollStatus.className = 'status ok';
+  } catch (e) { els.enrollStatus.textContent = 'ملف صوت غير صالح.'; els.enrollStatus.className = 'status bad'; }
+});
+
+// initial render: plan of the example without audio (audio needs a click)
+(() => { try { const r = synthesize(els.input.value, { mode: 'fusha' }); drawWave(r.samples); els.mDur.textContent = (r.stats.durationMs / 1000).toFixed(2); els.mPhones.textContent = r.plan.phones.filter(p => p.p !== '_').length; els.mEngine.textContent = 'مركّب'; els.mMode.textContent = 'فصحى'; els.phones.textContent = r.plan.phones.map(p => p.p === '_' ? `[${p.dur}ms]` : p.p + (p.geminate ? 'ː' : '')).join(' '); } catch (e) { els.status.textContent = 'خطأ في المحرّك: ' + e.message; } })();
+(async () => { try { downloads = window.claude?.use ? await window.claude.use('downloads') : null; } catch { downloads = null; } })();
+</script>

@@ -1,0 +1,14 @@
+{
+  "name": "nataq-arabic-tts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "ناطق: self-contained Arabic text-to-voice (fusha and Saudi white dialect) with voice enrollment and reuse. No external model at runtime.",
+  "bin": { "nataq": "./cli.mjs" },
+  "scripts": {
+    "test": "node --test test/engine.test.mjs",
+    "demo": "node cli.mjs demo",
+    "build": "node build-web.mjs"
+  },
+  "engines": { "node": ">=20" }
+}

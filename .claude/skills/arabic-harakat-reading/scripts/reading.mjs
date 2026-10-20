@@ -17,7 +17,7 @@ const IPA = {
   'ع': 'ʕ', 'غ': 'ɣ', 'ف': 'f', 'ق': 'q', 'ك': 'k', 'ل': 'l', 'م': 'm', 'ن': 'n',
   'ه': 'h', 'و': 'w', 'ي': 'j', 'ة': 't', 'پ': 'p', 'چ': 'tʃ', 'ڤ': 'v', 'گ': 'g',
 };
-const VOWELS = {
+const VOWEL_SCHEMES = {
   latin: { a: 'a', u: 'u', i: 'i', aa: 'ā', uu: 'ū', ii: 'ī' },
   ipa: { a: 'a', u: 'u', i: 'i', aa: 'aː', uu: 'uː', ii: 'iː' },
 };
@@ -130,7 +130,7 @@ export function checkCompleteness(word, { dialect = 'fusha' } = {}) {
 export function readWord(word, { atPause = false, afterVowel = false, scheme = 'latin', dialect = 'fusha' } = {}) {
   const saudi = dialect === 'saudi';
   let C = scheme === 'ipa' ? IPA : LATIN;
-  const V = VOWELS[scheme] || VOWELS.latin;
+  const V = VOWEL_SCHEMES[scheme] || VOWEL_SCHEMES.latin;
   const units = segment(word);
   if (saudi) {
     const skeleton = units.map(u => u.ch).join('');

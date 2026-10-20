@@ -1,0 +1,1390 @@
+<title>ناطق</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
+<style>
+/* Layout: a studio console. Script on top, voice rack beneath, meters as text. Dark-first: this is a sound tool. */
+:root {
+  --bg: #14181c; --panel: #1c2228; --ink: #e8ecef; --ink-soft: #9aa6b1; --rule: #2d3740;
+  --accent: #e4b85a; --accent-ink: #1a1408; --accent-soft: #3a3120; --ok: #7cc98a; --warn: #e6c16a; --bad: #e88b7a; --code: #232b33;
+  --font-arabic: 'Amiri', 'Noto Naskh Arabic', serif; --font-ui: 'IBM Plex Sans Arabic', 'Noto Sans Arabic', system-ui, sans-serif; --font-mono: ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) { --bg: #f3f1ec; --panel: #ffffff; --ink: #1b1f23; --ink-soft: #5b6670; --rule: #d8d3c8; --accent: #9a6b10; --accent-ink: #fff; --accent-soft: #f1e4c4; --ok: #2f7d45; --warn: #8f6a00; --bad: #a63a28; --code: #ebe7df; color-scheme: light; }
+}
+:root[data-theme="light"] { --bg: #f3f1ec; --panel: #ffffff; --ink: #1b1f23; --ink-soft: #5b6670; --rule: #d8d3c8; --accent: #9a6b10; --accent-ink: #fff; --accent-soft: #f1e4c4; --ok: #2f7d45; --warn: #8f6a00; --bad: #a63a28; --code: #ebe7df; color-scheme: light; }
+html { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-ui); font-size: 15px; line-height: 1.7; direction: rtl; min-height: 100%; }
+.wrap { max-width: 960px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 56px; display: grid; gap: 26px; }
+header { display: grid; gap: 6px; }
+header h1 { font-family: var(--font-arabic); font-weight: 700; font-size: 2.5rem; margin: 0; line-height: 1.3; }
+header p { margin: 0; color: var(--ink-soft); max-width: 64ch; }
+.eyebrow { font-size: .78rem; letter-spacing: .08em; color: var(--accent); }
+section.panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 16px 18px; display: grid; gap: 12px; min-width: 0; }
+h2 { font-size: 1.05rem; font-weight: 600; margin: 0; display: flex; gap: 10px; align-items: baseline; }
+h2 small { color: var(--ink-soft); font-weight: 400; font-size: .85rem; }
+textarea { width: 100%; box-sizing: border-box; min-height: 100px; resize: vertical; border: 1px solid var(--rule); border-radius: 6px; background: var(--code); color: var(--ink); font-family: var(--font-arabic); font-size: 1.4rem; line-height: 2; padding: 12px 14px; }
+textarea:focus, button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+button.primary { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 6px; padding: 10px 20px; font: 600 1rem var(--font-ui); cursor: pointer; }
+button.primary:disabled { opacity: .55; cursor: wait; }
+button.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); border-radius: 6px; padding: 7px 14px; font: 500 .92rem var(--font-ui); cursor: pointer; }
+label.opt { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-soft); font-size: .92rem; }
+select, input[type=number] { font: inherit; font-size: .92rem; border: 1px solid var(--rule); border-radius: 6px; background: var(--code); color: var(--ink); padding: 4px 8px; }
+input[type=number] { width: 5.5em; font-variant-numeric: tabular-nums; }
+.status { font-size: .9rem; color: var(--ink-soft); min-height: 1.4em; }
+.status.ok { color: var(--ok); } .status.bad { color: var(--bad); } .status.warn { color: var(--warn); }
+.phones { font-family: var(--font-mono); direction: ltr; text-align: left; background: var(--code); border-radius: 6px; padding: 10px 12px; font-size: .95rem; white-space: pre-wrap; overflow-x: auto; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { border: 1px solid var(--rule); background: var(--code); color: var(--ink); border-radius: 999px; padding: 4px 12px; cursor: pointer; font-family: var(--font-arabic); font-size: 1.05rem; }
+.chip:hover { border-color: var(--accent); }
+.scriptgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.scriptgrid div { background: var(--code); border-radius: 6px; padding: 4px 10px; font-family: var(--font-arabic); font-size: 1.15rem; display: flex; justify-content: space-between; gap: 8px; }
+.scriptgrid span { color: var(--ink-soft); font-family: var(--font-mono); font-size: .8rem; }
+.meter { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+.meter div { background: var(--code); border-radius: 6px; padding: 8px 10px; }
+.meter b { display: block; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+.meter span { color: var(--ink-soft); font-size: .8rem; }
+canvas { width: 100%; height: 90px; background: var(--code); border-radius: 6px; display: block; }
+.foot { color: var(--ink-soft); font-size: .85rem; border-top: 1px solid var(--rule); padding-top: 14px; }
+@media (max-width: 560px) { header h1 { font-size: 2rem; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">محرّك مستقلّ، لا نموذج خارجي</div>
+    <h1>ناطق</h1>
+    <p>يحوّل النصّ العربي المشكّل إلى صوت داخل هذه الصفحة: مركّب تردّدات صيغية للنطق الصحيح بالفصحى والسعودية البيضاء، وتركيب بالوصل من وحدات صوتك المسجّل لإعادة نبرتك. كلّ شيء يعمل في المتصفح بلا خادم ولا نموذج.</p>
+  </header>
+
+  <section class="panel">
+    <h2>النصّ <small>مشكّل تشكيلًا كاملًا؛ غير المشكّل يُقرأ كما كُتب</small></h2>
+    <textarea id="input" spellcheck="false">ذَهَبَ الطَّالِبُ إِلَى الْمَدْرَسَةِ صَبَاحًا، ثُمَّ رَجَعَ. هَلْ رَأَيْتَهُ؟</textarea>
+    <div class="chips" id="chips"></div>
+    <div class="row">
+      <button class="primary" id="speak">انطق</button>
+      <button class="ghost" id="stop">أوقف</button>
+      <label class="opt">اللهجة <select id="mode"><option value="auto">تلقائي</option><option value="fusha">فصحى</option><option value="saudi">سعودية بيضاء</option></select></label>
+      <label class="opt">الصوت <select id="voiceSel"><option value="default">الافتراضي (مركّب)</option></select></label>
+      <label class="opt">طبقة الصوت <input type="number" id="f0" value="118" min="60" max="400"> Hz</label>
+      <label class="opt">السرعة <input type="number" id="rate" value="1.0" min="0.6" max="1.6" step="0.1"></label>
+    </div>
+    <div class="status" id="status"></div>
+    <canvas id="wave" width="900" height="90"></canvas>
+    <div class="meter">
+      <div><b id="mDur">—</b><span>المدّة (ث)</span></div>
+      <div><b id="mPhones">—</b><span>الأصوات</span></div>
+      <div><b id="mEngine">—</b><span>المحرّك</span></div>
+      <div><b id="mMode">—</b><span>اللهجة</span></div>
+    </div>
+    <div class="phones" id="phones"></div>
+  </section>
+
+  <section class="panel">
+    <h2>تسجيل نبرة الصوت <small>سجّل الكلمات التالية بأيّ مسجّل، ثم ارفع الملفات هنا</small></h2>
+    <p style="margin:0;color:var(--ink-soft)">اقرأ كلّ كلمة وحدها بنبرتك المعتادة مع نصف ثانية صمت بينها. ارفع ملفًا واحدًا لكلّ كلمة باسم رقمها (01.wav … 48.wav)، أو تسجيلًا واحدًا للكلّ بالترتيب فيُقطَّع على الصمت. صيغة WAV. المتصفح يمنع التسجيل المباشر داخل الصفحة.</p>
+    <div class="scriptgrid" id="scriptGrid"></div>
+    <div class="row">
+      <label class="opt">ملفات التسجيل <input type="file" id="recFiles" accept=".wav,audio/wav" multiple></label>
+      <label class="opt">اسم الصوت <input type="text" id="voiceName" value="صوتي" style="font:inherit;border:1px solid var(--rule);border-radius:6px;background:var(--code);color:var(--ink);padding:4px 8px"></label>
+      <button class="primary" id="enroll">ابنِ الصوت</button>
+    </div>
+    <div class="status" id="enrollStatus"></div>
+    <div class="meter" id="profileMeter" hidden>
+      <div><b id="pF0">—</b><span>طبقة الصوت الأساسية Hz</span></div>
+      <div><b id="pRange">—</b><span>مدى النغمة</span></div>
+      <div><b id="pScale">—</b><span>مقياس التردّدات الصيغية</span></div>
+      <div><b id="pRate">—</b><span>السرعة</span></div>
+      <div><b id="pUnits">—</b><span>الوحدات المحفوظة</span></div>
+      <div><b id="pCov">—</b><span>الأصوات المغطّاة</span></div>
+    </div>
+    <div class="row">
+      <button class="ghost" id="exportVoice" hidden>احفظ الصوت (JSON)</button>
+      <label class="opt">استيراد صوت محفوظ <input type="file" id="importVoice" accept=".json,application/json"></label>
+    </div>
+  </section>
+
+  <div class="foot">
+    الإخراج 16 كيلوهرتز أحادي. النطق من محرّك القواعد نفسه الذي في مهارة «قارئ الحركات»: الوصل والوقف والإدغام وأصوات اللهجة. الصوت المركّب افتراضيًا آلي الطابع؛ الصوت المسجّل يعيد نبرتك وطبقتك وسرعتك ووحداتك الصوتية. لا يُرسَل شيء خارج الصفحة.
+  </div>
+</div>
+
+<script>
+
+// ---- reading.mjs ----
+// Deterministic reader for fully vocalized Arabic.
+// Converts tashkeel-bearing text into a phonetic reading (Latin transliteration or IPA),
+// applying connected-speech rules (wasl) and pause rules (waqf).
+// No dependencies. Works in Node and in the browser (the artifact inlines this file).
+
+const LATIN = {
+  'ء': 'ʾ', 'أ': 'ʾ', 'إ': 'ʾ', 'ؤ': 'ʾ', 'ئ': 'ʾ',
+  'ب': 'b', 'ت': 't', 'ث': 'th', 'ج': 'j', 'ح': 'ḥ', 'خ': 'kh', 'د': 'd', 'ذ': 'dh',
+  'ر': 'r', 'ز': 'z', 'س': 's', 'ش': 'sh', 'ص': 'ṣ', 'ض': 'ḍ', 'ط': 'ṭ', 'ظ': 'ẓ',
+  'ع': 'ʿ', 'غ': 'gh', 'ف': 'f', 'ق': 'q', 'ك': 'k', 'ل': 'l', 'م': 'm', 'ن': 'n',
+  'ه': 'h', 'و': 'w', 'ي': 'y', 'ة': 't', 'پ': 'p', 'چ': 'ch', 'ڤ': 'v', 'گ': 'g',
+};
+const IPA = {
+  'ء': 'ʔ', 'أ': 'ʔ', 'إ': 'ʔ', 'ؤ': 'ʔ', 'ئ': 'ʔ',
+  'ب': 'b', 'ت': 't', 'ث': 'θ', 'ج': 'dʒ', 'ح': 'ħ', 'خ': 'x', 'د': 'd', 'ذ': 'ð',
+  'ر': 'r', 'ز': 'z', 'س': 's', 'ش': 'ʃ', 'ص': 'sˤ', 'ض': 'dˤ', 'ط': 'tˤ', 'ظ': 'ðˤ',
+  'ع': 'ʕ', 'غ': 'ɣ', 'ف': 'f', 'ق': 'q', 'ك': 'k', 'ل': 'l', 'م': 'm', 'ن': 'n',
+  'ه': 'h', 'و': 'w', 'ي': 'j', 'ة': 't', 'پ': 'p', 'چ': 'tʃ', 'ڤ': 'v', 'گ': 'g',
+};
+const VOWEL_SCHEMES = {
+  latin: { a: 'a', u: 'u', i: 'i', aa: 'ā', uu: 'ū', ii: 'ī' },
+  ipa: { a: 'a', u: 'u', i: 'i', aa: 'aː', uu: 'uː', ii: 'iː' },
+};
+
+// Saudi white dialect: words that keep /q/ even though the dialect reads qaf as /g/
+const QAF_KEEP = new Set(['قرآن', 'القرآن', 'قانون', 'القانون', 'قوانين', 'القوانين', 'قانوني', 'قانونية', 'القدس', 'القيامة', 'مقدس', 'المقدس', 'القاهرة', 'قاضي', 'القاضي']);
+const LONG_E = { latin: 'ē', ipa: 'eː' };
+const LONG_O = { latin: 'ō', ipa: 'oː' };
+const HAMZA_LETTERS = new Set('ءأإؤئ');
+
+const FATHA = 'َ', DAMMA = 'ُ', KASRA = 'ِ', SUKUN = 'ْ', SHADDA = 'ّ';
+const FATHATAN = 'ً', DAMMATAN = 'ٌ', KASRATAN = 'ٍ', MADDA = 'ٓ', DAGGER = 'ٰ';
+const MARKS = new Set([FATHA, DAMMA, KASRA, SUKUN, SHADDA, FATHATAN, DAMMATAN, KASRATAN, MADDA, DAGGER, 'ٔ', 'ٕ', 'ٖ']);
+const TATWEEL = 'ـ';
+const SUN = new Set('تثدذرزسشصضطظلن');
+const SHORT = { [FATHA]: 'a', [DAMMA]: 'u', [KASRA]: 'i' };
+const TANWEEN = { [FATHATAN]: 'an', [DAMMATAN]: 'un', [KASRATAN]: 'in' };
+const ARABIC_LETTER = /[ء-غف-يٱٹ-ۓ]/;
+const PUNCT_END = /[.!?؟،,;؛:…»"”)\]]+$/;
+
+// Words whose standard spelling omits a long alif (read with a dagger alif) or carries a silent letter.
+// key: bare skeleton (no marks). dagger: index of the letter that takes ā. silent: index of a letter not read.
+const EXCEPTIONS = {
+  'هذا': { dagger: 0 }, 'هذه': { dagger: 0 }, 'هذان': { dagger: 0 }, 'هذين': { dagger: 0 }, 'هؤلاء': { dagger: 0 },
+  'ذلك': { dagger: 0 }, 'ذلكم': { dagger: 0 }, 'لكن': { dagger: 0 }, 'لكنه': { dagger: 0 }, 'لكنها': { dagger: 0 }, 'لكنهم': { dagger: 0 },
+  'الله': { dagger: 2 }, 'اللهم': { dagger: 2 }, 'اله': { dagger: 1 }, 'الهم': { dagger: 1 }, 'الرحمن': { dagger: 4 }, 'أولئك': { dagger: 2, silent: 1 }, 'طه': { dagger: 0 },
+  'عمرو': { silent: 3 }, 'مائة': { silent: 1 }, 'مائتان': { silent: 1 }, 'مائتين': { silent: 1 },
+};
+const PREFIXES = ['و', 'ف', 'ب', 'ل', 'ك', 'وب', 'ول', 'فب', 'فل'];
+
+function applyExceptions(units) {
+  const letters = units.map(u => u.ch);
+  const skeleton = letters.join('');
+  const tryKey = (key, offset) => {
+    const ex = EXCEPTIONS[key];
+    if (!ex) return false;
+    if (ex.dagger !== undefined) {
+      const u = units[offset + ex.dagger];
+      if (u && !u.marks.includes(DAGGER)) u.marks.push(DAGGER);
+    }
+    if (ex.silent !== undefined) { const u = units[offset + ex.silent]; if (u) u.silent = true; }
+    return true;
+  };
+  if (tryKey(skeleton, 0)) return;
+  for (const p of PREFIXES) if (skeleton.startsWith(p) && tryKey(skeleton.slice(p.length), p.length)) return;
+}
+
+/** Split a word into [{ch, marks:[]}] units; marks attach to the preceding letter. */
+function segment(word) {
+  const units = [];
+  for (const ch of word.normalize('NFC')) {
+    if (ch === TATWEEL) continue;
+    if (MARKS.has(ch)) {
+      if (units.length) units[units.length - 1].marks.push(ch);
+      continue;
+    }
+    units.push({ ch, marks: [] });
+  }
+  return units;
+}
+
+/** لِلْكِتَابِ، وَلِلطَّالِبِ: the article's alif is dropped after the preposition lam; restore it for reading. */
+function restoreArticleAlif(units) {
+  for (const k of [0, 1]) {
+    const a = units[k], b = units[k + 1];
+    if (!a || !b || !units[k + 2]) continue;
+    if (k === 1 && !('وف'.includes(units[0].ch) && units[0].marks.some(m => SHORT[m]))) continue;
+    if (a.ch === 'ل' && a.marks.some(m => SHORT[m]) && b.ch === 'ل' && (b.marks.includes(SHADDA) || !b.marks.some(m => SHORT[m] || TANWEEN[m]))) {
+      units.splice(k + 1, 0, { ch: 'ا', marks: [] });
+      return;
+    }
+  }
+}
+
+/** Report letters that lack a required mark. Returns [] when the word is fully vocalized. */
+function checkCompleteness(word, { dialect = 'fusha' } = {}) {
+  const units = segment(word);
+  restoreArticleAlif(units);
+  applyExceptions(units);
+  const problems = [];
+  let prevVowel = null; // short vowel carried into the next unit
+  for (let i = 0; i < units.length; i++) {
+    const u = units[i];
+    const isLetter = ARABIC_LETTER.test(u.ch);
+    if (!isLetter) { prevVowel = null; continue; }
+    if (u.silent) { continue; }
+    const marks = u.marks;
+    const hasVowel = marks.some(m => SHORT[m] || TANWEEN[m]);
+    const hasSukun = marks.includes(SUKUN);
+    const hasShadda = marks.includes(SHADDA);
+    const isLast = i === units.length - 1;
+    const next = units[i + 1];
+    if (u.ch === 'ا' || u.ch === 'ى' || u.ch === 'ٱ') { prevVowel = null; continue; }
+    if (u.ch === 'آ') { prevVowel = 'a'; continue; }
+    // ال article: alif bare, lam may be bare when followed by shadda (sun letter)
+    if (u.ch === 'ل' && !marks.length && i > 0 && units[i - 1].ch === 'ا' && units[i - 1].marks.length === 0 && next && next.marks.includes(SHADDA)) { continue; }
+    if (u.ch === 'و' && prevVowel === 'u' && !marks.length) { prevVowel = 'uu'; continue; }
+    if (u.ch === 'ي' && prevVowel === 'i' && !marks.length) { prevVowel = 'ii'; continue; }
+    if (!hasVowel && !hasSukun) {
+      // shadda alone (no vowel) on the final letter is acceptable as a pausal form; a bare final ة is the Saudi convention
+      const saudiTa = dialect === 'saudi' && u.ch === 'ة' && isLast;
+      if (!(hasShadda && isLast) && !saudiTa) problems.push({ index: i, letter: u.ch, issue: 'لا حركة ولا سكون' });
+    }
+    prevVowel = marks.find(m => SHORT[m]) ? SHORT[marks.find(m => SHORT[m])] : null;
+  }
+  return problems;
+}
+
+/** Read one word. `atPause` applies waqf rules; `afterVowel` elides hamzat wasl. */
+function readWord(word, { atPause = false, afterVowel = false, scheme = 'latin', dialect = 'fusha' } = {}) {
+  const saudi = dialect === 'saudi';
+  let C = scheme === 'ipa' ? IPA : LATIN;
+  const V = VOWEL_SCHEMES[scheme] || VOWEL_SCHEMES.latin;
+  const units = segment(word);
+  if (saudi) {
+    const skeleton = units.map(u => u.ch).join('');
+    const keepQ = QAF_KEEP.has(skeleton) || PREFIXES.some(p => skeleton.startsWith(p) && QAF_KEEP.has(skeleton.slice(p.length)));
+    if (!keepQ) C = { ...C, 'ق': scheme === 'ipa' ? 'ɡ' : 'g' };
+  }
+  if (!units.some(u => ARABIC_LETTER.test(u.ch))) return { reading: word, elided: false, warnings: [] };
+  restoreArticleAlif(units);
+  applyExceptions(units);
+
+  let out = '';
+  let elided = false;
+  const warnings = [];
+  let prevVowel = null; // 'a' | 'u' | 'i' | 'aa' | 'uu' | 'ii' | null
+  let emittedLetter = false;
+
+  const lengthen = (v) => { // replace a just-emitted short vowel by its long form
+    const short = V[v];
+    if (out.endsWith(short)) out = out.slice(0, out.length - short.length);
+    out += V[v + v];
+    prevVowel = v + v;
+  };
+  const hamza = () => (scheme === 'latin' && !emittedLetter) ? '' : C['ء'];
+
+  // Effective last letter: ignore a trailing bare alif / alif maqsura that only carries tanween fath (كِتَابًا، فَتًى)
+  let lastLetterIndex = -1;
+  for (let k = units.length - 1; k >= 0; k--) if (ARABIC_LETTER.test(units[k].ch)) { lastLetterIndex = k; break; }
+  if (lastLetterIndex > 0) {
+    const L = units[lastLetterIndex], P = units[lastLetterIndex - 1];
+    if ((L.ch === 'ا' || L.ch === 'ى') && L.marks.length === 0 && P.marks.includes(FATHATAN)) lastLetterIndex -= 1;
+  }
+
+  // One-letter proclitic (وَ فَ بِ كَ لِ) before the article or a hamzat wasl: read it, then elide the alif
+  let i = 0;
+  let prefixOffset = 0;
+  {
+    // count proclitics: up to two (وَبِالْـ، فَلِلْـ), each a vowelled و ف ب ك ل, followed by a bare alif that opens
+    // either the article (ا ل with bare/sukun/shadda lam) or a hamzat wasl (ا + letter with sukun)
+    let k = 0;
+    while (k < 2 && units[k] && 'وفبكل'.includes(units[k].ch) && units[k].marks.some(m => SHORT[m]) && units[k + 1]) {
+      const a = units[k + 1];
+      if ((a.ch === 'ا' || a.ch === 'ٱ') && a.marks.length === 0 && units[k + 2]) {
+        const l = units[k + 2];
+        const articleLike = l.ch === 'ل' && (l.marks.length === 0 || l.marks.includes(SUKUN) || l.marks.includes(SHADDA)) && units[k + 3];
+        const waslLike = l.marks.includes(SUKUN) && units[k + 3];
+        if (articleLike || waslLike) { k++; prefixOffset = k; }
+        break;
+      }
+      if (k === 0 && 'بكل'.includes(a.ch) && a.marks.some(m => SHORT[m])) { k++; continue; }
+      break;
+    }
+    for (let q = 0; q < prefixOffset; q++) {
+      const pv = SHORT[units[q].marks.find(m => SHORT[m])];
+      out += (C[units[q].ch] || units[q].ch) + V[pv] + '-';
+    }
+    if (prefixOffset) { afterVowel = true; emittedLetter = true; }
+  }
+  const first = units[prefixOffset];
+  const second = units[prefixOffset + 1];
+  const initialAlif = first && (first.ch === 'ا' || first.ch === 'ٱ') && !first.marks.some(m => TANWEEN[m]);
+  const isArticle = initialAlif && second && second.ch === 'ل' && units.length > prefixOffset + 2
+    && (second.marks.length === 0 || second.marks.includes(SUKUN) || second.marks.includes(SHADDA));
+  const isWaslVerb = initialAlif && !isArticle && second && (second.marks.includes(SUKUN) || second.marks.length === 0) && units.length > prefixOffset + 2;
+
+  if (isArticle) {
+    if (!afterVowel) out += V.a; else if (!prefixOffset) elided = true;
+    const lam = second, after = units[prefixOffset + 2];
+    if (lam.marks.includes(SHADDA)) {
+      // الَّذِي، اللَّهُ written with the shadda on the lam itself
+      out += afterVowel ? 'l' : 'l-';
+      lam.marks = lam.marks.filter(m => m !== SHADDA);
+      i = prefixOffset + 1;
+      emittedLetter = true;
+    } else if (after && SUN.has(after.ch)) {
+      // assimilation: the lam is replaced by a doubled sun letter
+      out += (C[after.ch] || after.ch) + '-';
+      after.marks = after.marks.filter(m => m !== SHADDA);
+      i = prefixOffset + 2;
+      emittedLetter = true;
+    } else {
+      out += 'l-';
+      i = prefixOffset + 2;
+      emittedLetter = false; // a stem-initial hamza after the article is not written in the Latin scheme (l-abu)
+    }
+    prevVowel = null;
+  } else if (isWaslVerb) {
+    if (!afterVowel) {
+      const explicit = first.marks.find(m => SHORT[m]);
+      let v = explicit ? SHORT[explicit] : 'i';
+      // imperative of a triliteral verb whose third radical takes damma: اُكْتُبْ
+      if (!explicit && units.length === 4 && units[2].marks.includes(DAMMA)) v = 'u';
+      out += V[v];
+      prevVowel = v;
+    } else {
+      elided = true;
+      prevVowel = null;
+    }
+    emittedLetter = true;
+    i = prefixOffset + 1;
+  } else {
+    i = prefixOffset;
+  }
+
+  for (; i < units.length; i++) {
+    const u = units[i];
+    const ch = u.ch;
+    if (!ARABIC_LETTER.test(ch)) { out += ch; continue; }
+    if (u.silent) { continue; }
+    const marks = u.marks;
+    const shadda = marks.includes(SHADDA);
+    const sukun = marks.includes(SUKUN);
+    const shortMark = marks.find(m => SHORT[m]);
+    const tanweenMark = marks.find(m => TANWEEN[m]);
+    const madda = marks.includes(MADDA);
+    const dagger = marks.includes(DAGGER);
+    const isLast = i === lastLetterIndex;
+    const next = units[i + 1];
+
+    // Vowel letters
+    if (ch === 'ا' || ch === 'ٱ') {
+      if (madda) { out += hamza() + V.aa; prevVowel = 'aa'; emittedLetter = true; continue; }
+      if (prevVowel === 'a') { lengthen('a'); continue; }
+      if (shortMark && prevVowel === null && i === 0) { out += V[SHORT[shortMark]]; prevVowel = SHORT[shortMark]; emittedLetter = true; continue; }
+      continue; // alif fariqa after ū, alif of tanween fath, or otherwise silent
+    }
+    if (ch === 'آ') { out += hamza() + V.aa; prevVowel = 'aa'; emittedLetter = true; continue; }
+    if (ch === 'ى') {
+      if (prevVowel === 'a') { lengthen('a'); continue; }
+      if (i > 0 && units[i - 1].marks.includes(FATHATAN)) { continue; }
+      out += V.aa; prevVowel = 'aa'; emittedLetter = true; continue;
+    }
+    if (ch === 'و' && !marks.length && prevVowel === 'u') { lengthen('u'); continue; }
+    if (ch === 'ي' && !marks.length && prevVowel === 'i') { lengthen('i'); continue; }
+    if (ch === 'و' && !marks.length && prevVowel === 'uu' && isLast) { continue; } // عَمْرٌو style silent waw
+
+    // Saudi white: diphthongs ـَيْ → ē and ـَوْ → ō
+    if (saudi && (ch === 'و' || ch === 'ي') && sukun && !shadda && prevVowel === 'a' && out.endsWith(V.a)) {
+      out = out.slice(0, out.length - V.a.length) + (ch === 'و' ? LONG_O[scheme] : LONG_E[scheme]);
+      prevVowel = ch === 'و' ? 'oo' : 'ee';
+      continue;
+    }
+    // Saudi white: a word-final hamza is not pronounced (سما، جا، شي)
+    if (saudi && HAMZA_LETTERS.has(ch) && isLast) { prevVowel = null; continue; }
+
+    // Consonants
+    let base = C[ch] || ch;
+    if (ch === 'ء' || ch === 'أ' || ch === 'إ' || ch === 'ؤ' || ch === 'ئ') base = hamza();
+    if (saudi && ch === 'ئ' && prevVowel && shortMark) base = C['ي'];
+    if (ch === 'ة') {
+      if (saudi) base = (shortMark || sukun) ? 't' : '';   // مضافة → t، وإلا فالفتحة قبلها هي النطق
+      else base = (atPause && isLast) ? 'h' : 't';
+    }
+    emittedLetter = true;
+
+    if (isLast && atPause) {
+      out += (shadda ? base : '') + base;
+      if (ch !== 'ة' && tanweenMark === FATHATAN) { out += saudi ? V.a + 'n' : V.aa; prevVowel = saudi ? null : 'aa'; }
+      else prevVowel = null;
+      continue;
+    }
+
+    out += (shadda ? base : '') + base;
+    if (dagger) { out += V.aa; prevVowel = 'aa'; }
+    else if (shortMark) { out += V[SHORT[shortMark]]; prevVowel = SHORT[shortMark]; }
+    else if (tanweenMark) { const t = TANWEEN[tanweenMark]; out += V[t[0]] + 'n'; prevVowel = null; }
+    else if (sukun) { prevVowel = null; }
+    else {
+      if (!isLast) warnings.push(`حرف بلا حركة: ${ch} في «${word}»`);
+      prevVowel = null;
+    }
+  }
+
+  // Saudi white: a word-final ـِي / ـُو is short (تَبِي tabi، أَبُو abu); the alif fariqa form (رَاحُوا rāḥū) keeps its length
+  if (saudi && lastLetterIndex >= 0) {
+    const L = units[lastLetterIndex];
+    if ((L.ch === 'ي' && out.endsWith(V.ii)) ) out = out.slice(0, out.length - V.ii.length) + V.i;
+    else if (L.ch === 'و' && out.endsWith(V.uu)) out = out.slice(0, out.length - V.uu.length) + V.u;
+    else if (L.ch === 'ى' && out.endsWith(V.aa)) out = out.slice(0, out.length - V.aa.length) + V.a;
+  }
+  return { reading: out, elided, warnings };
+}
+
+/** Read a full text. Pauses before punctuation and at the end when `pause` is true. */
+function readText(text, { pause = true, scheme = 'latin', dialect = 'fusha' } = {}) {
+  const tokens = text.normalize('NFC').replace(/\s+/g, ' ').trim().split(' ');
+  const parts = [];
+  const warnings = [];
+  let afterVowel = false;
+  for (let t = 0; t < tokens.length; t++) {
+    let tok = tokens[t];
+    const m = tok.match(PUNCT_END);
+    const punct = m ? m[0] : '';
+    if (punct) tok = tok.slice(0, -punct.length);
+    const lead = tok.match(/^[«"“(\[]+/);
+    const leadStr = lead ? lead[0] : '';
+    if (leadStr) tok = tok.slice(leadStr.length);
+    if (!tok) { parts.push(leadStr + punct); afterVowel = false; continue; }
+    const isLastTok = t === tokens.length - 1;
+    const atPause = pause && (isLastTok || /[.!?؟،,;؛:…]/.test(punct));
+    const r = readWord(tok, { atPause, afterVowel, scheme, dialect });
+    warnings.push(...r.warnings);
+    let piece = r.reading;
+    if (r.elided && parts.length) {
+      // join to the previous word: "fī l-madrasati"
+      parts[parts.length - 1] = parts[parts.length - 1] + ' ' + piece;
+      piece = null;
+    }
+    if (piece !== null) parts.push(leadStr + piece + punct); else parts[parts.length - 1] += punct;
+    afterVowel = !atPause && /[aiuāīūēōː]$/.test(r.reading.replace(/[-'ʾʿ]+$/, ''));
+  }
+  // Fix doubled-consonant marker from sun-letter assimilation: "ṭ-ṭālibu" is desired, so nothing to do.
+  return { reading: parts.join(' '), warnings };
+}
+
+/** Punctuation → pauses and sentence type. Returns segments the acoustic layer can time. */
+const PAUSE_MS = { '،': 250, ',': 250, '؛': 400, ';': 400, ':': 400, '.': 600, '؟': 600, '?': 600, '!': 600, '…': 800, '—': 200 };
+function prosody(text) {
+  const norm = text.normalize('NFC').replace(/\.{3}/g, '…').replace(/\s+/g, ' ').trim();
+  const segments = [];
+  const re = /([^،,؛;:.؟?!…—]+)([،,؛;:.؟?!…—]+)?/g;
+  let m;
+  while ((m = re.exec(norm)) !== null) {
+    const body = m[1].trim();
+    if (!body) continue;
+    const punct = (m[2] || '').trim();
+    const last = punct ? punct[punct.length - 1] : '';
+    let type = 'continue';
+    if (last === '؟' || last === '?') type = 'question';
+    else if (last === '!') type = 'exclamation';
+    else if (last === '.' || last === '…') type = 'statement';
+    const pauseMs = punct ? Math.max(...[...punct].map(c => PAUSE_MS[c] || 0)) : 0;
+    segments.push({ text: body, punct, pauseMs, type });
+  }
+  if (segments.length && !segments[segments.length - 1].punct) { segments[segments.length - 1].type = 'statement'; segments[segments.length - 1].pauseMs = PAUSE_MS['.']; }
+  return segments;
+}
+
+/** Text ready for ElevenLabs. `family` 'v3' covers eleven_v3/eleven_v4 (punctuation only); 'v2' covers multilingual_v2/flash/turbo (<break> tags for long pauses). */
+function toTtsText(text, { family = 'v3' } = {}) {
+  const segs = prosody(text);
+  if (!segs.length) return '';
+  const pieces = segs.map((sg, i) => {
+    let p = sg.punct || (i === segs.length - 1 ? '.' : '');
+    if (family === 'v2') {
+      if (/…/.test(p)) p = p.replace(/…/g, '.') + ' <break time="0.8s" />';
+      else if (/[؛;:]/.test(p)) p = p + ' <break time="0.4s" />';
+    }
+    return sg.text + p;
+  });
+  return pieces.join(' ').replace(/\s+/g, ' ').trim();
+}
+
+function completenessReport(text, { dialect = 'fusha' } = {}) {
+  const words = text.normalize('NFC').split(/\s+/).filter(Boolean);
+  return words.map(w => ({ word: w, problems: checkCompleteness(w.replace(PUNCT_END, ''), { dialect }) })).filter(x => x.problems.length);
+}
+
+
+// ---- wav.mjs ----
+// WAV decode/encode and resampling. No dependencies.
+const SR = 16000;
+
+function decodeWav(buf) {
+  const dv = new DataView(buf.buffer ? buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) : buf);
+  const tag = (o) => String.fromCharCode(dv.getUint8(o), dv.getUint8(o + 1), dv.getUint8(o + 2), dv.getUint8(o + 3));
+  if (tag(0) !== 'RIFF' || tag(8) !== 'WAVE') throw new Error('not a WAV file');
+  let p = 12, fmt = null, data = null;
+  while (p + 8 <= dv.byteLength) {
+    const id = tag(p), size = dv.getUint32(p + 4, true);
+    if (id === 'fmt ') fmt = { format: dv.getUint16(p + 8, true), channels: dv.getUint16(p + 10, true), rate: dv.getUint32(p + 12, true), bits: dv.getUint16(p + 22, true) };
+    else if (id === 'data') data = { off: p + 8, size: Math.min(size, dv.byteLength - p - 8) };
+    p += 8 + size + (size & 1);
+  }
+  if (!fmt || !data) throw new Error('WAV missing fmt or data chunk');
+  const { channels, rate, bits, format } = fmt;
+  const bytes = bits / 8, frames = Math.floor(data.size / (bytes * channels));
+  const out = new Float32Array(frames);
+  for (let i = 0; i < frames; i++) {
+    let acc = 0;
+    for (let c = 0; c < channels; c++) {
+      const o = data.off + (i * channels + c) * bytes;
+      let v;
+      if (format === 3) v = bits === 32 ? dv.getFloat32(o, true) : dv.getFloat64(o, true);
+      else if (bits === 16) v = dv.getInt16(o, true) / 32768;
+      else if (bits === 24) { const b0 = dv.getUint8(o), b1 = dv.getUint8(o + 1), b2 = dv.getInt8(o + 2); v = ((b2 << 16) | (b1 << 8) | b0) / 8388608; }
+      else if (bits === 32) v = dv.getInt32(o, true) / 2147483648;
+      else if (bits === 8) v = (dv.getUint8(o) - 128) / 128;
+      else throw new Error('unsupported WAV bit depth ' + bits);
+      acc += v;
+    }
+    out[i] = acc / channels;
+  }
+  return { samples: rate === SR ? out : resample(out, rate, SR), rate: SR, originalRate: rate };
+}
+
+function encodeWav(samples, rate = SR) {
+  const n = samples.length;
+  const buf = new ArrayBuffer(44 + n * 2);
+  const dv = new DataView(buf);
+  const w = (o, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(o + i, s.charCodeAt(i)); };
+  w(0, 'RIFF'); dv.setUint32(4, 36 + n * 2, true); w(8, 'WAVE'); w(12, 'fmt ');
+  dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+  dv.setUint32(24, rate, true); dv.setUint32(28, rate * 2, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
+  w(36, 'data'); dv.setUint32(40, n * 2, true);
+  for (let i = 0; i < n; i++) { const v = Math.max(-1, Math.min(1, samples[i])); dv.setInt16(44 + i * 2, v < 0 ? v * 32768 : v * 32767, true); }
+  return new Uint8Array(buf);
+}
+
+/** Linear-interpolation resampler with a simple anti-alias average when downsampling. */
+function resample(x, from, to) {
+  if (from === to) return x;
+  const ratio = from / to;
+  const n = Math.floor(x.length / ratio);
+  const out = new Float32Array(n);
+  if (ratio > 1) {
+    const win = Math.ceil(ratio);
+    for (let i = 0; i < n; i++) {
+      const c = i * ratio; let acc = 0, cnt = 0;
+      for (let k = Math.floor(c - win / 2); k <= Math.floor(c + win / 2); k++) { if (k >= 0 && k < x.length) { acc += x[k]; cnt++; } }
+      out[i] = cnt ? acc / cnt : 0;
+    }
+  } else {
+    for (let i = 0; i < n; i++) { const c = i * ratio, k = Math.floor(c), f = c - k; out[i] = (x[k] ?? 0) * (1 - f) + (x[k + 1] ?? 0) * f; }
+  }
+  return out;
+}
+
+function normalize(x, peak = 0.7) {
+  let m = 0; for (let i = 0; i < x.length; i++) m = Math.max(m, Math.abs(x[i]));
+  if (m < 1e-6) return x;
+  const g = peak / m; const out = new Float32Array(x.length);
+  for (let i = 0; i < x.length; i++) out[i] = x[i] * g;
+  return out;
+}
+
+// ---- dsp.mjs ----
+// Signal-processing primitives: framing, pitch tracking (YIN-style), spectral features, LPC formants, resonators, PSOLA.
+
+const FRAME = 160;   // 10 ms hop at 16 kHz
+const WIN = 640;     // 40 ms analysis window
+
+function hann(n) { const w = new Float32Array(n); for (let i = 0; i < n; i++) w[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (n - 1)); return w; }
+
+function frameEnergyDb(x, hop = FRAME, win = 320) {
+  const n = Math.max(0, Math.floor((x.length - win) / hop) + 1);
+  const out = new Float32Array(n);
+  for (let f = 0; f < n; f++) { let e = 0; const o = f * hop; for (let i = 0; i < win; i++) e += x[o + i] * x[o + i]; out[f] = 10 * Math.log10(e / win + 1e-10); }
+  return out;
+}
+
+function zeroCrossRate(x, hop = FRAME, win = 320) {
+  const n = Math.max(0, Math.floor((x.length - win) / hop) + 1);
+  const out = new Float32Array(n);
+  for (let f = 0; f < n; f++) { let z = 0; const o = f * hop; for (let i = 1; i < win; i++) if ((x[o + i] >= 0) !== (x[o + i - 1] >= 0)) z++; out[f] = z / win; }
+  return out;
+}
+
+/** YIN-style pitch per frame. Returns { f0: Float32Array (0 = unvoiced), voicing: Float32Array (0..1) }. */
+function trackPitch(x, { hop = FRAME, win = WIN, fmin = 60, fmax = 420, threshold = 0.12 } = {}) {
+  const n = Math.max(0, Math.floor((x.length - win) / hop) + 1);
+  const f0 = new Float32Array(n), voicing = new Float32Array(n);
+  const tauMin = Math.floor(SR / fmax), tauMax = Math.ceil(SR / fmin);
+  const half = Math.floor(win / 2);
+  const d = new Float32Array(tauMax + 1), cmnd = new Float32Array(tauMax + 1);
+  for (let f = 0; f < n; f++) {
+    const o = f * hop;
+    let energy = 0; for (let i = 0; i < win; i++) energy += x[o + i] * x[o + i];
+    if (energy / win < 1e-6) { continue; }
+    for (let tau = 1; tau <= tauMax; tau++) { let s = 0; for (let i = 0; i < half; i++) { const dd = x[o + i] - x[o + i + tau]; s += dd * dd; } d[tau] = s; }
+    let run = 0; cmnd[0] = 1;
+    for (let tau = 1; tau <= tauMax; tau++) { run += d[tau]; cmnd[tau] = d[tau] * tau / (run || 1e-9); }
+    let best = -1;
+    for (let tau = tauMin; tau <= tauMax; tau++) {
+      if (cmnd[tau] < threshold) { while (tau + 1 <= tauMax && cmnd[tau + 1] < cmnd[tau]) tau++; best = tau; break; }
+    }
+    if (best < 0) { let m = 1e9; for (let tau = tauMin; tau <= tauMax; tau++) if (cmnd[tau] < m) { m = cmnd[tau]; best = tau; } if (m > 0.5) { voicing[f] = Math.max(0, 1 - m); continue; } }
+    // octave check: a dip at half the true period can pass the threshold; prefer 2τ when it is clearly deeper
+    if (2 * best <= tauMax && cmnd[2 * best] < 0.6 * cmnd[best]) best = 2 * best;
+    // parabolic interpolation
+    let t = best;
+    if (best > tauMin && best < tauMax) { const a = cmnd[best - 1], b = cmnd[best], c = cmnd[best + 1]; const den = a - 2 * b + c; if (Math.abs(den) > 1e-9) t = best + 0.5 * (a - c) / den; }
+    f0[f] = SR / t; voicing[f] = Math.max(0, Math.min(1, 1 - cmnd[best]));
+  }
+  // median smoothing (5 frames) to remove octave glitches
+  const sm = new Float32Array(n);
+  for (let i = 0; i < n; i++) { const w = []; for (let k = -2; k <= 2; k++) if (f0[i + k] > 0) w.push(f0[i + k]); if (f0[i] > 0 && w.length >= 3) { w.sort((a, b) => a - b); sm[i] = w[Math.floor(w.length / 2)]; } else sm[i] = f0[i]; }
+  return { f0: sm, voicing };
+}
+
+// ---- FFT (radix-2) ----
+function fft(re, im) {
+  const n = re.length;
+  for (let i = 1, j = 0; i < n; i++) { let bit = n >> 1; for (; j & bit; bit >>= 1) j ^= bit; j ^= bit; if (i < j) { [re[i], re[j]] = [re[j], re[i]]; [im[i], im[j]] = [im[j], im[i]]; } }
+  for (let len = 2; len <= n; len <<= 1) {
+    const ang = -2 * Math.PI / len, wr = Math.cos(ang), wi = Math.sin(ang);
+    for (let i = 0; i < n; i += len) {
+      let cr = 1, ci = 0;
+      for (let j = 0; j < len / 2; j++) {
+        const ur = re[i + j], ui = im[i + j], vr = re[i + j + len / 2] * cr - im[i + j + len / 2] * ci, vi = re[i + j + len / 2] * ci + im[i + j + len / 2] * cr;
+        re[i + j] = ur + vr; im[i + j] = ui + vi; re[i + j + len / 2] = ur - vr; im[i + j + len / 2] = ui - vi;
+        const t = cr * wr - ci * wi; ci = cr * wi + ci * wr; cr = t;
+      }
+    }
+  }
+}
+
+function spectralCentroid(x, hop = FRAME, win = 512) {
+  const n = Math.max(0, Math.floor((x.length - win) / hop) + 1);
+  const out = new Float32Array(n), w = hann(win), re = new Float32Array(win), im = new Float32Array(win);
+  for (let f = 0; f < n; f++) {
+    const o = f * hop; for (let i = 0; i < win; i++) { re[i] = x[o + i] * w[i]; im[i] = 0; }
+    fft(re, im);
+    let num = 0, den = 0;
+    for (let k = 1; k < win / 2; k++) { const m = Math.sqrt(re[k] * re[k] + im[k] * im[k]); num += m * k * SR / win; den += m; }
+    out[f] = den > 1e-9 ? num / den : 0;
+  }
+  return out;
+}
+
+/** LPC via autocorrelation + Levinson-Durbin. Returns the predictor coefficients a[1..order] (a[0] = 1). */
+function lpc(frame, order = 14) {
+  const n = frame.length, r = new Float64Array(order + 1);
+  for (let k = 0; k <= order; k++) { let s = 0; for (let i = k; i < n; i++) s += frame[i] * frame[i - k]; r[k] = s; }
+  if (r[0] < 1e-9) return null;
+  const a = new Float64Array(order + 1); a[0] = 1; let err = r[0] * 1.0001;
+  const tmp = new Float64Array(order + 1);
+  for (let i = 1; i <= order; i++) {
+    let acc = r[i]; for (let j = 1; j < i; j++) acc -= a[j] * r[i - j];
+    const k = acc / err;
+    for (let j = 0; j < i; j++) tmp[j] = a[j];
+    for (let j = 1; j < i; j++) a[j] = tmp[j] - k * tmp[i - j];
+    a[i] = k; err *= (1 - k * k); if (err <= 0) return null;
+  }
+  return a;
+}
+
+/** Spectral peaks of one voiced frame from the LPC envelope (Hz, ascending). Close formants such as F1/F2 of /a/ can merge into one peak;
+ * callers use the first peak between 500 and 1600 Hz as a vocal-tract length proxy rather than as a true F1. */
+function lpcPeaks(frame, order = 16) {
+  const pre = new Float32Array(frame.length); for (let i = 1; i < frame.length; i++) pre[i] = frame[i] - 0.97 * frame[i - 1];
+  const w = hann(frame.length); for (let i = 0; i < frame.length; i++) pre[i] *= w[i];
+  const a = lpc(pre, order); if (!a) return [];
+  const bins = 512, env = new Float32Array(bins);
+  for (let b = 0; b < bins; b++) {
+    const wv = Math.PI * b / bins; let re = 0, im = 0;
+    for (let k = 0; k <= order; k++) { re += a[k] * Math.cos(wv * k); im -= a[k] * Math.sin(wv * k); }
+    env[b] = 1 / Math.sqrt(re * re + im * im + 1e-12);
+  }
+  const peaks = [];
+  for (let b = 2; b < bins - 2; b++) if (env[b] > env[b - 1] && env[b] >= env[b + 1]) peaks.push(b * (SR / 2) / bins);
+  return peaks;
+}
+/** Reference value of the /a/ peak proxy for this engine's own voice at formantScale 1 (measured on the synthesizer). */
+const A_PEAK_REFERENCE = 1063;
+
+/** Estimate formants from one voiced frame by peak-picking the LPC envelope. Returns [F1, F2, F3] in Hz (or null). */
+function estimateFormants(frame, order = 14) {
+  const pre = new Float32Array(frame.length); for (let i = 1; i < frame.length; i++) pre[i] = frame[i] - 0.97 * frame[i - 1];
+  const w = hann(frame.length); for (let i = 0; i < frame.length; i++) pre[i] *= w[i];
+  const a = lpc(pre, order); if (!a) return null;
+  const bins = 512, env = new Float32Array(bins);
+  for (let b = 0; b < bins; b++) {
+    const wv = Math.PI * b / bins; let re = 0, im = 0;
+    for (let k = 0; k <= order; k++) { re += a[k] * Math.cos(wv * k); im -= a[k] * Math.sin(wv * k); }
+    env[b] = 1 / Math.sqrt(re * re + im * im + 1e-12);
+  }
+  const peaks = [];
+  for (let b = 2; b < bins - 2; b++) if (env[b] > env[b - 1] && env[b] >= env[b + 1]) peaks.push({ f: b * (SR / 2) / bins, m: env[b] });
+  const f1 = peaks.find(p => p.f >= 220 && p.f <= 1100);
+  const f2 = peaks.find(p => p.f > (f1 ? f1.f + 150 : 800) && p.f <= 2800);
+  const f3 = peaks.find(p => p.f > (f2 ? f2.f + 200 : 2000) && p.f <= 3800);
+  if (!f1 || !f2) return null;
+  return [f1.f, f2.f, f3 ? f3.f : 2700];
+}
+
+/** Second-order digital resonator (Klatt). Returns a filter function processing one sample. */
+function resonator(f, bw, sr = SR) {
+  const c = -Math.exp(-2 * Math.PI * bw / sr), b = 2 * Math.exp(-Math.PI * bw / sr) * Math.cos(2 * Math.PI * f / sr), a = 1 - b - c;
+  let y1 = 0, y2 = 0;
+  const fn = (x) => { const y = a * x + b * y1 + c * y2; y2 = y1; y1 = y; return y; };
+  fn.set = (nf, nbw) => { const nc = -Math.exp(-2 * Math.PI * nbw / sr), nb = 2 * Math.exp(-Math.PI * nbw / sr) * Math.cos(2 * Math.PI * nf / sr); fn.a = 1 - nb - nc; fn.b = nb; fn.c = nc; };
+  fn.a = a; fn.b = b; fn.c = c;
+  fn.run = (x) => { const y = fn.a * x + fn.b * y1 + fn.c * y2; y2 = y1; y1 = y; return y; };
+  return fn;
+}
+
+/** Pitch marks for a voiced signal from a per-frame f0 track: one mark per period, aligned to local peaks. */
+function pitchMarks(x, f0, hop = FRAME, defaultPeriod = 133) {
+  const marks = [];
+  let t = 0;
+  while (t < x.length) {
+    const f = f0[Math.min(f0.length - 1, Math.floor(t / hop))] || 0;
+    const period = f > 0 ? Math.round(SR / f) : defaultPeriod;
+    // snap to the local maximum within ±period/4
+    let best = t, bv = -Infinity; const r = Math.floor(period / 4);
+    for (let k = Math.max(0, t - r); k < Math.min(x.length, t + r); k++) if (x[k] > bv) { bv = x[k]; best = k; }
+    marks.push({ pos: best, period, voiced: f > 0 });
+    t = best + period;
+  }
+  return marks;
+}
+
+/** TD-PSOLA: resynthesize `x` (with analysis pitch marks) at a new length and a target f0 contour (Hz per output frame; 0 = keep). */
+function psola(x, marks, outLength, targetF0 = null, hop = FRAME) {
+  const out = new Float32Array(Math.max(1, outLength));
+  const inLen = x.length, scale = inLen / Math.max(1, outLength);
+  if (!marks.length) return out;
+  let t = 0, mi = 0;
+  while (t < outLength) {
+    const tin = t * scale;
+    while (mi + 1 < marks.length && Math.abs(marks[mi + 1].pos - tin) < Math.abs(marks[mi].pos - tin)) mi++;
+    const m = marks[mi];
+    const tf = targetF0 ? targetF0[Math.min(targetF0.length - 1, Math.floor(t / hop))] : 0;
+    const period = (m.voiced && tf > 0) ? Math.round(SR / tf) : m.period;
+    const win = 2 * m.period;
+    for (let k = -m.period; k < m.period; k++) {
+      const src = m.pos + k, dst = t + k;
+      if (src < 0 || src >= inLen || dst < 0 || dst >= outLength) continue;
+      const w = 0.5 - 0.5 * Math.cos(Math.PI * (k + m.period) / win * 2);
+      out[dst] += x[src] * w;
+    }
+    t += Math.max(16, period);
+  }
+  return out;
+}
+
+function crossfadeConcat(parts, fadeSamples = 80) {
+  let total = 0; for (const p of parts) total += p.length;
+  const out = new Float32Array(total); let pos = 0;
+  for (const p of parts) {
+    for (let i = 0; i < p.length; i++) {
+      const dst = pos + i;
+      if (i < fadeSamples && pos > 0 && dst < out.length) { const a = i / fadeSamples; out[dst] = out[dst] * (1 - a) + p[i] * a; }
+      else out[dst] = p[i];
+    }
+    pos += p.length - Math.min(fadeSamples, p.length);
+  }
+  return out.subarray(0, pos + fadeSamples);
+}
+
+/** Split a recording into chunks separated by silence. Returns [{start, end}] in samples. */
+function splitOnSilence(x, { minSilenceMs = 250, thresholdDb = -38, minChunkMs = 120 } = {}) {
+  const e = frameEnergyDb(x, FRAME, 320);
+  let maxE = -100; for (const v of e) maxE = Math.max(maxE, v);
+  const thr = Math.max(thresholdDb, maxE - 35);
+  const minSil = Math.round(minSilenceMs / 10), minChunk = Math.round(minChunkMs / 10);
+  const chunks = []; let inChunk = false, start = 0, sil = 0;
+  for (let f = 0; f < e.length; f++) {
+    const loud = e[f] > thr;
+    if (!inChunk && loud) { inChunk = true; start = Math.max(0, f - 2); sil = 0; }
+    else if (inChunk) {
+      if (loud) sil = 0; else { sil++; if (sil >= minSil) { const end = f - sil + 2; if (end - start >= minChunk) chunks.push({ start: start * FRAME, end: Math.min(x.length, end * FRAME) }); inChunk = false; } }
+    }
+  }
+  if (inChunk) chunks.push({ start: start * FRAME, end: x.length });
+  return chunks;
+}
+
+// ---- phonemize.mjs ----
+// Text → phones with durations and an F0 contour. Uses the skill's reading engine for the pronunciation rules
+// (tashkeel, wasl, waqf, sun-letter assimilation, dialect sounds) and adds the acoustic plan.
+
+const SYMBOLS = ['dʒ', 'tʃ', 'tˤ', 'dˤ', 'sˤ', 'ðˤ', 'aː', 'iː', 'uː', 'eː', 'oː',
+  'ʔ', 'b', 't', 'θ', 'ħ', 'x', 'd', 'ð', 'r', 'z', 's', 'ʃ', 'ʕ', 'ɣ', 'f', 'q', 'k', 'g', 'ɡ', 'l', 'm', 'n', 'h', 'w', 'j', 'a', 'i', 'u', 'p', 'v', 'e', 'o'];
+
+const VOWELS = new Set(['a', 'i', 'u', 'e', 'o', 'aː', 'iː', 'uː', 'eː', 'oː']);
+const EMPHATIC = new Set(['tˤ', 'dˤ', 'sˤ', 'ðˤ', 'q']);
+const CLASS = {
+  vowel: new Set(['a', 'i', 'u', 'e', 'o', 'aː', 'iː', 'uː', 'eː', 'oː']),
+  nasal: new Set(['m', 'n']), liquid: new Set(['l', 'r']), glide: new Set(['w', 'j']), pharyngeal_app: new Set(['ʕ']),
+  vfric: new Set(['z', 'ð', 'ðˤ', 'ɣ', 'v']), ufric: new Set(['f', 'θ', 's', 'sˤ', 'ʃ', 'x', 'ħ', 'h']),
+  vstop: new Set(['b', 'd', 'dˤ', 'g', 'ɡ', 'dʒ']), ustop: new Set(['t', 'tˤ', 'k', 'q', 'ʔ', 'p', 'tʃ']),
+};
+function classOf(p) { for (const [k, s] of Object.entries(CLASS)) if (s.has(p)) return k; return 'other'; }
+const isVoiced = (p) => !(CLASS.ufric.has(p) || CLASS.ustop.has(p));
+
+/** Base durations in ms by phone (before gemination, lengthening and rate). */
+const DUR = { vowel: 75, long: 150, nasal: 65, liquid: 55, glide: 60, pharyngeal_app: 80, vfric: 85, ufric: 100, vstop: 70, ustop: 80, other: 70 };
+
+function tokenizeIpa(s) {
+  const phones = [];
+  const str = s.replace(/-/g, '');
+  let i = 0;
+  while (i < str.length) {
+    if (str[i] === ' ') { phones.push(' '); i++; continue; }
+    let hit = null;
+    for (const sym of SYMBOLS) if (str.startsWith(sym, i)) { hit = sym; break; }
+    if (!hit) { i++; continue; } // punctuation or unknown glyph: skip
+    phones.push(hit === 'ɡ' ? 'g' : hit);
+    i += hit.length;
+  }
+  return phones;
+}
+
+/**
+ * Build the acoustic plan for vocalized Arabic text.
+ * Returns { phones: [{p, dur, f0, voiced, geminate, emphatic, wordStart, wordEnd, segment}], segments, totalMs }.
+ */
+function phonemize(text, { mode = 'fusha', f0Base = 120, f0Range = 1.0, rate = 1.0 } = {}) {
+  const dialect = mode === 'saudi' ? 'saudi' : 'fusha';
+  const segments = prosody(text);
+  const plan = [];
+  segments.forEach((sg, si) => {
+    const ipa = readText(sg.text, { pause: true, scheme: 'ipa', dialect }).reading;
+    const toks = tokenizeIpa(ipa);
+    // words → phones with gemination folded
+    const words = []; let cur = [];
+    for (const t of toks) { if (t === ' ') { if (cur.length) words.push(cur); cur = []; } else cur.push(t); }
+    if (cur.length) words.push(cur);
+    const segPhones = [];
+    words.forEach((w, wi) => {
+      for (let k = 0; k < w.length; k++) {
+        const p = w[k];
+        if (k > 0 && w[k - 1] === p && !VOWELS.has(p)) { segPhones[segPhones.length - 1].geminate = true; continue; }
+        const cls = classOf(p);
+        const long = VOWELS.has(p) && p.length === 2;
+        segPhones.push({ p, cls, voiced: isVoiced(p), geminate: false, long, wordStart: k === 0, wordEnd: k === w.length - 1, word: wi, segment: si });
+      }
+    });
+    // emphatic spreading: vowels adjacent to an emphatic consonant get the emphatic colour
+    for (let k = 0; k < segPhones.length; k++) {
+      const ph = segPhones[k];
+      if (VOWELS.has(ph.p)) ph.emphatic = EMPHATIC.has(segPhones[k - 1]?.p) || EMPHATIC.has(segPhones[k + 1]?.p);
+    }
+    // durations
+    const n = segPhones.length;
+    segPhones.forEach((ph, k) => {
+      let d = VOWELS.has(ph.p) ? (ph.long ? DUR.long : DUR.vowel) : DUR[ph.cls];
+      if (ph.geminate) d *= 1.8;
+      if (ph.wordEnd && VOWELS.has(ph.p)) d *= 1.15;
+      if (k >= n - 2) d *= 1.3; // phrase-final lengthening
+      ph.dur = Math.round(d / rate);
+    });
+    // F0 contour: declination over the segment, type-specific ending
+    let acc = 0; const segMs = segPhones.reduce((s, p) => s + p.dur, 0) || 1;
+    segPhones.forEach(ph => {
+      const pos = acc / segMs; acc += ph.dur;
+      let f = f0Base * (1.12 - (sg.type === 'question' ? 0.08 : 0.18) * pos);
+      if (sg.type === 'question') f *= 1 + 0.6 * Math.max(0, (pos - 0.55) / 0.45);   // rise over the last 45%
+      else if (sg.type === 'exclamation') f *= 1.12;
+      else if (sg.type === 'statement' && pos > 0.7) f *= 1 - 0.2 * (pos - 0.7) / 0.3; // final fall
+      if (ph.geminate || ph.long) f *= 1.03; // slight prominence
+      f = f0Base + (f - f0Base) * f0Range;
+      ph.f0 = ph.voiced ? f : 0;
+    });
+    plan.push(...segPhones);
+    if (sg.pauseMs) plan.push({ p: '_', cls: 'pause', dur: Math.round(sg.pauseMs / rate), f0: 0, voiced: false, segment: si });
+  });
+  const totalMs = plan.reduce((s, p) => s + p.dur, 0);
+  return { phones: plan, segments, totalMs };
+}
+
+// ---- formant.mjs ----
+// Klatt-style cascade formant synthesizer for Arabic phones. Self-contained: no model, no data files.
+
+// Formant targets (Hz), bandwidths, source amplitudes and frication centres per phone. Male reference voice.
+const V = (f1, f2, f3) => ({ f: [f1, f2, f3], bw: [80, 100, 140], av: 1.0, af: 0, kind: 'vowel' });
+const PHONES = {
+  a: V(700, 1250, 2500), 'aː': V(720, 1250, 2500), i: V(310, 2150, 2900), 'iː': V(300, 2200, 2950),
+  u: V(340, 820, 2350), 'uː': V(320, 780, 2300), e: V(450, 1900, 2600), 'eː': V(430, 1950, 2650), o: V(450, 900, 2400), 'oː': V(440, 870, 2400),
+  // nasals, liquids, glides, pharyngeal approximant
+  m: { f: [250, 1100, 2200], bw: [120, 200, 250], av: 0.45, af: 0, kind: 'sonorant' },
+  n: { f: [250, 1500, 2500], bw: [120, 200, 250], av: 0.45, af: 0, kind: 'sonorant' },
+  l: { f: [350, 1200, 2700], bw: [100, 150, 200], av: 0.6, af: 0, kind: 'sonorant' },
+  r: { f: [380, 1300, 2200], bw: [100, 150, 200], av: 0.65, af: 0, kind: 'sonorant', trill: true },
+  w: { f: [330, 750, 2300], bw: [90, 120, 200], av: 0.7, af: 0, kind: 'sonorant' },
+  j: { f: [300, 2100, 2800], bw: [90, 120, 200], av: 0.7, af: 0, kind: 'sonorant' },
+  'ʕ': { f: [750, 1300, 2400], bw: [150, 200, 250], av: 0.6, af: 0.1, kind: 'sonorant', fric: [1200, 1500], f0mul: 0.9 },
+  // fricatives
+  f: { f: [350, 1300, 2400], bw: [150, 200, 250], av: 0, af: 0.3, kind: 'fric', fric: [1800, 4000] },
+  'θ': { f: [350, 1500, 2600], bw: [150, 200, 250], av: 0, af: 0.3, kind: 'fric', fric: [3200, 4000] },
+  'ð': { f: [350, 1500, 2600], bw: [150, 200, 250], av: 0.35, af: 0.25, kind: 'fric', fric: [3200, 4000] },
+  'ðˤ': { f: [450, 1050, 2300], bw: [150, 200, 250], av: 0.35, af: 0.25, kind: 'fric', fric: [2600, 3500] },
+  s: { f: [350, 1600, 2600], bw: [150, 200, 250], av: 0, af: 0.8, kind: 'fric', fric: [6000, 2000] },
+  z: { f: [350, 1600, 2600], bw: [150, 200, 250], av: 0.35, af: 0.6, kind: 'fric', fric: [6000, 2000] },
+  'sˤ': { f: [450, 1050, 2300], bw: [150, 200, 250], av: 0, af: 0.8, kind: 'fric', fric: [4500, 2000] },
+  'ʃ': { f: [350, 1800, 2600], bw: [150, 200, 250], av: 0, af: 0.8, kind: 'fric', fric: [3000, 1400] },
+  x: { f: [350, 1300, 2500], bw: [150, 200, 250], av: 0, af: 0.6, kind: 'fric', fric: [1900, 1000] },
+  'ɣ': { f: [400, 1200, 2400], bw: [150, 200, 250], av: 0.4, af: 0.4, kind: 'fric', fric: [1900, 1000] },
+  'ħ': { f: [720, 1450, 2500], bw: [200, 250, 300], av: 0, af: 0.55, kind: 'fric', fric: [1600, 2500], aspiration: true },
+  h: { f: [500, 1500, 2500], bw: [250, 300, 350], av: 0, af: 0.4, kind: 'fric', fric: [1500, 3000], aspiration: true, inherit: true },
+  v: { f: [350, 1300, 2400], bw: [150, 200, 250], av: 0.35, af: 0.25, kind: 'fric', fric: [1800, 4000] },
+  // stops: locus formants, burst centre
+  b: { f: [200, 900, 2200], bw: [100, 150, 200], av: 0.15, af: 0, kind: 'stop', voiced: true, burst: [800, 1500] },
+  d: { f: [200, 1700, 2600], bw: [100, 150, 200], av: 0.15, af: 0, kind: 'stop', voiced: true, burst: [3500, 2000] },
+  'dˤ': { f: [250, 1100, 2300], bw: [100, 150, 200], av: 0.15, af: 0, kind: 'stop', voiced: true, burst: [2000, 1500] },
+  g: { f: [250, 1900, 2500], bw: [100, 150, 200], av: 0.15, af: 0, kind: 'stop', voiced: true, burst: [2500, 1500] },
+  t: { f: [200, 1700, 2600], bw: [100, 150, 200], av: 0, af: 0, kind: 'stop', voiced: false, burst: [4000, 2000] },
+  'tˤ': { f: [250, 1100, 2300], bw: [100, 150, 200], av: 0, af: 0, kind: 'stop', voiced: false, burst: [2500, 1500] },
+  k: { f: [250, 1900, 2500], bw: [100, 150, 200], av: 0, af: 0, kind: 'stop', voiced: false, burst: [2500, 1500] },
+  q: { f: [250, 1000, 2300], bw: [100, 150, 200], av: 0, af: 0, kind: 'stop', voiced: false, burst: [1200, 1200] },
+  p: { f: [200, 900, 2200], bw: [100, 150, 200], av: 0, af: 0, kind: 'stop', voiced: false, burst: [800, 1500] },
+  'ʔ': { f: [500, 1500, 2500], bw: [100, 150, 200], av: 0, af: 0, kind: 'stop', voiced: false, burst: null, glottal: true },
+  'dʒ': { f: [250, 1800, 2600], bw: [100, 150, 200], av: 0.15, af: 0, kind: 'affricate', voiced: true, fric: [2800, 1400] },
+  'tʃ': { f: [250, 1800, 2600], bw: [100, 150, 200], av: 0, af: 0, kind: 'affricate', voiced: false, fric: [2800, 1400] },
+};
+
+const EMPH_SHIFT = { f1: 60, f2: -320 };
+
+function gaussian() { let u = 0, v = 0; while (u === 0) u = Math.random(); while (v === 0) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+
+/** Expand the phone plan into acoustic sub-segments with per-segment targets. */
+function expand(plan, voice) {
+  const segs = [];
+  const fs = voice.formantScale ?? 1;
+  const scaleF = (f) => f.map(v => v * fs);
+  for (let i = 0; i < plan.length; i++) {
+    const ph = plan[i];
+    if (ph.p === '_') { segs.push({ kind: 'silence', dur: ph.dur, f0: 0 }); continue; }
+    const base = PHONES[ph.p] || PHONES.a;
+    let f = base.f.slice();
+    if (ph.emphatic) { f[0] += EMPH_SHIFT.f1; f[1] += EMPH_SHIFT.f2; }
+    // /h/ and glottal stop take the neighbouring vowel's shape
+    if (base.inherit || base.glottal) { const nb = plan[i + 1] && VOWELS.has(plan[i + 1].p) ? PHONES[plan[i + 1].p] : (plan[i - 1] && VOWELS.has(plan[i - 1].p) ? PHONES[plan[i - 1].p] : null); if (nb) f = nb.f.slice(); }
+    const common = { f: scaleF(f), bw: base.bw, f0: ph.f0 * (base.f0mul || 1), trill: !!base.trill, phone: ph.p };
+    const dur = ph.dur;
+    if (base.kind === 'stop') {
+      const burst = base.burst ? 12 : 0, vot = base.voiced ? 5 : 25;
+      const closure = Math.max(20, dur - burst - vot);
+      segs.push({ ...common, kind: 'closure', dur: closure, av: base.av, af: 0 });
+      if (base.burst) segs.push({ ...common, kind: 'burst', dur: burst, av: 0, af: 0.9, fric: scaleF(base.burst) });
+      if (!base.voiced) segs.push({ ...common, kind: 'aspiration', dur: vot, av: 0, af: 0.35, fric: [1500 * fs, 3000] });
+      else if (vot) segs.push({ ...common, kind: 'closure', dur: vot, av: 0.2, af: 0 });
+    } else if (base.kind === 'affricate') {
+      segs.push({ ...common, kind: 'closure', dur: Math.round(dur * 0.4), av: base.av, af: 0 });
+      segs.push({ ...common, kind: 'fric', dur: Math.round(dur * 0.6), av: base.voiced ? 0.3 : 0, af: 0.8, fric: scaleF(base.fric) });
+    } else {
+      segs.push({ ...common, kind: base.kind, dur, av: base.av, af: base.af, fric: base.fric ? scaleF(base.fric) : null, aspiration: !!base.aspiration });
+    }
+  }
+  return segs;
+}
+
+/** Render a phone plan to a Float32Array at 16 kHz. */
+function synthesizeFormant(plan, voice = {}) {
+  const segs = expand(plan, voice);
+  const total = segs.reduce((s, g) => s + g.dur, 0);
+  const n = Math.round(total * SR / 1000);
+  const out = new Float32Array(n);
+  const breath = voice.breathiness ?? 0.08;
+  const tilt = resonator(0, 100);            // glottal pulse shaping (-12 dB/oct)
+  const F = [resonator(500, 80), resonator(1500, 100), resonator(2500, 140), resonator(3500, 300), resonator(4300, 400)];
+  const fricRes = resonator(4000, 2000);
+  const transMs = 32;
+  let pos = 0, phase = 1, prevF = null, prevBw = null;
+  for (let s = 0; s < segs.length; s++) {
+    const g = segs[s];
+    const len = Math.round(g.dur * SR / 1000);
+    const fromF = prevF || g.f, fromBw = prevBw || g.bw;
+    const trans = Math.min(len, Math.round(transMs * SR / 1000));
+    for (let i = 0; i < len; i++, pos++) {
+      if (pos >= n) break;
+      if (g.kind === 'silence') { continue; }
+      // formant interpolation from the previous target
+      const a = trans ? Math.min(1, i / trans) : 1;
+      for (let k = 0; k < 3; k++) F[k].set(fromF[k] + (g.f[k] - fromF[k]) * a, fromBw[k] + (g.bw[k] - fromBw[k]) * a);
+      // amplitude envelope: 6 ms ramps at segment edges
+      const ramp = Math.round(0.006 * SR);
+      const env = Math.min(1, i / ramp, (len - i) / ramp);
+      // voiced source
+      let src = 0;
+      if (g.av > 0 && g.f0 > 0) {
+        phase += g.f0 / SR;
+        if (phase >= 1) { phase -= 1; src = 1; }
+        src = tilt.run(src / tilt.a * 0.6);   // impulse scaled so the shaped pulse peaks near 0.6
+        if (g.trill) src *= 0.5 + 0.5 * Math.sin(2 * Math.PI * 28 * pos / SR);
+        src *= g.av;
+      }
+      // aspiration noise through the cascade (breathiness and /h ħ/)
+      let asp = gaussian() * (g.aspiration ? g.af * 0.5 : (g.av > 0 ? breath * g.av * 0.3 : 0));
+      let x = src + asp;
+      for (let k = 0; k < 5; k++) x = F[k].run(x);
+      // frication noise through its own resonator, added in parallel
+      let fr = 0;
+      if (g.af > 0 && g.fric && !g.aspiration) { fricRes.set(g.fric[0], g.fric[1]); fr = fricRes.run(gaussian()) * g.af * 0.6; }
+      out[pos] = (x + fr) * env;
+    }
+    prevF = g.f; prevBw = g.bw;
+  }
+  // radiation (first difference) and normalisation
+  const rad = new Float32Array(n); let m = 0;
+  for (let i = 1; i < n; i++) { rad[i] = out[i] - 0.95 * out[i - 1]; m = Math.max(m, Math.abs(rad[i])); }
+  if (m > 0) for (let i = 0; i < n; i++) rad[i] = rad[i] / m * 0.7;
+  return rad;
+}
+
+/** Sample boundaries (in samples) of each plan phone, for alignment tests and unit cutting. */
+function phoneBoundaries(plan) {
+  const b = []; let t = 0;
+  for (const ph of plan) { const len = Math.round(ph.dur * SR / 1000); b.push({ p: ph.p, start: t, end: t + len }); t += len; }
+  return b;
+}
+
+// ---- mode.mjs ----
+// Fusha vs Saudi white detection from lexical markers (same lists as the skill).
+const SAUDI = ['وش', 'إيش', 'ايش', 'ليش', 'وين', 'الحين', 'أبغى', 'ابغى', 'أبي', 'تبي', 'تبغى', 'يبغى', 'مو', 'بس', 'مرة', 'اللي', 'هذي', 'هذول', 'بكرة', 'زين', 'خلاص', 'يلا', 'شوي', 'عشان', 'لين', 'راح', 'كذا', 'معليش', 'طيب', 'رايح', 'رايك', 'ولا'];
+const FUSHA = ['إن', 'إنّ', 'سوف', 'لن', 'لم', 'ليس', 'الذي', 'التي', 'الذين', 'هذه', 'ماذا', 'لماذا', 'أين', 'كيف', 'حيث', 'إذ', 'قد', 'ثم', 'ثمّ'];
+const strip = (w) => w.replace(/[ً-ْٰـ]/g, '').replace(/[.!?؟،,;؛:…«»"()]/g, '');
+
+function detectMode(text) {
+  const words = text.split(/\s+/).map(strip).map(w => w.replace(/^[وف]/, '')).filter(Boolean);
+  let s = 0, f = 0;
+  for (const w of words) { if (SAUDI.includes(w)) s++; if (FUSHA.includes(w)) f++; }
+  // case endings (tanween) on several words point to fusha
+  const tanween = (text.match(/[ً-ٍ]/g) || []).length;
+  if (tanween >= 2 && s === 0) f++;
+  return s >= 1 && s >= f ? 'saudi' : 'fusha';
+}
+
+// ---- voice.mjs ----
+// Voice enrollment: turn recordings of the enrollment script into a speaker profile and a unit inventory.
+
+/** Per-frame features for alignment. */
+function features(x) {
+  const e = frameEnergyDb(x), { f0, voicing } = trackPitch(x), c = spectralCentroid(x);
+  const n = Math.min(e.length, voicing.length, c.length);
+  let maxE = -100, minE = 100; for (let i = 0; i < n; i++) { maxE = Math.max(maxE, e[i]); minE = Math.min(minE, e[i]); }
+  const feats = [];
+  for (let i = 0; i < n; i++) feats.push({ e: (e[i] - minE) / Math.max(1, maxE - minE), v: voicing[i], c: c[i], f0: f0[i] });
+  return feats;
+}
+
+const CENTROID_FRIC = { f: 2500, 'θ': 3000, 'ð': 3000, 'ðˤ': 2500, s: 5000, z: 4500, 'sˤ': 4000, 'ʃ': 2800, x: 1800, 'ɣ': 1700, 'ħ': 1500, h: 1500, v: 2500 };
+
+/** Frame cost of assigning phone `p` to features `ft`. Lower is better. */
+function frameCost(p, ft) {
+  const cls = classOf(p);
+  switch (cls) {
+    case 'vowel': return (1 - ft.v) * 2.5 + (1 - ft.e) * 2 + Math.max(0, ft.c - 2500) / 2000;
+    case 'nasal': case 'liquid': case 'glide': case 'pharyngeal_app': return (1 - ft.v) * 2 + Math.abs(ft.e - 0.6) * 1.5 + Math.max(0, ft.c - 2200) / 2000;
+    case 'vfric': return (1 - ft.v) * 0.8 + Math.max(0, (CENTROID_FRIC[p] || 3000) - ft.c) / 3000 + Math.abs(ft.e - 0.5);
+    case 'ufric': return ft.v * 2 + Math.max(0, (CENTROID_FRIC[p] || 3000) - ft.c) / 3000 + Math.abs(ft.e - 0.45) * 0.8;
+    case 'ustop': return ft.e * 2.2 + ft.v * 1.2;
+    case 'vstop': return ft.e * 1.8 + (1 - ft.v) * 0.4;
+    default: return 1;
+  }
+}
+
+/** Segmental DP: align the expected phone sequence to frames. Returns [{p, start, end}] in frames. */
+function alignPhones(phones, feats) {
+  const T = feats.length, N = phones.length;
+  if (!T || !N) return [];
+  const minD = phones.map(p => VOWELS.has(p) ? 3 : 2);
+  const maxD = phones.map(p => VOWELS.has(p) ? (p.length === 2 ? 45 : 28) : (classOf(p) === 'ufric' ? 40 : 30));
+  // prefix sums of per-phone frame costs
+  const pre = phones.map(p => { const s = new Float64Array(T + 1); for (let t = 0; t < T; t++) s[t + 1] = s[t] + frameCost(p, feats[t]); return s; });
+  const best = Array.from({ length: N }, () => new Float64Array(T + 1).fill(Infinity));
+  const back = Array.from({ length: N }, () => new Int32Array(T + 1).fill(-1));
+  for (let t = minD[0]; t <= Math.min(T, maxD[0]); t++) { best[0][t] = pre[0][t]; back[0][t] = 0; }
+  for (let i = 1; i < N; i++) {
+    for (let t = 1; t <= T; t++) {
+      let b = Infinity, bs = -1;
+      for (let d = minD[i]; d <= maxD[i] && d <= t; d++) {
+        const s = t - d; const prev = best[i - 1][s];
+        if (prev === Infinity) continue;
+        const c = prev + pre[i][t] - pre[i][s];
+        if (c < b) { b = c; bs = s; }
+      }
+      best[i][t] = b; back[i][t] = bs;
+    }
+  }
+  // end: allow trailing frames to be absorbed by the last phone up to maxD, else pick the best end
+  let endT = T, bestEnd = Infinity;
+  for (let t = Math.max(1, T - 10); t <= T; t++) if (best[N - 1][t] < bestEnd) { bestEnd = best[N - 1][t]; endT = t; }
+  if (bestEnd === Infinity) { // fall back to proportional split
+    const per = T / N; return phones.map((p, i) => ({ p, start: Math.round(i * per), end: Math.round((i + 1) * per) }));
+  }
+  const out = []; let t = endT;
+  for (let i = N - 1; i >= 0; i--) { const s = back[i][t]; out.unshift({ p: phones[i], start: s, end: t }); t = s; }
+  return out;
+}
+
+function trimSilence(x, marginMs = 40) {
+  const chunks = splitOnSilence(x, { minSilenceMs: 150 });
+  if (!chunks.length) return x;
+  const margin = Math.round(marginMs * SR / 1000);
+  const start = Math.max(0, chunks[0].start - margin), end = Math.min(x.length, chunks[chunks.length - 1].end + margin);
+  return x.subarray(start, end);
+}
+
+/** Enroll one recorded item (vocalized text + samples). Returns units and analysis data. */
+function enrollItem({ text, mode = 'fusha', samples }) {
+  const x = trimSilence(samples);
+  const plan = phonemize(text, { mode }).phones.filter(p => p.p !== '_');
+  const expected = plan.map(p => p.p);
+  const feats = features(x);
+  const ali = alignPhones(expected, feats);
+  const { f0 } = trackPitch(x);
+  const units = ali.map((a, i) => {
+    const s = a.start * FRAME, e = Math.min(x.length, a.end * FRAME + 320);
+    const seg = x.slice(s, e);
+    const f0seg = f0.subarray(a.start, Math.min(f0.length, a.end));
+    const voiced = Array.from(f0seg).filter(v => v > 0);
+    const f0mean = voiced.length ? voiced.reduce((p, q) => p + q, 0) / voiced.length : 0;
+    const marks = pitchMarks(seg, f0seg);
+    return { p: a.p, cls: classOf(a.p), prev: expected[i - 1] || '#', next: expected[i + 1] || '#', samples: seg, f0mean, marks, durMs: Math.round(seg.length / SR * 1000) };
+  });
+  // formant estimate from the middle of every short /a/ vowel
+  const formants = [];
+  ali.forEach(a => {
+    if ((a.p === 'a' || a.p === 'aː') && a.end - a.start >= 5) {
+      const mid = Math.round((a.start + a.end) / 2) * FRAME - 320; const fr = x.subarray(Math.max(0, mid), Math.max(0, mid) + 640);
+      if (fr.length === 640) { const peak = lpcPeaks(fr).find(f => f >= 500 && f <= 1600); if (peak) formants.push(peak); }
+    }
+  });
+  const f0s = Array.from(f0).filter(v => v > 0);
+  return { units, f0s, formants, alignment: ali, frames: feats.length, phones: expected, durationMs: Math.round(x.length / SR * 1000) };
+}
+
+function median(arr) { if (!arr.length) return 0; const s = [...arr].sort((a, b) => a - b); return s[Math.floor(s.length / 2)]; }
+function quantile(arr, q) { if (!arr.length) return 0; const s = [...arr].sort((a, b) => a - b); return s[Math.min(s.length - 1, Math.floor(q * s.length))]; }
+
+/** Build a voice (profile + unit inventory) from enrolled items. */
+function buildVoice(items, { name = 'صوتي' } = {}) {
+  const units = [], f0s = [], formants = []; let phonesTotal = 0, msTotal = 0;
+  for (const it of items) { units.push(...it.units); f0s.push(...it.f0s); formants.push(...it.formants); phonesTotal += it.phones.length; msTotal += it.durationMs; }
+  const f0Base = median(f0s) || 120;
+  const f0Range = f0s.length ? Math.min(2, Math.max(0.5, (quantile(f0s, 0.85) - quantile(f0s, 0.15)) / f0Base / 0.5)) : 1;
+  let formantScale = 1;
+  if (formants.length) formantScale = Math.min(1.35, Math.max(0.75, median(formants) / A_PEAK_REFERENCE));
+  const rate = msTotal ? Math.min(1.4, Math.max(0.7, (phonesTotal / (msTotal / 1000)) / 8)) : 1;
+  const covered = new Set(units.map(u => u.p));
+  return {
+    profile: { name, f0Base: Math.round(f0Base), f0Range: +f0Range.toFixed(2), formantScale: +formantScale.toFixed(3), rate: +rate.toFixed(2), breathiness: 0.08, unitCount: units.length, phonesCovered: [...covered].sort(), createdAt: new Date().toISOString() },
+    units,
+  };
+}
+
+// ---- serialization (units as base64 Int16) ----
+function serializeVoice(voice) {
+  const units = voice.units.map(u => {
+    const i16 = new Int16Array(u.samples.length); for (let i = 0; i < i16.length; i++) i16[i] = Math.max(-32768, Math.min(32767, Math.round(u.samples[i] * 32767)));
+    const bytes = new Uint8Array(i16.buffer);
+    let bin = ''; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    const b64 = typeof btoa === 'function' ? btoa(bin) : Buffer.from(bin, 'binary').toString('base64');
+    return { p: u.p, cls: u.cls, prev: u.prev, next: u.next, f0mean: Math.round(u.f0mean), marks: u.marks.map(m => [m.pos, m.period, m.voiced ? 1 : 0]), durMs: u.durMs, pcm: b64 };
+  });
+  return JSON.stringify({ format: 'arabic-tts-voice/1', profile: voice.profile, units });
+}
+
+function deserializeVoice(json) {
+  const d = typeof json === 'string' ? JSON.parse(json) : json;
+  const units = (d.units || []).map(u => {
+    const bin = typeof atob === 'function' ? atob(u.pcm) : Buffer.from(u.pcm, 'base64').toString('binary');
+    const bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const i16 = new Int16Array(bytes.buffer); const samples = new Float32Array(i16.length); for (let i = 0; i < i16.length; i++) samples[i] = i16[i] / 32767;
+    return { ...u, samples, marks: u.marks.map(m => ({ pos: m[0], period: m[1], voiced: !!m[2] })) };
+  });
+  return { profile: d.profile, units };
+}
+
+/** Split one long recording of the whole script into items, in script order. */
+function splitRecording(samples, script) {
+  const chunks = splitOnSilence(samples, { minSilenceMs: 350 });
+  if (chunks.length !== script.length) return { ok: false, found: chunks.length, expected: script.length, chunks };
+  return { ok: true, items: script.map((s, i) => ({ ...s, samples: samples.subarray(chunks[i].start, chunks[i].end) })) };
+}
+
+// ---- concat.mjs ----
+// Unit-concatenation synthesis from an enrolled voice, with PSOLA for duration and pitch, and formant fallback.
+
+function unitCost(u, prev, next, targetMs) {
+  let c = 0;
+  c += u.prev === prev ? 0 : (classOf(u.prev) === classOf(prev) ? 0.6 : 1.5);
+  c += u.next === next ? 0 : (classOf(u.next) === classOf(next) ? 0.6 : 1.5);
+  const r = u.durMs / Math.max(20, targetMs); c += Math.abs(Math.log(Math.max(0.2, r))) * 0.8;
+  return c;
+}
+
+/** Synthesize a phone plan with the enrolled voice. Phones without units fall back to the formant synthesizer. */
+function synthesizeConcat(plan, voice) {
+  const byPhone = new Map();
+  for (const u of voice.units) { if (!byPhone.has(u.p)) byPhone.set(u.p, []); byPhone.get(u.p).push(u); }
+  const parts = []; let fallbackCount = 0;
+  for (let i = 0; i < plan.length; i++) {
+    const ph = plan[i];
+    const len = Math.round(ph.dur * SR / 1000);
+    if (ph.p === '_') { parts.push(new Float32Array(len)); continue; }
+    const cands = byPhone.get(ph.p);
+    if (!cands || !cands.length) {
+      fallbackCount++;
+      const seg = synthesizeFormant([{ ...ph, f0: ph.f0 || voice.profile.f0Base }], voice.profile);
+      parts.push(seg); continue;
+    }
+    const prev = plan[i - 1]?.p || '#', next = plan[i + 1]?.p || '#';
+    let best = cands[0], bc = Infinity;
+    for (const u of cands) { const c = unitCost(u, prev, next, ph.dur); if (c < bc) { bc = c; best = u; } }
+    const target = ph.voiced && ph.f0 > 0 ? new Float32Array(Math.ceil(len / FRAME) + 1).fill(ph.f0) : null;
+    const seg = psola(best.samples, best.marks, len, target);
+    // trim edge clicks
+    const ramp = Math.min(40, seg.length >> 2);
+    for (let k = 0; k < ramp; k++) { seg[k] *= k / ramp; seg[seg.length - 1 - k] *= k / ramp; }
+    parts.push(seg);
+  }
+  const out = crossfadeConcat(parts, 64);
+  let m = 0; for (let i = 0; i < out.length; i++) m = Math.max(m, Math.abs(out[i]));
+  if (m > 0) for (let i = 0; i < out.length; i++) out[i] = out[i] / m * 0.7;
+  return { samples: out, fallbackCount, unitCount: plan.filter(p => p.p !== '_').length - fallbackCount };
+}
+
+// ---- index.mjs ----
+// Nataq (ناطق): a self-contained Arabic text-to-voice engine. Fusha and Saudi white dialect, voice enrollment and reuse.
+// No external model or service is used at runtime.
+
+const DEFAULT_PROFILE = { name: 'الصوت الافتراضي', f0Base: 118, f0Range: 1.0, formantScale: 1.0, rate: 1.0, breathiness: 0.08 };
+
+/**
+ * Synthesize vocalized Arabic text.
+ * @param text fully vocalized text (fusha or Saudi convention)
+ * @param opts { mode: 'auto'|'fusha'|'saudi', voice: {profile, units} | null, profile overrides }
+ * @returns { samples: Float32Array (16 kHz), plan, mode, engine: 'formant'|'concat', stats }
+ */
+function synthesize(text, opts = {}) {
+  const mode = !opts.mode || opts.mode === 'auto' ? detectMode(text) : opts.mode;
+  const voice = opts.voice || null;
+  const profile = { ...DEFAULT_PROFILE, ...(voice?.profile || {}), ...(opts.profile || {}) };
+  const plan = phonemize(text, { mode, f0Base: profile.f0Base, f0Range: profile.f0Range, rate: profile.rate });
+  if (voice && voice.units && voice.units.length) {
+    const r = synthesizeConcat(plan.phones, { profile, units: voice.units });
+    return { samples: r.samples, plan, mode, engine: 'concat', stats: { fallbackCount: r.fallbackCount, unitCount: r.unitCount, durationMs: Math.round(r.samples.length / SR * 1000) } };
+  }
+  const samples = synthesizeFormant(plan.phones, profile);
+  return { samples, plan, mode, engine: 'formant', stats: { durationMs: Math.round(samples.length / SR * 1000) } };
+}
+
+
+const SCRIPT = [{"id":1,"text":"بَابَا","mode":"fusha"},{"id":2,"text":"تِينْ","mode":"saudi"},{"id":3,"text":"ثَوْبٌ","mode":"fusha"},{"id":4,"text":"جَمِيلٌ","mode":"fusha"},{"id":5,"text":"حَالٌ","mode":"fusha"},{"id":6,"text":"خُبْزٌ","mode":"fusha"},{"id":7,"text":"دَارٌ","mode":"fusha"},{"id":8,"text":"ذَهَبَ","mode":"fusha"},{"id":9,"text":"رَجُلٌ","mode":"fusha"},{"id":10,"text":"زَيْتٌ","mode":"fusha"},{"id":11,"text":"سَلَامٌ","mode":"fusha"},{"id":12,"text":"شَمْسٌ","mode":"fusha"},{"id":13,"text":"صَبَاحٌ","mode":"fusha"},{"id":14,"text":"ضَيْفٌ","mode":"fusha"},{"id":15,"text":"طَالِبٌ","mode":"fusha"},{"id":16,"text":"ظُهْرٌ","mode":"fusha"},{"id":17,"text":"عَيْنٌ","mode":"fusha"},{"id":18,"text":"غَدًا","mode":"fusha"},{"id":19,"text":"فُولٌ","mode":"fusha"},{"id":20,"text":"قَلَمٌ","mode":"fusha"},{"id":21,"text":"كِتَابٌ","mode":"fusha"},{"id":22,"text":"لَيْلٌ","mode":"fusha"},{"id":23,"text":"مَاءٌ","mode":"fusha"},{"id":24,"text":"نُورٌ","mode":"fusha"},{"id":25,"text":"هُنَا","mode":"fusha"},{"id":26,"text":"وَلَدٌ","mode":"fusha"},{"id":27,"text":"يَدٌ","mode":"fusha"},{"id":28,"text":"أَكَلَ","mode":"fusha"},{"id":29,"text":"سَأَلَ","mode":"fusha"},{"id":30,"text":"مُعَلِّمٌ","mode":"fusha"},{"id":31,"text":"مُحَمَّدٌ","mode":"fusha"},{"id":32,"text":"الشَّمْسُ","mode":"fusha"},{"id":33,"text":"الْقَمَرُ","mode":"fusha"},{"id":34,"text":"مَدْرَسَةٌ","mode":"fusha"},{"id":35,"text":"كَبِيرٌ","mode":"fusha"},{"id":36,"text":"صَغِيرٌ","mode":"fusha"},{"id":37,"text":"يَكْتُبُ","mode":"fusha"},{"id":38,"text":"يَقُولُ","mode":"fusha"},{"id":39,"text":"بُكْرَة","mode":"saudi"},{"id":40,"text":"بَيْتْ","mode":"saudi"},{"id":41,"text":"يَوْمْ","mode":"saudi"},{"id":42,"text":"وِشْ","mode":"saudi"},{"id":43,"text":"لَيْشْ","mode":"saudi"},{"id":44,"text":"السُّوقْ","mode":"saudi"},{"id":45,"text":"الْحِينْ","mode":"saudi"},{"id":46,"text":"أَبْغَى","mode":"saudi"},{"id":47,"text":"خَلَاصْ","mode":"saudi"},{"id":48,"text":"طَيِّبْ","mode":"saudi"}];
+
+const $ = (id) => document.getElementById(id);
+const els = { input: $('input'), speak: $('speak'), stop: $('stop'), mode: $('mode'), voiceSel: $('voiceSel'), f0: $('f0'), rate: $('rate'), status: $('status'), wave: $('wave'),
+  mDur: $('mDur'), mPhones: $('mPhones'), mEngine: $('mEngine'), mMode: $('mMode'), phones: $('phones'), chips: $('chips'), scriptGrid: $('scriptGrid'), recFiles: $('recFiles'), voiceName: $('voiceName'),
+  enroll: $('enroll'), enrollStatus: $('enrollStatus'), profileMeter: $('profileMeter'), exportVoice: $('exportVoice'), importVoice: $('importVoice') };
+const voices = new Map();
+let audioCtx = null, playing = null, downloads = null;
+
+const EXAMPLES = [
+  ['ذَهَبَ الطَّالِبُ إِلَى الْمَدْرَسَةِ صَبَاحًا، ثُمَّ رَجَعَ. هَلْ رَأَيْتَهُ؟', 'fusha'],
+  ['إِنَّ الْمُعَلِّمِينَ مُخْلِصُونَ فِي عَمَلِهِمْ.', 'fusha'],
+  ['السَّلَامُ عَلَيْكُمْ وَرَحْمَةُ اللَّهِ.', 'fusha'],
+  ['وِشْ رَايِكْ نْرُوحْ السُّوقْ بُكْرَة؟', 'saudi'],
+  ['بَسْ خَلَاصْ، لَا تِزْعَلْ، الطَّقْسْ حَارْ مَرَّة الْيَوْمْ.', 'saudi'],
+  ['كَيْفْ حَالِكْ يَا أَبُو خَالِدْ؟', 'saudi'],
+];
+for (const [t, m] of EXAMPLES) { const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = t; b.addEventListener('click', () => { els.input.value = t; els.mode.value = m; }); els.chips.appendChild(b); }
+for (const it of SCRIPT) { const d = document.createElement('div'); d.innerHTML = `<span>${String(it.id).padStart(2, '0')}${it.mode === 'saudi' ? ' س' : ''}</span>`; d.prepend(document.createTextNode(it.text)); els.scriptGrid.appendChild(d); }
+
+function drawWave(x) {
+  const c = els.wave, g = c.getContext('2d'); g.clearRect(0, 0, c.width, c.height);
+  g.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#e4b85a'; g.lineWidth = 1; g.beginPath();
+  const step = Math.max(1, Math.floor(x.length / c.width));
+  for (let i = 0; i < c.width; i++) { let mx = 0; for (let k = i * step; k < (i + 1) * step && k < x.length; k++) mx = Math.max(mx, Math.abs(x[k])); g.moveTo(i, c.height / 2 - mx * c.height / 2); g.lineTo(i, c.height / 2 + mx * c.height / 2); }
+  g.stroke();
+}
+
+function play(samples) {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  stopPlayback();
+  const buf = audioCtx.createBuffer(1, samples.length, SR);
+  buf.copyToChannel(samples instanceof Float32Array ? samples : Float32Array.from(samples), 0);
+  const src = audioCtx.createBufferSource(); src.buffer = buf; src.connect(audioCtx.destination); src.start(); playing = src;
+  src.onended = () => { if (playing === src) playing = null; };
+}
+function stopPlayback() { if (playing) { try { playing.stop(); } catch {} playing = null; } }
+els.stop.addEventListener('click', stopPlayback);
+
+els.speak.addEventListener('click', () => {
+  const text = els.input.value.trim(); if (!text) return;
+  els.speak.disabled = true; els.status.textContent = 'يركّب…'; els.status.className = 'status';
+  setTimeout(() => {
+    try {
+      const voice = voices.get(els.voiceSel.value) || null;
+      const profile = { f0Base: Number(els.f0.value) || 118, rate: Number(els.rate.value) || 1 };
+      const r = synthesize(text, { mode: els.mode.value, voice, profile });
+      drawWave(r.samples);
+      els.mDur.textContent = (r.stats.durationMs / 1000).toFixed(2); els.mPhones.textContent = r.plan.phones.filter(p => p.p !== '_').length;
+      els.mEngine.textContent = r.engine === 'concat' ? `وصل (${r.stats.unitCount} وحدة${r.stats.fallbackCount ? `، ${r.stats.fallbackCount} مركّبة` : ''})` : 'مركّب';
+      els.mMode.textContent = r.mode === 'saudi' ? 'سعودية بيضاء' : 'فصحى';
+      els.phones.textContent = r.plan.phones.map(p => p.p === '_' ? `[${p.dur}ms]` : p.p + (p.geminate ? 'ː' : '')).join(' ');
+      play(r.samples);
+      els.status.textContent = '';
+    } catch (e) { els.status.textContent = 'تعذّر التركيب: ' + (e.message || e); els.status.className = 'status bad'; }
+    els.speak.disabled = false;
+  }, 20);
+});
+
+function readFileBuf(file) { return new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(new Uint8Array(fr.result)); fr.onerror = rej; fr.readAsArrayBuffer(file); }); }
+
+els.enroll.addEventListener('click', async () => {
+  const files = Array.from(els.recFiles.files || []);
+  if (!files.length) { els.enrollStatus.textContent = 'ارفع ملفات التسجيل أولًا.'; els.enrollStatus.className = 'status warn'; return; }
+  els.enroll.disabled = true; els.enrollStatus.textContent = 'يحلّل التسجيلات…'; els.enrollStatus.className = 'status';
+  try {
+    let items = [];
+    if (files.length === 1 && !/^\d+/.test(files[0].name)) {
+      const { samples } = decodeWav(await readFileBuf(files[0]));
+      const r = splitRecording(samples, SCRIPT);
+      if (!r.ok) throw new Error(`وُجد ${r.found} مقطعًا والمتوقع ${r.expected}. سجّل الكلمات بملفات منفصلة أو اترك صمتًا أوضح بينها.`);
+      items = r.items;
+    } else {
+      for (const f of files) { const id = parseInt(f.name, 10); const it = SCRIPT.find(s => s.id === id); if (!it) continue; items.push({ ...it, samples: decodeWav(await readFileBuf(f)).samples }); }
+      if (!items.length) throw new Error('لم يُعرف أيّ ملف. سمِّ الملفات بأرقام الكلمات: 01.wav …');
+    }
+    const enrolled = items.map(it => enrollItem(it));
+    const voice = buildVoice(enrolled, { name: els.voiceName.value || 'صوتي' });
+    const key = 'v' + Date.now(); voices.set(key, voice);
+    const o = document.createElement('option'); o.value = key; o.textContent = voice.profile.name; els.voiceSel.appendChild(o); els.voiceSel.value = key;
+    els.f0.value = voice.profile.f0Base; els.rate.value = voice.profile.rate;
+    showProfile(voice.profile);
+    els.enrollStatus.textContent = `بُني الصوت من ${items.length} تسجيلًا. اضغط «انطق» لسماعه.`; els.enrollStatus.className = 'status ok';
+    els.exportVoice.hidden = !downloads; els.exportVoice.dataset.key = key;
+  } catch (e) { els.enrollStatus.textContent = e.message || String(e); els.enrollStatus.className = 'status bad'; }
+  els.enroll.disabled = false;
+});
+
+function showProfile(p) {
+  els.profileMeter.hidden = false;
+  $('pF0').textContent = p.f0Base; $('pRange').textContent = p.f0Range; $('pScale').textContent = p.formantScale; $('pRate').textContent = p.rate; $('pUnits').textContent = p.unitCount; $('pCov').textContent = p.phonesCovered.length;
+}
+
+els.exportVoice.addEventListener('click', async () => {
+  const voice = voices.get(els.exportVoice.dataset.key); if (!voice || !downloads) return;
+  try { await downloads.save({ filename: (voice.profile.name || 'voice') + '.json', data: serializeVoice(voice) }); els.enrollStatus.textContent = 'حُفظ.'; }
+  catch (e) { els.enrollStatus.textContent = e.code === 'cancelled' ? '' : 'لم يُحفظ الملف.'; }
+});
+
+els.importVoice.addEventListener('change', async () => {
+  const f = els.importVoice.files && els.importVoice.files[0]; if (!f) return;
+  try {
+    const text = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsText(f); });
+    const voice = deserializeVoice(text);
+    const key = 'i' + Date.now(); voices.set(key, voice);
+    const o = document.createElement('option'); o.value = key; o.textContent = voice.profile.name || f.name; els.voiceSel.appendChild(o); els.voiceSel.value = key;
+    els.f0.value = voice.profile.f0Base; els.rate.value = voice.profile.rate; showProfile(voice.profile);
+    els.enrollStatus.textContent = `استُورد الصوت «${voice.profile.name}».`; els.enrollStatus.className = 'status ok';
+  } catch (e) { els.enrollStatus.textContent = 'ملف صوت غير صالح.'; els.enrollStatus.className = 'status bad'; }
+});
+
+// initial render: plan of the example without audio (audio needs a click)
+(() => { try { const r = synthesize(els.input.value, { mode: 'fusha' }); drawWave(r.samples); els.mDur.textContent = (r.stats.durationMs / 1000).toFixed(2); els.mPhones.textContent = r.plan.phones.filter(p => p.p !== '_').length; els.mEngine.textContent = 'مركّب'; els.mMode.textContent = 'فصحى'; els.phones.textContent = r.plan.phones.map(p => p.p === '_' ? `[${p.dur}ms]` : p.p + (p.geminate ? 'ː' : '')).join(' '); } catch (e) { els.status.textContent = 'خطأ في المحرّك: ' + e.message; } })();
+(async () => { try { downloads = window.claude?.use ? await window.claude.use('downloads') : null; } catch { downloads = null; } })();
+</script>
