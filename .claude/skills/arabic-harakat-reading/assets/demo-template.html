@@ -145,6 +145,16 @@ summary { cursor: pointer; color: var(--ink); }
     </div>
     <p class="tashkeel" id="tts" style="font-size:1.4rem;line-height:1.9"></p>
     <div class="status" id="prosodyLine"></div>
+    <h2>الصوت <small>التوليد عبر حسابك في ElevenLabs، والمعاينة بصوت المتصفح</small></h2>
+    <div class="row">
+      <button class="primary" id="speak">ولّد الصوت في ElevenLabs</button>
+      <button class="ghost" id="preview">معاينة سريعة بصوت المتصفح</button>
+      <label class="opt">النموذج الصوتي
+        <select id="ttsModel"><option value="eleven_v4">Eleven v4</option><option value="eleven_v3">Eleven v3</option><option value="eleven_multilingual_v2">Multilingual v2</option><option value="eleven_flash_v2_5">Flash v2.5</option></select>
+      </label>
+    </div>
+    <div class="status" id="speakStatus"></div>
+    <div id="speakLinks" class="row"></div>
     <h2 id="tableTitle">الإعراب</h2>
     <div class="tablewrap">
       <table id="table">
@@ -215,11 +225,34 @@ const els = { input: $('input'), run: $('run'), stop: $('stop'), status: $('stat
   readingStatus: $('readingStatus'), tbody: $('table').querySelector('tbody'), notes: $('notes'), notesBox: $('notesBox'), pause: $('pause'),
   scheme: $('scheme'), resultTag: $('resultTag'), copy: $('copyTashkeel'), copyStatus: $('copyStatus'), chips: $('chips'),
   mode: $('mode'), family: $('family'), tts: $('tts'), copyTts: $('copyTts'), ttsStatus: $('ttsStatus'), prosodyLine: $('prosodyLine'), tableTitle: $('tableTitle'), testSet: $('testSet'),
+  speak: $('speak'), preview: $('preview'), ttsModel: $('ttsModel'), speakStatus: $('speakStatus'), speakLinks: $('speakLinks'),
   runTests: $('runTests'), score: $('score'), testStatus: $('testStatus'), testTbody: $('testTable').querySelector('tbody'), testWrap: $('testTableWrap') };
 
 let current = EXAMPLE;
 let sample = null;
+let mcp = null;
 let ctl = null;
+// Dialect comes from the voice: library voices whose accent label matches each mode.
+const VOICES = { fusha: { id: 'rPNcQ53R703tTmtue1AT', name: 'Mazen Lawand (فصحى)' }, saudi: { id: 'yXEnnEln9armDCyhkXcA', name: 'Jeddawi Echo (سعودي)' } };
+const MCP_SERVER = 'ElevenLabs';
+const MCP_COPY = {
+  server_not_connected: 'أضف ElevenLabs من إعدادات claude.ai ← Connectors ثم أعد المحاولة.',
+  needs_reauth: 'أعد ربط ElevenLabs من إعدادات claude.ai ← Connectors.',
+  not_in_manifest: 'لم يُسمح لهذه الصفحة باستخدام ElevenLabs. اسمح لها من قائمة الصلاحيات.',
+  approval_required: 'يحتاج التوليد إلى موافقتك؛ اضغط الزرّ مرة أخرى ووافق.',
+  blocked_by_policy: 'سياسة المؤسسة تمنع هذه الأداة.',
+  tool_error: 'رفض ElevenLabs الطلب. تأكد أن الصوت مضاف إلى مكتبتك وأن الرصيد كافٍ.',
+  server_unavailable: 'ElevenLabs لا يستجيب الآن. حاول بعد قليل.',
+  cancelled: '',
+};
+const mcpCopy = (code) => MCP_COPY[code] ?? 'تعذّر الاتصال بـ ElevenLabs. حاول مرة أخرى.';
+function collectUrls(obj, out = new Set(), depth = 0) {
+  if (!obj || depth > 6) return out;
+  if (typeof obj === 'string') { if (/^https?:\/\//.test(obj)) out.add(obj); return out; }
+  if (Array.isArray(obj)) { obj.forEach(x => collectUrls(x, out, depth + 1)); return out; }
+  if (typeof obj === 'object') { for (const [k, v] of Object.entries(obj)) if (/url|href|audio|src/i.test(k) || typeof v === 'object') collectUrls(v, out, depth + 1); }
+  return out;
+}
 
 const ERROR_COPY = {
   not_granted: 'لم يُسمح لهذه الصفحة باستخدام Claude. اسمح لها من قائمة الصلاحيات ثم أعد المحاولة.',
@@ -273,6 +306,7 @@ function rerender() { render(current, els.resultTag.textContent); }
 els.pause.addEventListener('change', rerender);
 els.scheme.addEventListener('change', rerender);
 els.family.addEventListener('change', rerender);
+els.ttsModel.addEventListener('change', () => { els.family.value = /^eleven_v[34]/.test(els.ttsModel.value) ? 'v3' : 'v2'; rerender(); });
 
 // Example chips from the test set
 for (const [set, mode] of [[TESTSET, 'fusha'], [TESTSET_SAUDI, 'saudi']]) {
@@ -296,6 +330,52 @@ els.copyTts.addEventListener('click', async () => {
   try { await navigator.clipboard.writeText(text); els.ttsStatus.textContent = 'نُسخ.'; }
   catch { const range = document.createRange(); range.selectNodeContents(els.tts); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(range); els.ttsStatus.textContent = 'حُدّد النصّ؛ انسخه يدويًا.'; }
   setTimeout(() => { els.ttsStatus.textContent = ''; }, 2500);
+});
+
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+els.speak.addEventListener('click', async () => {
+  const text = els.tts.textContent.trim();
+  if (!text) return;
+  if (!mcp) { els.speakStatus.textContent = 'التوليد يحتاج فتح الصفحة في claude.ai مع ربط ElevenLabs. استعمل المعاينة بصوت المتصفح.'; els.speakStatus.className = 'status warn'; return; }
+  const mode = current.mode === 'saudi' ? 'saudi' : 'fusha';
+  const voice = VOICES[mode];
+  els.speak.disabled = true; els.speakLinks.replaceChildren();
+  els.speakStatus.textContent = `يولّد بصوت ${voice.name} على ${els.ttsModel.value}… (يُخصم من رصيدك في ElevenLabs)`; els.speakStatus.className = 'status';
+  try {
+    const started = await mcp.callTool(MCP_SERVER, 'creative_generate_speech', {
+      prompt: text, model_id: els.ttsModel.value, voice_id: voice.id, generations_count: 1,
+      context: 'Arabic harakat reader demo: speak the vocalized text with a dialect-matched voice',
+    });
+    const run = started.payload || {};
+    const flowUrl = run.flow_url || run.url;
+    if (flowUrl) { const a = document.createElement('a'); a.href = flowUrl; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'افتح التوليد في ElevenLabs'; els.speakLinks.appendChild(a); }
+    let status = run; let tries = 0;
+    while (!status.all_completed && !status.has_failures && tries < 30 && run.flow_id && run.session_ids) {
+      await sleep(Math.max(3000, (status.poll_after_seconds || 4) * 1000));
+      const r = await mcp.callTool(MCP_SERVER, 'creative_get_flow_run_status', { flow_id: run.flow_id, session_ids: run.session_ids, context: 'poll speech generation' }, { cache: false });
+      status = r.payload || {}; tries++;
+      els.speakStatus.textContent = `جارٍ التوليد… (${tries})`;
+    }
+    if (status.has_failures) { els.speakStatus.textContent = 'فشل التوليد في ElevenLabs. افتح الرابط لمعرفة السبب.'; els.speakStatus.className = 'status bad'; }
+    else if (status.all_completed) {
+      els.speakStatus.textContent = 'اكتمل التوليد. الصوت يُشغَّل من صفحة ElevenLabs (المتصفح يمنع تشغيله داخل هذه الصفحة).'; els.speakStatus.className = 'status ok';
+      for (const u of collectUrls(status.generations)) { if (u === flowUrl) continue; const a = document.createElement('a'); a.href = u; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'ملف الصوت'; els.speakLinks.appendChild(a); }
+    } else { els.speakStatus.textContent = 'ما زال التوليد جاريًا؛ افتح الرابط لمتابعته.'; els.speakStatus.className = 'status warn'; }
+  } catch (e) {
+    els.speakStatus.textContent = mcpCopy(e.code); els.speakStatus.className = 'status ' + (e.code === 'cancelled' ? '' : 'bad');
+  } finally { els.speak.disabled = false; }
+});
+
+els.preview.addEventListener('click', () => {
+  if (!('speechSynthesis' in window)) { els.speakStatus.textContent = 'المتصفح لا يدعم النطق.'; els.speakStatus.className = 'status warn'; return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(els.tashkeel.textContent);
+  const ar = speechSynthesis.getVoices().filter(v => /^ar/i.test(v.lang));
+  const pick = ar.find(v => /SA/i.test(v.lang)) || ar[0];
+  if (pick) u.voice = pick; u.lang = pick ? pick.lang : 'ar-SA'; u.rate = 0.95;
+  els.speakStatus.textContent = pick ? `معاينة بصوت المتصفح: ${pick.name}. هذا ليس ElevenLabs؛ غرضه التحقق من الحركات والوقفات فقط.` : 'لا يوجد صوت عربي مثبّت في هذا المتصفح؛ ستُقرأ بصوت افتراضي.';
+  els.speakStatus.className = 'status';
+  speechSynthesis.speak(u);
 });
 
 function setBusy(busy, msg) {
@@ -381,6 +461,7 @@ els.runTests.addEventListener('click', async () => {
 render(EXAMPLE, 'مثال محسوب مسبقًا');
 (async () => {
   try { sample = window.claude?.use ? await window.claude.use('sample') : null; } catch { sample = null; }
+  try { mcp = window.claude?.use ? await window.claude.use('mcp') : null; } catch { mcp = null; }
   if (!sample) { els.status.textContent = 'النموذج غير متاح في هذا العرض؛ افتح الصفحة في claude.ai لتجربة التشكيل. القراءة الصوتية تعمل بلا نموذج.'; els.status.className = 'status warn'; }
 })();
 </script>

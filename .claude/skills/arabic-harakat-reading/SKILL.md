@@ -7,13 +7,14 @@ description: إجادة قراءة الحركات والإعراب في العر
 
 هذه المهارة تجعل النموذج يقرأ العربية قراءةً صحيحة بالفصحى أو بالسعودية البيضاء: يضع كلّ حركة في موضعها، ويختار علامة الإعراب الصحيحة بسببها النحوي (أو يسكّن الآخر في الدارجة)، ويحوّل الترقيم إلى وقفات ونغمة، ثم يحوّل النصّ المشكّل إلى نطق صوتي منضبط ونصّ جاهز لمحرّك الكلام. الصورة الكاملة لمحاكاة ElevenLabs في `docs/arabic-tts-architecture.md` في جذر المستودع.
 
-المهارة ثلاث طبقات:
+المهارة أربع طبقات:
 
 | الطبقة | ما تفعله | أين تعيش |
 |---|---|---|
 | 1. التشكيل والإعراب | نموذج اللغة يطبّق قواعد النحو والصرف ويُخرج النصّ مشكّلًا تشكيلًا كاملًا مع إعراب كلّ كلمة؛ وفي الوضع السعودي يشكّل كما يُنطق ويذكر وظيفة الكلمة | `assets/prompt.md` و`assets/prompt-saudi.md` + `references/nahw.md` + `references/harakat.md` + `references/saudi-white.md` |
 | 2. القراءة الصوتية والوقفات | محرّك قواعد حتميّ (لا يحتاج نموذجًا) يحوّل النصّ المشكّل إلى نطق بالحروف اللاتينية أو IPA مع أحكام الوقف والوصل والإدغام وأصوات اللهجة، ويحوّل الترقيم إلى وقفات مقدَّرة ونوع الجملة، ويُخرج نصّ ElevenLabs حسب عائلة النموذج | `scripts/reading.mjs` |
-| 3. التحقق | مجموعتا اختبار ذهبيتان (فصحى وسعودية) ومقياس دقّة على مستوى الكلمة | `assets/testset.json` + `assets/testset-saudi.json` + `scripts/score.mjs` + `scripts/reading.test.mjs` |
+| 3. الصوت | خطّ أنابيب كامل: نصّ → تشكيل (Claude) → قراءة ووقفات (المحرّك) → صوت ElevenLabs بصوت تطابق لهجته الوضع | `scripts/tts-pipeline.mjs` + `package.json` |
+| 4. التحقق | مجموعتا اختبار ذهبيتان (فصحى وسعودية) ومقياس دقّة على مستوى الكلمة | `assets/testset.json` + `assets/testset-saudi.json` + `scripts/score.mjs` + `scripts/reading.test.mjs` |
 
 ## متى تستعملها
 
@@ -69,7 +70,22 @@ node .claude/skills/arabic-harakat-reading/scripts/reading.mjs --ipa --no-pause 
 
 برمجيًا: `prosody(text)` يعيد مقاطع الجملة مع نوعها (خبرية، استفهامية، تعجبية) ومدّة الوقفة بالمللي ثانية عند كلّ علامة ترقيم، و`toTtsText(text, {family})` يعيد النصّ الجاهز لـ ElevenLabs: `v3` لـ eleven_v4/eleven_v3 (ترقيم فقط، الحذف «…» للوقفة الطويلة) و`v2` لـ multilingual_v2/flash (وسوم `<break>` للوقفات المتوسطة والطويلة). الإرسال إلى ElevenLabs: `language_code=ar`، والصوت يحدّد اللهجة (وسم `ar-saudi` للبيضاء و`ar-modern-standard` للفصحى).
 
-### 6. تحقّق
+### 6. حوّل إلى صوت (المخرج النهائي)
+
+```bash
+cd .claude/skills/arabic-harakat-reading && npm install
+export ANTHROPIC_API_KEY=...   # أو ant auth login
+export ELEVENLABS_API_KEY=...
+node scripts/tts-pipeline.mjs --mode auto --out out.mp3 "وش رايك نروح السوق بكرة؟ بس خلاص، لا تزعل."
+node scripts/tts-pipeline.mjs --mode fusha --voice VOICE_ID --model eleven_v4 "ذهب الطالب إلى المدرسة صباحا."
+node scripts/tts-pipeline.mjs --vocalized "نَصٌّ مُشَكَّلٌ مُسْبَقًا"
+```
+
+السكربت يكشف الوضع (أو يأخذه من `--mode`)، ويشكّل النصّ عبر Claude بتعليمات الوضع، ثمّ يقرؤه بالمحرّك ويقطّع ترقيمه، ثمّ يرسله إلى ElevenLabs بـ `language_code=ar` وإيقاف التطبيع (الأرقام مكتوبة كلمات أصلًا) وبصوتٍ لهجته توافق الوضع: الافتراضي صوت فصيح لـ `fusha` وصوت سعودي لـ `saudi`، ويُغيَّر بـ `--voice`. أصوات المكتبة تُضاف إلى مساحة العمل في ElevenLabs قبل استخدام معرّفاتها عبر الواجهة البرمجية. يطبع التشكيل والنطق ومُدد الوقفات ويكتب ملف MP3.
+
+في صفحة التجربة: زرّ «ولّد الصوت في ElevenLabs» يستدعي موصّل ElevenLabs من حساب المشاهد بالصوت المطابق للوضع، وزرّ المعاينة يقرأ بصوت المتصفح للتحقق السريع من الحركات والوقفات.
+
+### 7. تحقّق
 
 ```bash
 node --test .claude/skills/arabic-harakat-reading/scripts/reading.test.mjs

@@ -1,0 +1,20 @@
+{
+  "name": "arabic-harakat-reading",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Arabic tashkeel, i'rab, phonetic reading and text-to-voice through ElevenLabs (fusha and Saudi white dialect)",
+  "scripts": {
+    "test": "node --test scripts/reading.test.mjs",
+    "build": "node scripts/build-artifact.mjs demo.html",
+    "tts": "node scripts/tts-pipeline.mjs",
+    "score": "node scripts/score.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.135.0",
+    "@elevenlabs/elevenlabs-js": "^2.74.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
