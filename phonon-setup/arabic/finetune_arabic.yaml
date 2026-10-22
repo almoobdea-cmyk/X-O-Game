@@ -1,0 +1,45 @@
+# Stage 1: Arabic 24-layer teacher, fine-tuned from Kyutai's English teacher with a fresh
+# Arabic tokenizer. Based on pocket-tts/training/configs/finetune_language.yaml, which on
+# Czech reached the scratch run's WER ~2.5x sooner. Copy this file into the pocket-tts
+# checkout and run:  uv run training/train.py finetune_arabic.yaml
+model_config: pocket_tts/config/english_2026-04_24l.yaml
+model_overrides:
+  # From: uv run -m training.scripts.train_tokenizer data/sada/tokenizer data/sada/train.jsonl --character-coverage 1.0
+  # Vocab 4000 = lookup_table.n_bins, so n_bins needs no override.
+  flow_lm.lookup_table.tokenizer_path: data/sada/tokenizer.model
+start_from_pretrained: true
+reset_text_embedding: true   # the Arabic tokenizer is not the one these weights were trained with
+
+data:
+  train_jsonl: data/sada/train_aligned.jsonl
+  valid_jsonl: data/sada/valid_aligned.jsonl
+  max_duration_sec: 30.0
+  max_voice_prompt_sec: 5.0
+
+flow:
+  type: lsd
+  kwargs: {}
+
+flow_batch_multiplier: 4
+eos_loss_weight: 0.1
+text_dropout: 0.2
+voice_dropout: 0.2
+
+optim:
+  lr: 2e-4          # keep: the text embedding starts random, the backbone must move with it
+  schedule: constant
+  warmup_steps: 1000
+
+run_dir: runs/arabic_sada_teacher
+# Effective batch = batch_size x GPUs x grad_accum_steps must reach 64.
+# 1 x H100-80GB: 64 x 1. 1 x 24 GB consumer GPU: batch_size 16, grad_accum_steps 4.
+batch_size: 64
+grad_accum_steps: 1
+max_steps: 250000   # WER plateaus by ~15k steps; the rest buys acoustic quality
+stats_ema_steps: 1000
+ema_decay: 0.999
+log_freq: 50
+valid_freq: 2500
+ckpt_freq: 2500
+num_ckpt_keep: 3
+sample_cfg_coef: 2.0

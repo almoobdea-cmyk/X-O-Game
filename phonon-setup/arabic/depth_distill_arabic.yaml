@@ -1,0 +1,38 @@
+# Stage 2: distil the Arabic 24-layer teacher into the 6-layer student that Phonon ships
+# (same shape as Phonon 31m / Pocket TTS: d_model 1024, 6 layers). Based on
+# pocket-tts/training/configs/depth_distill.yaml.  uv run training/train.py depth_distill_arabic.yaml
+model_config: pocket_tts/config/english.yaml   # 6-layer student architecture
+model_overrides:
+  flow_lm.lookup_table.tokenizer_path: data/sada/tokenizer.model
+start_from_pretrained: false
+distill_cfg_coef: 2.0            # bakes classifier-free guidance into the student
+distill_teacher_config: pocket_tts/config/english_2026-04_24l.yaml
+distill_teacher_overrides:
+  flow_lm.lookup_table.tokenizer_path: data/sada/tokenizer.model
+distill_teacher_weights: runs/arabic_sada_teacher/checkpoint_00250000.pt   # pick your best teacher step
+
+data:
+  train_jsonl: data/sada/train_aligned.jsonl
+  valid_jsonl: data/sada/valid_aligned.jsonl
+
+flow:
+  type: lsd
+  kwargs: {}
+
+text_dropout: 0.0
+voice_dropout: 0.0
+
+optim:
+  lr: 4e-4
+  schedule: cosine
+  warmup_steps: 1000
+
+run_dir: runs/arabic_sada_student
+batch_size: 64
+grad_accum_steps: 1
+max_steps: 200000
+ema_decay: 0.9999
+log_freq: 50
+valid_freq: 2500
+ckpt_freq: 2500
+num_ckpt_keep: 3
