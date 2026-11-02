@@ -212,6 +212,38 @@ window.W = (() => {
     };
   }
 
+  /* ---------- bakes: static layers rendered once to PNG data urls, shared by all scenes ---------- */
+  const BM = {}; let bakeJob = null;
+  async function rasterSVG(buildFn, box, scale) {
+    const tmp = document.createElementNS(NS, 'svg');
+    tmp.setAttribute('xmlns', NS); tmp.setAttribute('viewBox', `${box.x} ${box.y} ${box.w} ${box.h}`);
+    const w = Math.round(box.w * scale), h = Math.round(box.h * scale);
+    tmp.setAttribute('width', w); tmp.setAttribute('height', h);
+    defs(tmp, 'bake'); const g = el('g', {}, tmp); buildFn(g);
+    const xml = new XMLSerializer().serializeToString(tmp);
+    const img = new Image();
+    await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml); });
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h; cv.getContext('2d').drawImage(img, 0, 0, w, h);
+    return { url: cv.toDataURL('image/png'), box };
+  }
+  function nearCorner(g, id, R, x, y) { for (let k = 0; k < 9; k++) el('ellipse', { cx: x + (R() - .5) * 300, cy: y + (R() - .5) * 380, rx: 80 + R() * 70, ry: 36 + R() * 26, fill: ['#0f3a24', '#1b5a36', '#143f2a'][k % 3], opacity: 0.92, transform: `rotate(${R() * 180} ${x} ${y})` }, g); }
+  function bakeAll() {
+    if (!bakeJob) bakeJob = (async () => {
+      const R = rng(1234);
+      BM.back = await rasterSVG(g => {
+        el('rect', { x: -800, y: -1500, width: 2700, height: 5000, fill: 'url(#bake-sky)' }, g);
+        const f = el('g', { filter: 'url(#bake-bFar)' }, g); farTrees(f, 'bake', R);
+        el('rect', { x: -800, y: -1500, width: 2700, height: 5000, fill: '#2f6b3f', opacity: 0.35 }, g);
+        rays(g, 'bake', R);
+        const m = el('g', { filter: 'url(#bake-bMid)' }, g); midTrees(m, 'bake', R);
+      }, { x: -300, y: -450, w: 1700, h: 2900 }, 0.42);
+      BM.tree = await rasterSVG(g => { el('ellipse', { cx: 560, cy: 930, rx: 520, ry: 640, fill: 'url(#bake-glow)' }, g); tree(g, 'bake', R); }, { x: -220, y: -320, w: 1440, h: 2760 }, 1.2);
+      BM.nearA = await rasterSVG(g => { const n = el('g', { filter: 'url(#bake-bNear)' }, g); nearCorner(n, 'bake', R, 0, 320); }, { x: -380, y: -120, w: 760, h: 900 }, 0.4);
+      BM.nearB = await rasterSVG(g => { const n = el('g', { filter: 'url(#bake-bNear)' }, g); nearCorner(n, 'bake', R, 1080, 1620); }, { x: 700, y: 1180, w: 760, h: 900 }, 0.4);
+    })();
+    return bakeJob;
+  }
+
   /* ---------- world ---------- */
   function build(S, id) {
     const root = S.mount(`
@@ -229,14 +261,8 @@ window.W = (() => {
     const svg = root.querySelector('svg.world');
     defs(svg, id);
     const R = rng(1234);
-    el('rect', { x: -800, y: -1500, width: 2700, height: 5000, fill: `url(#${id}-sky)` }, svg);
-    const far = el('g', { filter: `url(#${id}-bFar)` }, svg); farTrees(far, id, R);
-    el('rect', { x: -800, y: -1500, width: 2700, height: 5000, fill: '#2f6b3f', opacity: 0.35 }, svg);
-    const rayG = el('g', {}, svg); const rayL = rays(rayG, id, R);
-    const mid = el('g', { filter: `url(#${id}-bMid)` }, svg); midTrees(mid, id, R);
-    const glowG = el('g', {}, svg); const glow = el('ellipse', { cx: 540, cy: 900, rx: 520, ry: 640, fill: `url(#${id}-glow)` }, glowG);
-    const subj = el('g', {}, svg);
-    const T = tree(subj, id, R);
+    const bgG = el('g', {}, svg); const backIm = el('image', { preserveAspectRatio: 'none' }, bgG);
+    const subj = el('g', {}, svg); const treeIm = el('image', { preserveAspectRatio: 'none' }, subj);
     const NX = 560, NY = 1010;
     const N = nest(subj, id, R, NX, NY);
     const eggsG = el('g', {}, subj); subj.insertBefore(eggsG, N.front);
@@ -248,25 +274,25 @@ window.W = (() => {
     const birdsG = el('g', {}, subj);
     const B = { host: bird(birdsG, id, 'host'), cuckoo: bird(birdsG, id, 'cuckoo') };
     B.host.set(440, 975, 1); B.host.g.setAttribute('display', 'none'); B.cuckoo.g.setAttribute('display', 'none');
-    const near = el('g', { filter: `url(#${id}-bNear)` }, svg); nearLeaves(near, id, R);
-    const dustG = el('g', {}, svg); const D = dust(dustG, R);
+    const nearG = el('g', {}, svg); const nearA = el('image', { preserveAspectRatio: 'none' }, nearG), nearB = el('image', { preserveAspectRatio: 'none' }, nearG);
+    const dustG = el('g', {}, svg); const Rd = rng(99); const D = [];
+    for (let i = 0; i < 240; i++) { const d = { x: Rd() * 1080, y: Rd() * 1920, r: 1.2 + Rd() * 2.6, sp: 22 + Rd() * 16, sw: 6 + Rd() * 18, ph: Rd() * 6.28, o: 0.18 + Rd() * 0.45 }; d.e = el('circle', { cx: d.x, cy: d.y, r: d.r, fill: '#fff4d6', opacity: d.o }, dustG); D.push(d); }
     const A = anno(svg);
     const cap = root.querySelector('.cap'), capSpan = cap.querySelector('span'), tint = root.querySelector('.tint');
-    const layers = [[far, 0.15], [mid, 0.4], [subj, 1.0], [near, 1.35]];
     const cam = { x: 540, y: 960, z: 1 };
+    const layers = [[bgG, 0.3], [subj, 1.0], [nearG, 1.35]];
+    const place = (im, bm) => { im.setAttribute('href', bm.url); im.setAttribute('x', bm.box.x); im.setAttribute('y', bm.box.y); im.setAttribute('width', bm.box.w); im.setAttribute('height', bm.box.h); };
     const W = {
-      root, svg, R, E, EP, C, B, A, N, T, cam, glow, cap, tint,
+      root, svg, R, E, EP, C, B, A, N, cam, cap, tint,
       setCam(cx, cy, z) {
         cam.x = cx; cam.y = cy; cam.z = z;
         layers.forEach(([g, p]) => { const zp = 1 + (z - 1) * p; const tx = 540 - 540 * zp - (cx - 540) * p * zp, ty = 960 - 960 * zp - (cy - 960) * p * zp; g.setAttribute('transform', `translate(${fmt(tx)} ${fmt(ty)}) scale(${fmt(zp)})`); });
       },
       toScreen(wx, wy) { return { x: 540 + (wx - cam.x) * cam.z, y: 960 + (wy - cam.y) * cam.z }; },
+      glowAt() {},
       ambient(t) {
-        D.forEach(d => { const y = ((d.y - t * d.sp) % 1920 + 1920) % 1920, x = d.x + Math.sin(t * 0.7 + d.ph) * d.sw; d.e.setAttribute('cx', fmt(x)); d.e.setAttribute('cy', fmt(y)); d.e.setAttribute('opacity', fmt(d.o * (0.6 + 0.4 * Math.sin(t * 1.3 + d.ph)) * Math.min(1, y / 120, (1920 - y) / 120))); });
-        rayL.forEach((r, i) => { r.p.setAttribute('opacity', fmt(r.base * (0.75 + 0.25 * Math.sin(t * 0.5 + r.ph)))); r.p.setAttribute('transform', `rotate(${fmt(1.5 * Math.sin(t * 0.21 + r.ph))} ${r.x} -300)`); });
-        glow.setAttribute('rx', fmt(520 + 14 * Math.sin(t * 0.9))); glow.setAttribute('ry', fmt(640 + 16 * Math.cos(t * 0.7)));
+        D.forEach(d => { const y = ((d.y - t * d.sp) % 1920 + 1920) % 1920, x = d.x + Math.sin(t * 0.7 + d.ph) * d.sw; d.e.setAttribute('cx', fmt(x)); d.e.setAttribute('cy', fmt(y)); d.e.setAttribute('opacity', fmt(d.o * (0.6 + 0.4 * Math.sin(t * 1.3 + d.ph)) * Math.max(0, Math.min(1, y / 120, (1920 - y) / 120)))); });
       },
-      glowAt(sx, sy, k = 1) { glow.setAttribute('cx', fmt(sx)); glow.setAttribute('cy', fmt(sy)); glowG.setAttribute('opacity', fmt(k)); },
       caption(t, reads) {
         let cur = null; for (const r of reads) if (t >= r.in && t < r.out) cur = r;
         if (!cur) { cap.style.opacity = 0; return; }
@@ -277,6 +303,7 @@ window.W = (() => {
       setTint(color, op) { tint.style.background = color; tint.style.opacity = fmt(op); },
       show(o, on) { o.g.setAttribute('display', on ? '' : 'none'); },
     };
+    S.setup(async () => { await bakeAll(); place(backIm, BM.back); place(treeIm, BM.tree); place(nearA, BM.nearA); place(nearB, BM.nearB); });
     W.setCam(540, 960, 1);
     return W;
   }

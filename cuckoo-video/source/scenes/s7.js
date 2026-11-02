@@ -33,6 +33,7 @@
     if (o1 > 0) W.A.arrows(sA.x, sA.y, 200, o1, t); else W.A.arrows(sB.x, sB.y, -20, wide ? 0 : o2, t);
     W.ambient(t); W.caption(t, P.reads);
   });
+  S.label('cut_wide', 5.0, { sound: 'whoosh', gain_db: -13 });
   S.label('push1', 2.3, { sound: 'swipe', gain_db: -8 });
   S.label('push2', 3.9, { sound: 'swipe', gain_db: -8 });
   S.label('drop', 5.3, { sound: 'whoosh', gain_db: -10 });
