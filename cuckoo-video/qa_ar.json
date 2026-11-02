@@ -1,0 +1,23 @@
+{
+ "file": "out/final_9x16.mp4",
+ "w": 1080,
+ "h": 1920,
+ "fps": 60.0,
+ "duration_s": 48.0,
+ "lint": "pass",
+ "black_frames": [],
+ "frozen_spans": [],
+ "flash_frames": [],
+ "loudness_lufs": -15.9,
+ "true_peak_db": -2.0,
+ "longest_tonal_ms": 32,
+ "result": "pass",
+ "notes": [
+  "P2 check: sudden change (pop) not at a labelled seam at t = [32.2]",
+  "mean frame change 1.33 grey levels at 1/4 size; 2880 frames decoded",
+  "longest_tonal_ms measured with ../../sound-aziz/scripts/sfx.py",
+  "sound-aziz: music check pass (tonal 32 ms, ratio 0.01, pulse 3); loudness pass"
+ ],
+ "tonal_ratio": 0.011,
+ "pulse_run": 3
+}

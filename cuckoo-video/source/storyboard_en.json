@@ -1,0 +1,740 @@
+{
+ "w": 1080,
+ "h": 1920,
+ "fps": 60,
+ "duration_s": 48.0,
+ "lang": "en",
+ "concept": "one nest, one imposter: every shot stays on the nest and what the cuckoo does to it",
+ "through_object": "the speckled cuckoo egg / chick",
+ "scenes": [
+  {
+   "id": "s1",
+   "start": 0.0,
+   "end": 4.6,
+   "beat": "hook",
+   "section": "science",
+   "sacred": false,
+   "reads": [
+    {
+     "text": "Deep in the forest",
+     "in": 0.0,
+     "out": 1.5
+    },
+    {
+     "text": "a small bird builds a nest",
+     "in": 1.5,
+     "out": 3.2
+    },
+    {
+     "text": "Three speckled eggs",
+     "in": 3.2,
+     "out": 4.6
+    }
+   ],
+   "visual": "wide forest, push-in to the nest with three speckled eggs on the branch",
+   "layout": "subject centred on a soft spotlight glow; captions centred at y 1500",
+   "motion": [
+    {
+     "el": "cam",
+     "what": "push-in",
+     "t": 0.0,
+     "dur": 4.6,
+     "ease": "sineInOut"
+    }
+   ],
+   "layers": [
+    {
+     "name": "far",
+     "p": 0.15,
+     "blur": 10,
+     "haze": 0.6
+    },
+    {
+     "name": "mid",
+     "p": 0.4,
+     "blur": 3,
+     "haze": 0.3
+    },
+    {
+     "name": "subject",
+     "p": 1.0,
+     "blur": 0
+    },
+    {
+     "name": "text",
+     "p": 1,
+     "blur": 0
+    },
+    {
+     "name": "near",
+     "p": 1.35,
+     "blur": 8
+    }
+   ],
+   "transition_out": {
+    "type": "cut",
+    "at": 4.6,
+    "dur": 0.0
+   },
+   "sfx": [],
+   "still_at": 2.76
+  },
+  {
+   "id": "s2",
+   "start": 4.6,
+   "end": 9.4,
+   "beat": "setup",
+   "section": "science",
+   "sacred": false,
+   "reads": [
+    {
+     "text": "Then a cuckoo arrives",
+     "in": 4.6,
+     "out": 6.0
+    },
+    {
+     "text": "while the mother is away",
+     "in": 6.0,
+     "out": 7.5
+    },
+    {
+     "text": "It steals one egg",
+     "in": 7.5,
+     "out": 9.4
+    }
+   ],
+   "visual": "cuckoo lands on the branch, red reticle on one egg, grabs it (yellow chevrons on contact)",
+   "layout": "subject centred on a soft spotlight glow; captions centred at y 1500",
+   "motion": [
+    {
+     "el": "cam",
+     "what": "push-in",
+     "t": 4.6,
+     "dur": 4.8,
+     "ease": "sineInOut"
+    }
+   ],
+   "layers": [
+    {
+     "name": "far",
+     "p": 0.15,
+     "blur": 10,
+     "haze": 0.6
+    },
+    {
+     "name": "mid",
+     "p": 0.4,
+     "blur": 3,
+     "haze": 0.3
+    },
+    {
+     "name": "subject",
+     "p": 1.0,
+     "blur": 0
+    },
+    {
+     "name": "text",
+     "p": 1,
+     "blur": 0
+    },
+    {
+     "name": "near",
+     "p": 1.35,
+     "blur": 8
+    }
+   ],
+   "transition_out": {
+    "type": "cut",
+    "at": 9.4,
+    "dur": 0.0
+   },
+   "sfx": [
+    {
+     "sound": "thud",
+     "at": 6.6,
+     "gain_db": -10
+    },
+    {
+     "sound": "pop",
+     "at": 8.5,
+     "gain_db": -8
+    }
+   ],
+   "still_at": 7.48
+  },
+  {
+   "id": "s3",
+   "start": 9.4,
+   "end": 13.6,
+   "beat": "build",
+   "section": "science",
+   "sacred": false,
+   "reads": [
+    {
+     "text": "and lays its own",
+     "in": 9.4,
+     "out": 10.7
+    },
+    {
+     "text": "in its place",
+     "in": 10.7,
+     "out": 11.9
+    },
+    {
+     "text": "Almost identical",
+     "in": 11.9,
+     "out": 13.6
+    }
+   ],
+   "visual": "cuckoo lays its own egg in the gap, yellow ring on the imposter egg, macro comparison",
+   "layout": "subject centred on a soft spotlight glow; captions centred at y 1500",
+   "motion": [
+    {
+     "el": "cam",
+     "what": "push-in",
+     "t": 9.4,
+     "dur": 4.2,
+     "ease": "sineInOut"
+    }
+   ],
+   "layers": [
+    {
+     "name": "far",
+     "p": 0.15,
+     "blur": 10,
+     "haze": 0.6
+    },
+    {
+     "name": "mid",
+     "p": 0.4,
+     "blur": 3,
+     "haze": 0.3
+    },
+    {
+     "name": "subject",
+     "p": 1.0,
+     "blur": 0
+    },
+    {
+     "name": "text",
+     "p": 1,
+     "blur": 0
+    },
+    {
+     "name": "near",
+     "p": 1.35,
+     "blur": 8
+    }
+   ],
+   "transition_out": {
+    "type": "cut",
+    "at": 13.6,
+    "dur": 0.0
+   },
+   "sfx": [
+    {
+     "sound": "thud",
+     "at": 10.3,
+     "gain_db": -10
+    },
+    {
+     "sound": "pop",
+     "at": 11.7,
+     "gain_db": -10
+    }
+   ],
+   "still_at": 11.92
+  },
+  {
+   "id": "s4",
+   "start": 13.6,
+   "end": 18.0,
+   "beat": "build",
+   "section": "science",
+   "sacred": false,
+   "reads": [
+    {
+     "text": "The mother returns",
+     "in": 13.6,
+     "out": 14.9
+    },
+    {
+     "text": "and notices nothing",
+     "in": 14.9,
+     "out": 16.4
+    },
+    {
+     "text": "Days pass",
+     "in": 16.4,
+     "out": 18.0
+    }
+   ],
+   "visual": "mother returns and sits; light sweeps day-night-day (time-lapse)",
+   "layout": "subject centred on a soft spotlight glow; captions centred at y 1500",
+   "motion": [
+    {
+     "el": "cam",
+     "what": "push-in",
+     "t": 13.6,
+     "dur": 4.4,
+     "ease": "sineInOut"
+    }
+   ],
+   "layers": [
+    {
+     "name": "far",
+     "p": 0.15,
+     "blur": 10,
+     "haze": 0.6
+    },
+    {
+     "name": "mid",
+     "p": 0.4,
+     "blur": 3,
+     "haze": 0.3
+    },
+    {
+     "name": "subject",
+     "p": 1.0,
+     "blur": 0
+    },
+    {
+     "name": "text",
+     "p": 1,
+     "blur": 0
+    },
+    {
+     "name": "near",
+     "p": 1.35,
+     "blur": 8
+    }
+   ],
+   "transition_out": {
+    "type": "fade",
+    "at": 18.0,
+    "dur": 0.5
+   },
+   "sfx": [],
+   "still_at": 16.24
+  },
+  {
+   "id": "s5",
+   "start": 18.0,
+   "end": 22.6,
+   "beat": "turn",
+   "section": "science",
+   "sacred": false,
+   "reads": [
+    {
+     "text": "The cuckoo hatches first",
+     "in": 18.0,
+     "out": 19.6
+    },
+    {
+     "text": "before the other eggs",
+     "in": 19.6,
+     "out": 21.0
+    },
+    {
+     "text": "a full day ahead",
+     "in": 21.0,
+     "out": 22.6
+    }
+   ],
+   "visual": "macro: the cuckoo egg cracks and hatches first, green outline on the hatchling",
+   "layout": "subject centred on a soft spotlight glow; captions centred at y 1500",
+   "motion": [
+    {
+     "el": "cam",
+     "what": "push-in",
+     "t": 18.0,
+     "dur": 4.6,
+     "ease": "sineInOut"
+    }
+   ],
+   "layers": [
+    {
+     "name": "far",
+     "p": 0.15,
+     "blur": 10,
+     "haze": 0.6
+    },
+    {
+     "name": "mid",
+     "p": 0.4,
+     "blur": 3,
+     "haze": 0.3
+    },
+    {
+     "name": "subject",
+     "p": 1.0,
+     "blur": 0
+    },
+    {
+     "name": "text",
+     "p": 1,
+     "blur": 0
+    },
+    {
+     "name": "near",
+     "p": 1.35,
+     "blur": 8
+    }
+   ],
+   "transition_out": {
+    "type": "cut",
+    "at": 22.6,
+    "dur": 0.0
+   },
+   "sfx": [
+    {
+     "sound": "click",
+     "at": 18.9,
+     "gain_db": -9
+    },
+    {
+     "sound": "click",
+     "at": 19.6,
+     "gain_db": -9
+    },
+    {
+     "sound": "pop",
+     "at": 20.6,
+     "gain_db": -8
+    }
+   ],
+   "still_at": 20.76
+  },
+  {
+   "id": "s6",
+   "start": 22.6,
+   "end": 27.2,
+   "beat": "build",
+   "section": "science",
+   "sacred": false,
+   "reads": [
+    {
+     "text": "The mother feeds it",
+     "in": 22.6,
+     "out": 24.0
+    },
+    {
+     "text": "believing it is her own",
+     "in": 24.0,
+     "out": 25.7
+    },
+    {
+     "text": "and it grows strong",
+     "in": 25.7,
+     "out": 27.2
+    }
+   ],
+   "visual": "mother feeds the hatchling beak to beak; it visibly grows",
+   "layout": "subject centred on a soft spotlight glow; captions centred at y 1500",
+   "motion": [
+    {
+     "el": "cam",
+     "what": "push-in",
+     "t": 22.6,
+     "dur": 4.6,
+     "ease": "sineInOut"
+    }
+   ],
+   "layers": [
+    {
+     "name": "far",
+     "p": 0.15,
+     "blur": 10,
+     "haze": 0.6
+    },
+    {
+     "name": "mid",
+     "p": 0.4,
+     "blur": 3,
+     "haze": 0.3
+    },
+    {
+     "name": "subject",
+     "p": 1.0,
+     "blur": 0
+    },
+    {
+     "name": "text",
+     "p": 1,
+     "blur": 0
+    },
+    {
+     "name": "near",
+     "p": 1.35,
+     "blur": 8
+    }
+   ],
+   "transition_out": {
+    "type": "cut",
+    "at": 27.2,
+    "dur": 0.0
+   },
+   "sfx": [
+    {
+     "sound": "click",
+     "at": 23.7,
+     "gain_db": -12
+    },
+    {
+     "sound": "click",
+     "at": 25.2,
+     "gain_db": -12
+    }
+   ],
+   "still_at": 25.36
+  },
+  {
+   "id": "s7",
+   "start": 27.2,
+   "end": 34.4,
+   "beat": "turn",
+   "section": "science",
+   "sacred": false,
+   "reads": [
+    {
+     "text": "Then, still blind and naked,",
+     "in": 27.2,
+     "out": 29.1
+    },
+    {
+     "text": "it pushes the other eggs",
+     "in": 29.1,
+     "out": 30.8
+    },
+    {
+     "text": "one by one",
+     "in": 30.8,
+     "out": 32.2
+    },
+    {
+     "text": "over the edge",
+     "in": 32.2,
+     "out": 34.4
+    }
+   ],
+   "visual": "blind naked chick backs into an egg, cyan chevrons show the push, egg tips over the rim and falls; wide cut as it drops into the forest",
+   "layout": "subject centred on a soft spotlight glow; captions centred at y 1500",
+   "motion": [
+    {
+     "el": "cam",
+     "what": "push-in",
+     "t": 27.2,
+     "dur": 7.2,
+     "ease": "sineInOut"
+    }
+   ],
+   "layers": [
+    {
+     "name": "far",
+     "p": 0.15,
+     "blur": 10,
+     "haze": 0.6
+    },
+    {
+     "name": "mid",
+     "p": 0.4,
+     "blur": 3,
+     "haze": 0.3
+    },
+    {
+     "name": "subject",
+     "p": 1.0,
+     "blur": 0
+    },
+    {
+     "name": "text",
+     "p": 1,
+     "blur": 0
+    },
+    {
+     "name": "near",
+     "p": 1.35,
+     "blur": 8
+    }
+   ],
+   "transition_out": {
+    "type": "cut",
+    "at": 34.4,
+    "dur": 0.0
+   },
+   "sfx": [
+    {
+     "sound": "swipe",
+     "at": 29.5,
+     "gain_db": -8
+    },
+    {
+     "sound": "swipe",
+     "at": 31.1,
+     "gain_db": -8
+    },
+    {
+     "sound": "whoosh",
+     "at": 32.5,
+     "gain_db": -9
+    },
+    {
+     "sound": "thud",
+     "at": 33.8,
+     "gain_db": -8
+    }
+   ],
+   "still_at": 31.52
+  },
+  {
+   "id": "s8",
+   "start": 34.4,
+   "end": 40.4,
+   "beat": "payoff",
+   "section": "science",
+   "sacred": false,
+   "reads": [
+    {
+     "text": "Now every meal is its alone",
+     "in": 34.4,
+     "out": 36.2
+    },
+    {
+     "text": "It grows and grows",
+     "in": 36.2,
+     "out": 37.8
+    },
+    {
+     "text": "until it dwarfs its mother",
+     "in": 37.8,
+     "out": 40.4
+    }
+   ],
+   "visual": "the chick alone in the nest grows until it dwarfs the foster mother feeding it",
+   "layout": "subject centred on a soft spotlight glow; captions centred at y 1500",
+   "motion": [
+    {
+     "el": "cam",
+     "what": "push-in",
+     "t": 34.4,
+     "dur": 6.0,
+     "ease": "sineInOut"
+    }
+   ],
+   "layers": [
+    {
+     "name": "far",
+     "p": 0.15,
+     "blur": 10,
+     "haze": 0.6
+    },
+    {
+     "name": "mid",
+     "p": 0.4,
+     "blur": 3,
+     "haze": 0.3
+    },
+    {
+     "name": "subject",
+     "p": 1.0,
+     "blur": 0
+    },
+    {
+     "name": "text",
+     "p": 1,
+     "blur": 0
+    },
+    {
+     "name": "near",
+     "p": 1.35,
+     "blur": 8
+    }
+   ],
+   "transition_out": {
+    "type": "cut",
+    "at": 40.4,
+    "dur": 0.0
+   },
+   "sfx": [],
+   "still_at": 38.0
+  },
+  {
+   "id": "s9",
+   "start": 40.4,
+   "end": 48.0,
+   "beat": "end",
+   "section": "science",
+   "sacred": false,
+   "reads": [
+    {
+     "text": "And one morning",
+     "in": 40.4,
+     "out": 41.9
+    },
+    {
+     "text": "it spreads its wings",
+     "in": 41.9,
+     "out": 43.4
+    },
+    {
+     "text": "and flies away",
+     "in": 43.4,
+     "out": 45.0
+    },
+    {
+     "text": "to begin the story again",
+     "in": 45.0,
+     "out": 48.0
+    }
+   ],
+   "visual": "the grown cuckoo spreads its wings and flies off through the light rays; the mother stays on the empty nest",
+   "layout": "subject centred on a soft spotlight glow; captions centred at y 1500",
+   "motion": [
+    {
+     "el": "cam",
+     "what": "push-in",
+     "t": 40.4,
+     "dur": 7.6,
+     "ease": "sineInOut"
+    }
+   ],
+   "layers": [
+    {
+     "name": "far",
+     "p": 0.15,
+     "blur": 10,
+     "haze": 0.6
+    },
+    {
+     "name": "mid",
+     "p": 0.4,
+     "blur": 3,
+     "haze": 0.3
+    },
+    {
+     "name": "subject",
+     "p": 1.0,
+     "blur": 0
+    },
+    {
+     "name": "text",
+     "p": 1,
+     "blur": 0
+    },
+    {
+     "name": "near",
+     "p": 1.35,
+     "blur": 8
+    }
+   ],
+   "sfx": [
+    {
+     "sound": "whoosh",
+     "at": 43.7,
+     "gain_db": -6
+    }
+   ],
+   "still_at": 44.96
+  }
+ ]
+}

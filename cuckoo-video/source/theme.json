@@ -1,0 +1,20 @@
+{
+  "id": "forest-spotlight-doc",
+  "name_ar": "غابة تحت الضوء",
+  "family": "global",
+  "why": "clone of the reference look: a photoreal subject on a soft spotlight glow, hard cuts, macro shots, yellow/cyan annotation overlays and bold word-chunk captions; the flat teal backdrop becomes a layered forest",
+  "palette": {"bg": "#0a2419", "surface": "#13392a", "primary": "#f6f3ea", "accent": "#ffd23f", "secondary": "#5fe8ff", "text": "#ffffff", "muted": "#a9c3b5"},
+  "contrast": {"text_on_bg": 15.2, "accent_on_bg": 9.6},
+  "fonts": {
+    "display": {"family": "thmanyah sans", "folder": "user/thmanyah", "file": "theme/fonts/thmanyahsans-Black.otf", "weight": 900, "weights": {"700": "theme/fonts/thmanyahsans-Bold.otf", "900": "theme/fonts/thmanyahsans-Black.otf"}, "license": "Thmanyah licence: no redistribution", "redistributable": false, "local_only": true},
+    "text": {"family": "thmanyah serif text", "folder": "user/thmanyah", "file": "theme/fonts/thmanyahseriftext-Regular.otf", "weight": 400, "license": "Thmanyah licence: no redistribution", "redistributable": false, "local_only": true},
+    "latin": null,
+    "quran": null
+  },
+  "depth_palette": null, "faith_palette": null, "faith_contrast": null, "bridge": null, "font_options": [], "layout": null, "texture_notes": "film grain 5; soft bokeh on far/near layers",
+  "selection": {"seed": 1, "signals": ["nature", "story", "reference-clone"]},
+  "textures": ["grain:5"],
+  "motion": {"personality": "crisp", "enter": "expoOut", "exit": "expoIn", "enter_ms": 160, "stagger_ms": 60, "transition": "cut", "camera": "push-in"},
+  "figures": "birds drawn as detailed silhouettes with plumage, beak and posture, no eyes",
+  "banned": ["music", "faces", "flat teal backdrop"]
+}
