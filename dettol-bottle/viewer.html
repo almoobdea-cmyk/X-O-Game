@@ -1,0 +1,228 @@
+<title>Dettol Bottle 3D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&family=Archivo+Black&display=swap">
+<style>
+  /* Layout: full-height stage for the model, a slim side rail with views and specs; stacks on phones. */
+  :root {
+    --bg: #eef1ec;
+    --panel: #ffffff;
+    --fg: #1d221c;
+    --muted: #5f6a5c;
+    --line: #cfd6cb;
+    --accent: #1f6b3a;
+    --accent-ink: #ffffff;
+    --stage-top: #f7f8f5;
+    --stage-bottom: #d9dfd4;
+    --font-ui: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, Arial, sans-serif;
+    --font-display: "Archivo Black", "Arial Black", Impact, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141814; --panel: #1d231d; --fg: #e9eee6; --muted: #a3ae9f; --line: #334033;
+      --accent: #6fcf8e; --accent-ink: #0f1a12; --stage-top: #232a23; --stage-bottom: #0f130f; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141814; --panel: #1d231d; --fg: #e9eee6; --muted: #a3ae9f; --line: #334033;
+    --accent: #6fcf8e; --accent-ink: #0f1a12; --stage-top: #232a23; --stage-bottom: #0f130f; color-scheme: dark;
+  }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-ui);
+    direction: rtl;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 12px;
+    box-sizing: border-box;
+  }
+  .app { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; height: 100%; min-height: 560px; }
+  @media (max-width: 760px) { .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(360px, 60vh) auto; height: auto; } }
+  .stage {
+    position: relative; min-width: 0; border-radius: 14px; overflow: hidden;
+    background: linear-gradient(180deg, var(--stage-top), var(--stage-bottom)); border: 1px solid var(--line);
+  }
+  .stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+  .loading {
+    position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 15px;
+  }
+  .rail { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  h1 { font-family: var(--font-display); font-size: 26px; letter-spacing: .04em; margin: 0; direction: ltr; text-align: right; text-wrap: balance; }
+  .sub { margin: 4px 0 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
+  .views { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  button {
+    font: 500 14px var(--font-ui); color: var(--fg); background: var(--panel); border: 1px solid var(--line);
+    border-radius: 8px; padding: 9px 6px; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .spec { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .spec h2 { font-size: 13px; letter-spacing: .08em; color: var(--muted); margin: 0 0 8px; font-weight: 500; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  td { padding: 5px 0; border-top: 1px solid var(--line); }
+  tr:first-child td { border-top: 0; }
+  td:last-child { text-align: left; font-variant-numeric: tabular-nums; direction: ltr; color: var(--muted); }
+  .hint { font-size: 12.5px; color: var(--muted); line-height: 1.6; margin: 0; }
+</style>
+
+<div class="app">
+  <div class="stage" id="stage">
+    <div class="loading" id="loading">جارٍ تحميل المجسم…</div>
+  </div>
+  <aside class="rail">
+    <div>
+      <h1>DETTOL</h1>
+      <p class="sub">عبوة Dettol الكلاسيكية كنموذج CAD ثلاثي الأبعاد. النصوص والسيف واللوحة محفورة في الزجاج، وكلمة DETTOL محفورة في أعلى الغطاء وحول طوق العنق.</p>
+    </div>
+    <div class="views" role="group" aria-label="زوايا العرض">
+      <button type="button" id="v-front" aria-pressed="true">الواجهة</button>
+      <button type="button" id="v-side" aria-pressed="false">الجانب</button>
+      <button type="button" id="v-top" aria-pressed="false">الغطاء</button>
+      <button type="button" id="v-iso" aria-pressed="false">منظور</button>
+      <button type="button" id="v-back" aria-pressed="false">الخلف</button>
+      <button type="button" id="v-spin" aria-pressed="true">دوران</button>
+    </div>
+    <div class="spec">
+      <h2>الأبعاد (مم)</h2>
+      <table>
+        <tr><td>الارتفاع الكلي مع الغطاء</td><td>134</td></tr>
+        <tr><td>عرض الجسم × العمق</td><td>76 × 40</td></tr>
+        <tr><td>ارتفاع الجدار المستقيم</td><td>85</td></tr>
+        <tr><td>قطر الغطاء × ارتفاعه</td><td>29 × 24</td></tr>
+        <tr><td>لوحة الواجهة</td><td>62 × 76</td></tr>
+        <tr><td>عمق حفر اللوحة / الرسمة</td><td>0.8 / 1.4</td></tr>
+        <tr><td>عمق حفر الغطاء</td><td>0.6</td></tr>
+      </table>
+    </div>
+    <p class="hint">اسحب للتدوير، عجلة الفأرة أو قرص الأصابع للتقريب. الملفات المصدرية: STEP وSTL وGLB.</p>
+  </aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/loaders/GLTFLoader.js"></script>
+<script>
+(function () {
+  var stage = document.getElementById('stage');
+  var loading = document.getElementById('loading');
+  var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  stage.appendChild(renderer.domElement);
+
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(32, 1, 1, 2000);
+  var controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.autoRotate = true;
+  controls.autoRotateSpeed = 1.2;
+
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x9aa596, 0.75));
+  var key = new THREE.DirectionalLight(0xffffff, 1.0);
+  key.position.set(90, 160, 140);
+  key.castShadow = true;
+  key.shadow.mapSize.set(2048, 2048);
+  key.shadow.camera.left = key.shadow.camera.bottom = -120;
+  key.shadow.camera.right = key.shadow.camera.top = 120;
+  key.shadow.camera.far = 600;
+  scene.add(key);
+  var rim = new THREE.DirectionalLight(0xdde8ff, 0.45);
+  rim.position.set(-120, 80, -90);
+  scene.add(rim);
+  var fill = new THREE.DirectionalLight(0xffffff, 0.3);
+  fill.position.set(-60, 20, 160);
+  scene.add(fill);
+
+  var ground = new THREE.Mesh(new THREE.CircleGeometry(140, 64), new THREE.ShadowMaterial({ opacity: 0.22 }));
+  ground.rotation.x = -Math.PI / 2;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  var target = new THREE.Vector3(0, 67, 0);
+  var dist = 330;
+  var views = {
+    front: [0, 60, 1],
+    back: [0, 60, -1],
+    side: [1, 60, 0],
+    top: [0.15, 300, 0.35],
+    iso: [0.9, 110, 0.9]
+  };
+  var buttons = {};
+  function setView(name) {
+    var v = views[name];
+    var dir = new THREE.Vector3(v[0], 0, v[2]).normalize().multiplyScalar(dist);
+    camera.position.set(dir.x, v[1], dir.z);
+    if (name === 'top') camera.position.set(v[0] * dist * 0.2, 400, v[2] * dist * 0.2);
+    controls.target.copy(target);
+    controls.update();
+    Object.keys(views).forEach(function (k) { if (buttons[k]) buttons[k].setAttribute('aria-pressed', String(k === name)); });
+  }
+  Object.keys(views).forEach(function (k) {
+    buttons[k] = document.getElementById('v-' + k);
+    buttons[k].addEventListener('click', function () { setView(k); });
+  });
+  var spin = document.getElementById('v-spin');
+  spin.addEventListener('click', function () {
+    controls.autoRotate = !controls.autoRotate;
+    spin.setAttribute('aria-pressed', String(controls.autoRotate));
+  });
+  controls.addEventListener('start', function () {
+    if (controls.autoRotate) { controls.autoRotate = false; spin.setAttribute('aria-pressed', 'false'); }
+  });
+
+  function resize() {
+    var w = stage.clientWidth, h = stage.clientHeight;
+    if (!w || !h) return;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  setView('front');
+
+  var loader = new THREE.GLTFLoader();
+  function onModel(gltf) {
+    var model = gltf.scene;
+    model.traverse(function (o) {
+      if (o.isMesh) {
+        o.castShadow = true;
+        o.receiveShadow = true;
+        if (o.material) {
+          o.material.side = THREE.FrontSide;
+          if (o.material.metalness === undefined) o.material.metalness = 0;
+        }
+      }
+    });
+    var box = new THREE.Box3().setFromObject(model);
+    var size = box.getSize(new THREE.Vector3());
+    var center = box.getCenter(new THREE.Vector3());
+    model.position.set(-center.x, -box.min.y, -center.z);
+    target.set(0, size.y / 2, 0);
+    dist = Math.max(size.x, size.y, size.z) * 2.3;
+    scene.add(model);
+    loading.hidden = true;
+    setView('front');
+  }
+  function onError() { loading.textContent = 'تعذر تحميل ملف المجسم.'; }
+  fetch('dettol_bottle.b64.txt').then(function (r) { return r.text(); }).then(function (b64) {
+    var bin = atob(b64.trim());
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    loader.parse(bytes.buffer, '', onModel, onError);
+  }).catch(onError);
+
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) { controls.autoRotate = false; spin.setAttribute('aria-pressed', 'false'); }
+
+  function frame() {
+    requestAnimationFrame(frame);
+    controls.update();
+    renderer.render(scene, camera);
+  }
+  frame();
+})();
+</script>

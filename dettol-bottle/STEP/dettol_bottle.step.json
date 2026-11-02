@@ -1,0 +1,1 @@
+{"appearance": {"assignments": {"o1.1": "glass", "o1.2": "bakelite"}, "materials": {"bakelite": {"metalness": 0.0, "name": "Bakelite cap", "roughness": 0.45}, "glass": {"clearcoat": 0.8, "clearcoatRoughness": 0.1, "metalness": 0.0, "name": "Moulded glass", "roughness": 0.12}}}, "documentHash": "0d9e5cee89a6abb1db6ef88ce31ef7f800524b1c69a37edea3149d350b54720b", "schemaVersion": 9}
