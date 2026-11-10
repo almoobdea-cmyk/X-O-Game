@@ -117,7 +117,9 @@ const lin=h=>new T.Color(h).convertSRGBToLinear();
 const mPaint=new T.MeshStandardMaterial({vertexColors:true,roughness:.6,metalness:.05,side:T.DoubleSide});
 const mMetal=new T.MeshStandardMaterial({color:lin(0xc9a24a),roughness:.34,metalness:.85,side:T.DoubleSide,emissive:lin(0x2a1c00)});
 let mesh=null;
-fetch('green-dome-keychain-hollow.stl').then(r=>{if(!r.ok)throw new Error(r.status);return r.arrayBuffer();}).then(buf=>{
+/* the artifact host does not serve .stl, so the same bytes are also published under a served binary name */
+const grab=u=>fetch(u).then(r=>{if(!r.ok)throw new Error(r.status);return r.arrayBuffer();});
+grab('green-dome-keychain-hollow.stl').catch(()=>grab('keychain-mesh.wasm')).then(buf=>{
   const dv=new DataView(buf),n=dv.getUint32(80,true),pos=new Float32Array(n*9),nor=new Float32Array(n*9),col=new Float32Array(n*9);
   const G=lin(0x2e7a42),W=lin(0xf6f2e8),Au=lin(0xd2a233),zWhite=(5.8-.14)*S,zGold=54-.75;
   for(let i=0,o=84;i<n;i++,o+=50){const nx=dv.getFloat32(o,true),ny=dv.getFloat32(o+4,true),nz=dv.getFloat32(o+8,true);let zc=0,rc=0;
