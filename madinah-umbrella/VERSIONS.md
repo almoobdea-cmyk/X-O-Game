@@ -14,5 +14,6 @@ Open a link to browse that version's files, or download them with the "Code → 
 | v7 | Casing end reworked: wide tails between the lamps, bronze corner shoes | [`253c231`](https://github.com/almoobdea-cmyk/X-O-Game/tree/253c231/madinah-umbrella) |
 | v8 | Built on v6 (v7 set aside): casing end in plane with the body, V-pointed corner strips, pyramid lamp roofs | [`9672e3e`](https://github.com/almoobdea-cmyk/X-O-Game/tree/9672e3e/madinah-umbrella) |
 | v9 | Supports re-proportioned to end on the fabric edge; validation (48 checks) and parts list added | [`b0c8023`](https://github.com/almoobdea-cmyk/X-O-Game/tree/b0c8023/madinah-umbrella) |
+| v10 | Same model as v9, plus STL exports for Blender | [`d9a3c46`](https://github.com/almoobdea-cmyk/X-O-Game/tree/d9a3c46/madinah-umbrella) |
 
 To get an old version back locally: `git checkout <commit> -- madinah-umbrella`.
