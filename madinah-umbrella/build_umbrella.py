@@ -408,10 +408,11 @@ K_A = (0.45, 14.15)       # [M] inner-arm root hinge on the fixed mast
 K_L = (0.46, 10.86)       # [M] lower-strut hinge on the fixed mast
 K_HX, K_H0 = 0.34, 15.95  # [M] upper-strut hinge on the sliding hub, open height
 K_U = 2.47                # [M] upper strut meets the inner arm this far from its root
-K_LI = 4.69               # [M] inner arm, root -> elbow
-K_LO = 8.00               # [M/P] outer arm, elbow -> tip
+K_LI = 4.10               # [P] inner arm, root -> elbow; set so the outer arm ends exactly at the fabric edge
+CL_DX = 0.59              # casing panels start this far before the elbow (keeps the folded casing where it was)
+K_LO = 8.31               # [P] outer arm, elbow -> tip (middle arms end on the 12.75 m fabric edge)
 K_YOFF = 0.30             # [P] outer-arm axis sits this far above the elbow pin
-K_QY = 0.20               # [P] lower-strut pin, height above the elbow pin line
+K_QY = 0.24               # [P] lower-strut pin, height above the elbow pin line
 K_TH0 = math.radians(10.3)     # [M] inner arm slope when open
 K_PHIC = math.radians(-91.6)   # [P] outer arm when folded: hangs, leaning in so the casing tapers downward
 NKEY, ANIM_SECONDS = 49, 12.0  # animation samples; the real umbrella takes 180 s [D]
@@ -470,12 +471,18 @@ def kin_solve(d):
         cands = [((x - phi + math.pi) % (2 * math.pi)) - math.pi + phi for x in (b + g - dl, b - g - dl)]
         phi = min(cands, key=lambda x: abs(x - phi))
         Q = E + _rot2(phi, (d["qx"], K_QY)); U = A + K_U * np.array([math.cos(th), math.sin(th)])
-        e = _sm((s - 0.03) / 0.69)                         # corner extension and passive arms fold away first
+        e = _sm(s / 0.55)                         # corner extension and passive arms fold away first
         out.append(dict(s=s, h=h, th=th, phi=phi, e=e,
                         psi=-d["phi0"] * (1 - e) - math.pi * e,
                         low=math.atan2(Q[1] - L[1], Q[0] - L[0]), up=math.atan2(U[1] - h, U[0] - K_HX),
                         squeeze=1 - 0.86 * _sm(s / 0.85), flat=1 - 0.90 * _sm((s - 0.30) / 0.65)))
     return out
+
+
+def quat_mul(a, b):
+    ax, ay, az, aw = a; bx, by, bz, bw = b
+    return [aw * bx + ax * bw + ay * bz - az * by, aw * by - ax * bz + ay * bw + az * bx,
+            aw * bz + ax * by - ay * bx + az * bw, aw * bw - ax * bx - ay * by - az * bz]
 
 
 def qz(a):
@@ -1097,7 +1104,7 @@ def build_parts(variant):
     beam(g, ((ex0 + ex1) / 2, ye, 0), ((ex0 + ex1) / 2, ye + .075, 0), 2 * ez, ex1 - ex0, up=(1, 0, 0))
     beam(g, ((ex0 + ex1) / 2 - .006, ye + .075, 0), ((ex0 + ex1) / 2 - .006, ye + .095, 0), 2 * ez - .02, ex1 - ex0 - .012, 2 * ez - .05, ex1 - ex0 - .03, up=(1, 0, 0))
     yr = ye + .095; rz2 = ez - .025; rx = ex1 - .024
-    apex = (1.13, 9.82, 0)                               # pyramid roof; the folded casing stands just behind its peak [P]
+    apex = (1.13, 9.74, 0)                               # pyramid roof; the folded casing stands just behind its peak [P]
     P0 = (ex0, yr, -rz2); P1 = (rx, yr, -rz2); P2 = (rx, yr, rz2); P3 = (ex0, yr, rz2)
     tri_h(g, P1, P2, apex, (1, 1, 0)); tri_h(g, P0, P1, apex, (0, 1, -1)); tri_h(g, P2, P3, apex, (0, 1, 1)); tri_h(g, P3, P0, apex, (-1, 1, 0))
     add("Lamp_Polished_Gilt", "Lantern", g, "gold", R4)
@@ -1153,19 +1160,19 @@ def build_parts(variant):
         beam(o, (-.22, .12, 0), (1.45, K_YOFF, 0), .30, .46, .30, .40)                       # knuckle body
         beam(o, (1.2, K_YOFF, 0), (K_LO, K_YOFF, 0), .30, .38, .20 if diag else .15, .22 if diag else .17)
         cyl(hg, (QX, K_QY, -.24), (QX, K_QY, .24), .12, n=12)                                # lower-strut pin
-        for xx in (1.6, 4.0, 6.6):                                                           # cladding stand-offs
+        for xx in (0.8, 3.4, 6.2):                                                           # cladding stand-offs
             beam(o, (xx, K_YOFF + .1, 0), (xx, .80, 0), .07, .07, up=(1, 0, 0))
         if diag:
             cyl(hg, (K_LO, K_YOFF - .17, -.2), (K_LO, K_YOFF - .17, .2), .10, n=12)          # corner-extension hinge
         else:
-            cyl(tp, (K_LO - .15, K_YOFF, 0), (K_LO + .12, K_YOFF - .02, 0), .09, .035, n=10)
-            sphere(tp, (K_LO + .14, K_YOFF - .02, 0), .055, 8)
+            cyl(tp, (K_LO - .20, K_YOFF, 0), (K_LO + .02, K_YOFF - .01, 0), .09, .05, n=10)       # short gilt shoe: must clear the lamp roof
+            sphere(tp, (K_LO + .02, K_YOFF - .01, 0), .05, 8)
         return o, hg, tp
 
-    CL_X0, CL_PET, CL_LEN = -1.20, 0.30, 10.50            # panel top, end of the petal arch, texture length
+    CL_X0, CL_PET, CL_LEN = -1.20 - CL_DX, 0.30 - CL_DX, 10.50            # panel top, end of the petal arch, texture length
 
     def clad_y(x):                                        # stand-off of the panel ridge above the elbow pin line
-        return .83 + .001 * max(x, 0.0)                 # chosen so the casing clears the lantern block corners
+        return .83 + .001 * max(x + CL_DX, 0.0)                 # chosen so the casing clears the lantern block corners
 
     def cladding_mesh(diag):
         """GRP panel with glass mosaic on the outer arm; the eight close into the casing. [P]
@@ -1175,16 +1182,16 @@ def build_parts(variant):
         on, in the same plane, as a strip between the lamps that ends in a V point.
         Returns (panel, bronze tip or None)."""
         c = Mesh(); secs = []
-        xs = [CL_X0 + (CL_PET - CL_X0) * (1 - math.cos(k / 12 * math.pi / 2)) for k in range(13)] + list(np.linspace(0.8, 9.03, 12))
-        xs += [9.43, 10.13] if diag else [9.42]
+        xs = [CL_X0 + (CL_PET - CL_X0) * (1 - math.cos(k / 12 * math.pi / 2)) for k in range(13)] + list(np.linspace(0.0, 9.03 - CL_DX, 12) if diag else np.linspace(0.0, K_LO - .2, 12))
+        xs += [9.43 - CL_DX, 10.13 - CL_DX] if diag else [min(9.42 - CL_DX, K_LO + .14)]   # middle panels stop at the arm tip
         for x in xs:
             drop, sh = .14, .035
             if x < CL_PET:
                 t = (CL_PET - x) / (CL_PET - CL_X0); g = max(1 - t ** 1.55, .02); yb = clad_y(x) - .50 * t * t; w = 1.12 * g
             else:
-                yb = clad_y(x); w = 1.12 + (.92 - 1.12) * min(x, 9.03) / 9.03
-                if diag and x > 9.03:                      # trimmed along the lamp roofs, then a flat strip
-                    f = min((x - 9.03) / .40, 1.0); w = .92 + (.54 - .92) * f; drop = .14 - .11 * f; sh = .035 - .045 * f
+                yb = clad_y(x); w = 1.12 + (.92 - 1.12) * min(max(x + CL_DX, 0), 9.03) / 9.03
+                if diag and x > 9.03 - CL_DX + 1e-6:                      # trimmed along the lamp roofs, then a flat strip
+                    f = min((x - 9.03 + CL_DX) / .40, 1.0); w = .92 + (.54 - .92) * f; drop = .14 - .11 * f; sh = .035 - .045 * f
             v = min((x - CL_X0) / CL_LEN, .995)
             secs.append([(x, yb - drop, -w / 2, 0.0, v), (x, yb - sh, -w * .32, .18, v), (x, yb + .04, 0.0, .5, v),
                          (x, yb - sh, w * .32, .82, v), (x, yb - drop, w / 2, 1.0, v)])
@@ -1197,7 +1204,7 @@ def build_parts(variant):
             for i in (1, 2, 3):
                 tri_h(c, e[0][:3], e[i][:3], e[i + 1][:3], (1, 0, 0))
             return c, None
-        tip = Mesh(); xt = 10.43; pt = (xt, clad_y(xt) + .03, 0.0); back = (10.13, clad_y(10.13) - .08, 0.0)   # bronze V point
+        tip = Mesh(); xt = 10.43 - CL_DX; pt = (xt, clad_y(xt) + .03, 0.0); back = (10.13 - CL_DX, clad_y(10.13 - CL_DX) - .03, 0.0)   # bronze V point
         for i in range(4):
             tri_h(tip, e[i][:3], e[i + 1][:3], pt, (0, 1, 0))
         tri_h(tip, e[0][:3], back, pt, (0, -1, -.3)); tri_h(tip, e[4][:3], back, pt, (0, -1, .3))
@@ -1205,7 +1212,7 @@ def build_parts(variant):
 
     def lozenge_mesh():
         """Faceted gilded lozenge on each petal (a low four-sided pyramid). [P]"""
-        g = Mesh(); xa, xb, hw = -.98, .22, .20; xm = xa + (xb - xa) * .42
+        g = Mesh(); xa, xb, hw = -.98 - CL_DX, .22 - CL_DX, .20; xm = xa + (xb - xa) * .42
 
         def surf(x, z):
             t = max((CL_PET - x) / (CL_PET - CL_X0), 0.0)
@@ -1240,7 +1247,9 @@ def build_parts(variant):
     cyl(ext_tip, (EXT_L - .15, 0, 0), (EXT_L + .1, 0, 0), .08, .035, n=10); sphere(ext_tip, (EXT_L + .12, 0, 0), .055, 8)
 
     # ---- the eight arms -------------------------------------------------------
-    PAS_X = {False: 6.00, True: 6.15}                      # passive-arm hinges on the outer arm
+    # passive arms fork off the outer arm about 60 % of the way out (as in aerial photos) and are
+    # long enough to reach the fabric edge; each swings on one oblique pin and folds back along the arm
+    PAS_X = {False: 4.40, True: 6.20}
     joint_outer, joint_ext, plane_ang = {}, {}, {}
     for j in range(8):
         diag = (j % 2 == 0); ang = -45.0 + 45.0 * j; tag = ("Diagonal" if diag else "Middle") + "_Arm_%d" % j
@@ -1275,12 +1284,13 @@ def build_parts(variant):
             d0 = tgt - hinge; Lp = float(np.linalg.norm(d0)); d0 /= Lp
             d1 = _unit((-1.0, -.06, .03 * (1 if tgt[2] > 0 else -1)))
             om = math.acos(max(-1, min(1, float(np.dot(d0, d1))))); rots = []
+            q0 = quat_from_to((1, 0, 0), d0); nax = _unit(np.cross(d0, d1))          # one fixed pin axis
             for kk in keys:
-                e = kk["e"]
-                dv = (math.sin((1 - e) * om) * d0 + math.sin(e * om) * d1) / math.sin(om)
-                rots.append(quat_from_to((1, 0, 0), dv))
+                a_ = kk["e"] * om; qa = [nax[0] * math.sin(a_ / 2), nax[1] * math.sin(a_ / 2), nax[2] * math.sin(a_ / 2), math.cos(a_ / 2)]
+                rots.append(quat_mul(qa, q0))
             PN = rig.add("Passive_%d%s" % (j, side), O, t=tuple(hinge), r=rots)
-            addn(tag + "_Passive_Arm_" + side, PN, tube(Lp, .075, .04), "steel")
+            pm = Mesh(); beam(pm, (0, 0, 0), (Lp, 0, 0), .15, .17, .08, .09); sphere(pm, (Lp, 0, 0), .06, 8)   # tapered box section
+            addn(tag + "_Passive_Arm_" + side, PN, pm, "steel")
 
     # virtual two-bar rigs for the 16 membrane rays that end on passive-arm tips
     for q in range(24):
@@ -1313,7 +1323,7 @@ def build_parts(variant):
             if wa <= 1e-6:
                 continue
             x = p[0] * math.cos(plane_ang[qi]) + p[2] * math.sin(plane_ang[qi])
-            w_ext = _sm((x - 12.6) / 1.0); w_arm = _sm((x - 3.4) / 2.2)
+            w_ext = _sm((x - 12.6) / 1.0); w_arm = _sm((x - 2.9) / 1.9)
             for n, w in (("Funnel_Gather", 1 - w_arm), (joint_outer[qi], w_arm * (1 - w_ext)), (joint_ext[qi], w_arm * w_ext)):
                 if w > 1e-5:
                     wd[n] = wd.get(n, 0.0) + wa * w

@@ -93,10 +93,10 @@ How it works, as read from the designer's section drawing (which overlays the fo
 the arm sweep) and from the cladding maker's photos of bare, half-open and closed umbrellas:
 
 1. An electric spindle inside the telescopic shaft pushes the top hub up by 3.55 m (15.95 → 19.50 m).
-2. Each **upper strut** (2.88 m, hub to inner arm) swings its **inner arm** (4.69 m) from 10° above
+2. Each **upper strut** (2.88 m, hub to inner arm) swings its **inner arm** (4.10 m) from 10° above
    horizontal to vertical about the root hinge on the fixed mast at 14.15 m.
-3. The **outer arm** (8.0 m) is hinged to the inner arm at the elbow. The **lower strut** (7.0 m, from
-   the fixed mast at 10.86 m to a pin 0.97 m past the elbow) forces it to fold downward as the
+3. The **outer arm** (8.31 m) is hinged to the inner arm at the elbow. The **lower strut** (6.49 m, from
+   the fixed mast at 10.86 m to a pin 0.90 m past the elbow) forces it to fold downward as the
    elbow rises, so each arm ends as an inverted V: inner arm up, outer arm hanging down.
 4. The corner extensions of the diagonal arms and the 16 passive arms fold back along the outer arms first.
 5. The mosaic cladding on top of the outer arms then faces outward. The eight panels close into
@@ -110,16 +110,36 @@ the arm sweep) and from the cladding maker's photos of bare, half-open and close
    in a bronze V point at 8.4 m over the corner notch of the lantern block.
 
 That is six hinges per arm (root, elbow, two per strut), matching the designer's description.
-Folded, the finial tip is at 21.7 m, as published; the casing runs from 8.7 m (diagonal tails) to 20.0 m.
+Folded, the finial tip is at 21.7 m, as published; the casing runs from 8.4 m (diagonal tips) to 20.0 m.
 
 The strut lengths are not published. The hinge heights and inner-arm length are measured off the
 drawing; the script then solves the lower-strut pin position so that one rigid linkage passes
 through both the open and the folded pose (`kin_design`), and steps it through 49 positions (`kin_solve`).
 
+## Supports, as seen from above
+
+Checked against an aerial photo of open umbrellas (SL Rasch project page): nothing projects past the
+fabric edge, and each of the eight main arms forks into two long side arms. In the model the four
+middle arms end on the edge midpoints, the four diagonal arms reach the corners through a fold-back
+extension, and the 16 passive arms fork off at about 60 % of the way out and end on the remaining
+edge points: 24 supports for 24 edge points. Each passive arm swings on one oblique pin.
+
+## Validation and parts list
+
+`python3 validate.py` runs 48 checks and writes `VALIDATION.md`, `PARTS.md` and `parts.json`.
+It checks that the linkage closes with rigid parts at every step, that every hardware joint is a
+single pin or a straight slide, strut pushing angles, clearances against the mast, lantern block,
+roof deck and lamps through the whole motion, headroom, footprint, casing fit, lighting, and the
+exported files. It does not check strength: see the top of `VALIDATION.md`.
+
+For a smaller model: `python3 validate.py --scale 0.1` writes the parts list at 1:10 (any scale works),
+with each part's size, material, colour and the mesh name that holds its shape in the GLB.
+
 ## Known limits
 
 - The linkage is a consistent reconstruction, not the fabrication geometry: the lower-strut pin
-  position and the 8.0 m outer-arm length are solved or estimated.
+  position and the arm lengths (4.10 m inner, 8.31 m outer) are solved or chosen. The arm lengths are
+  set so the middle arms end exactly on the fabric edge and the folded arms clear the lantern roof.
 - The fold-back corner extension on the diagonal arms is my assumption for how a 36 m diagonal
   packs into a 9.5 m casing; I found no drawing of it.
 - The membrane is moved by the arm rig and flattened inside the casing. It is not a cloth

@@ -1,0 +1,651 @@
+{
+ "scale": 1.0,
+ "units": "mm",
+ "note": "size_mm is the bounding box of the part in its own frame (x along the member for arm parts)",
+ "parts": [
+  {
+   "part": "Base Pedestal and Roll",
+   "qty": 1,
+   "material": "Polished granite",
+   "colour": "#C9A894",
+   "size_mm": [
+    1840.0,
+    1270.0,
+    1840.0
+   ],
+   "moving": false,
+   "triangles": 364,
+   "glb_mesh": "Base_Pedestal_and_Roll"
+  },
+  {
+   "part": "Base Pedestal Panels",
+   "qty": 4,
+   "material": "Polished granite",
+   "colour": "#C9A894",
+   "size_mm": [
+    20.0,
+    409.9,
+    1038.8
+   ],
+   "moving": false,
+   "triangles": 96,
+   "glb_mesh": "Base_Pedestal_Panels"
+  },
+  {
+   "part": "Shaft",
+   "qty": 1,
+   "material": "Granite cladding",
+   "colour": "#C4B0A0",
+   "size_mm": [
+    900.0,
+    4230.0,
+    900.0
+   ],
+   "moving": false,
+   "triangles": 16,
+   "glb_mesh": "Shaft"
+  },
+  {
+   "part": "Astragal Rolls",
+   "qty": 1,
+   "material": "Carved granite / cast stone",
+   "colour": "#C4B0A0",
+   "size_mm": [
+    1010.0,
+    190.0,
+    1010.0
+   ],
+   "moving": false,
+   "triangles": 352,
+   "glb_mesh": "Astragal_Rolls"
+  },
+  {
+   "part": "Capital Core",
+   "qty": 1,
+   "material": "Carved granite / cast stone",
+   "colour": "#C4B0A0",
+   "size_mm": [
+    1756.0,
+    1090.0,
+    1756.0
+   ],
+   "moving": false,
+   "triangles": 80,
+   "glb_mesh": "Capital_Core"
+  },
+  {
+   "part": "Capital Shield and Lattice",
+   "qty": 4,
+   "material": "Carved granite / cast stone",
+   "colour": "#C4B0A0",
+   "size_mm": [
+    410.3,
+    963.4,
+    1160.0
+   ],
+   "moving": false,
+   "triangles": 3904,
+   "glb_mesh": "Capital_Shield_and_Lattice"
+  },
+  {
+   "part": "Capital Corner Arabesque",
+   "qty": 4,
+   "material": "Carved granite / cast stone",
+   "colour": "#C4B0A0",
+   "size_mm": [
+    490.7,
+    870.5,
+    490.7
+   ],
+   "moving": false,
+   "triangles": 2244,
+   "glb_mesh": "Capital_Corner_Arabesque"
+  },
+  {
+   "part": "Frieze Chamfer Faces",
+   "qty": 1,
+   "material": "Carved granite / cast stone",
+   "colour": "#C4B0A0",
+   "size_mm": [
+    1680.0,
+    700.0,
+    1680.0
+   ],
+   "moving": false,
+   "triangles": 8,
+   "glb_mesh": "Frieze_Chamfer_Faces"
+  },
+  {
+   "part": "Frieze Chamfer Panels",
+   "qty": 4,
+   "material": "Carved granite / cast stone",
+   "colour": "#C4B0A0",
+   "size_mm": [
+    178.8,
+    549.1,
+    178.8
+   ],
+   "moving": false,
+   "triangles": 96,
+   "glb_mesh": "Frieze_Chamfer_Panels"
+  },
+  {
+   "part": "Frieze Slate Star Panel",
+   "qty": 4,
+   "material": "Slate-blue stone panel",
+   "colour": "#4D6175",
+   "size_mm": [
+    32.0,
+    700.0,
+    1240.0
+   ],
+   "moving": false,
+   "triangles": 954,
+   "glb_mesh": "Frieze_Slate_Star_Panel"
+  },
+  {
+   "part": "Cornice Core",
+   "qty": 1,
+   "material": "Carved granite / cast stone",
+   "colour": "#C4B0A0",
+   "size_mm": [
+    1870.0,
+    155.0,
+    1870.0
+   ],
+   "moving": false,
+   "triangles": 64,
+   "glb_mesh": "Cornice_Core"
+  },
+  {
+   "part": "Cornice Dogtooth Main",
+   "qty": 4,
+   "material": "Carved granite / cast stone",
+   "colour": "#C4B0A0",
+   "size_mm": [
+    78.4,
+    113.4,
+    1228.0
+   ],
+   "moving": false,
+   "triangles": 36,
+   "glb_mesh": "Cornice_Dogtooth_Main"
+  },
+  {
+   "part": "Cornice Dogtooth Corner",
+   "qty": 4,
+   "material": "Carved granite / cast stone",
+   "colour": "#C4B0A0",
+   "size_mm": [
+    276.9,
+    113.7,
+    276.9
+   ],
+   "moving": false,
+   "triangles": 12,
+   "glb_mesh": "Cornice_Dogtooth_Corner"
+  },
+  {
+   "part": "Lantern Block Granite",
+   "qty": 1,
+   "material": "Granite cladding",
+   "colour": "#C4B0A0",
+   "size_mm": [
+    1800.0,
+    1665.0,
+    1800.0
+   ],
+   "moving": false,
+   "triangles": 44,
+   "glb_mesh": "Lantern_Block_Granite"
+  },
+  {
+   "part": "Lantern Roof Deck and Faceted Crown",
+   "qty": 1,
+   "material": "Gold-plated / gilded metal",
+   "colour": "#D9A21C",
+   "size_mm": [
+    1840.0,
+    670.0,
+    1840.0
+   ],
+   "moving": false,
+   "triangles": 80,
+   "glb_mesh": "Lantern_Roof_Deck_and_Faceted_Crown"
+  },
+  {
+   "part": "Lamp Polished Gilt",
+   "qty": 4,
+   "material": "Gold-plated / gilded metal",
+   "colour": "#D9A21C",
+   "size_mm": [
+    475.0,
+    1945.0,
+    940.0
+   ],
+   "moving": false,
+   "triangles": 3616,
+   "glb_mesh": "Lamp_Polished_Gilt"
+  },
+  {
+   "part": "Lamp Engraved Gilt",
+   "qty": 4,
+   "material": "Gilded sheet, chased arabesque",
+   "colour": "#D9A21C",
+   "size_mm": [
+    360.0,
+    1395.0,
+    766.0
+   ],
+   "moving": false,
+   "triangles": 142,
+   "glb_mesh": "Lamp_Engraved_Gilt"
+  },
+  {
+   "part": "Lamp Reflector",
+   "qty": 4,
+   "material": "Ribbed aluminium reflector",
+   "colour": "#DBE3ED",
+   "size_mm": [
+    119.1,
+    980.0,
+    560.0
+   ],
+   "moving": false,
+   "triangles": 28,
+   "glb_mesh": "Lamp_Reflector"
+  },
+  {
+   "part": "Lamp Glass",
+   "qty": 4,
+   "material": "Clear glass",
+   "colour": "#B3D4EB (30 % opaque)",
+   "size_mm": [
+    325.0,
+    1010.0,
+    630.0
+   ],
+   "moving": false,
+   "triangles": 12,
+   "glb_mesh": "Lamp_Glass"
+  },
+  {
+   "part": "Fixed Upper Column",
+   "qty": 1,
+   "material": "Welded steel box section, painted",
+   "colour": "#EDEBE3",
+   "size_mm": [
+    920.0,
+    4570.0,
+    920.0
+   ],
+   "moving": false,
+   "triangles": 144,
+   "glb_mesh": "Fixed_Upper_Column"
+  },
+  {
+   "part": "Sliding Hub and Telescopic Shaft",
+   "qty": 1,
+   "material": "Welded steel box section, painted",
+   "colour": "#EDEBE3",
+   "size_mm": [
+    760.0,
+    5890.0,
+    760.0
+   ],
+   "moving": true,
+   "triangles": 248,
+   "glb_mesh": "Sliding_Hub_and_Telescopic_Shaft"
+  },
+  {
+   "part": "Finial Crown and Lance",
+   "qty": 1,
+   "material": "Gold-plated / gilded metal",
+   "colour": "#D9A21C",
+   "size_mm": [
+    2288.6,
+    2675.0,
+    2288.6
+   ],
+   "moving": true,
+   "triangles": 1952,
+   "glb_mesh": "Finial_Crown_and_Lance"
+  },
+  {
+   "part": "Diagonal arm: Inner Section",
+   "qty": 8,
+   "material": "Welded steel box section, painted",
+   "colour": "#EDEBE3",
+   "size_mm": [
+    4320.0,
+    540.0,
+    410.0
+   ],
+   "moving": true,
+   "triangles": 60,
+   "glb_mesh": "Diagonal_Arm_0_Inner_Section"
+  },
+  {
+   "part": "Diagonal arm: Hinge Pins",
+   "qty": 8,
+   "material": "Bronze-finish hinge pin and bush",
+   "colour": "#B88533",
+   "size_mm": [
+    4450.0,
+    510.0,
+    620.0
+   ],
+   "moving": true,
+   "triangles": 168,
+   "glb_mesh": "Diagonal_Arm_0_Hinge_Pins"
+  },
+  {
+   "part": "Diagonal arm: Outer Section",
+   "qty": 4,
+   "material": "Welded steel box section, painted",
+   "colour": "#EDEBE3",
+   "size_mm": [
+    8554.6,
+    908.7,
+    300.0
+   ],
+   "moving": true,
+   "triangles": 60,
+   "glb_mesh": "Diagonal_Arm_0_Outer_Section"
+  },
+  {
+   "part": "Diagonal arm: Outer Hinge Pins",
+   "qty": 4,
+   "material": "Bronze-finish hinge pin and bush",
+   "colour": "#B88533",
+   "size_mm": [
+    7626.1,
+    330.0,
+    480.0
+   ],
+   "moving": true,
+   "triangles": 96,
+   "glb_mesh": "Diagonal_Arm_0_Outer_Hinge_Pins"
+  },
+  {
+   "part": "Diagonal arm: Mosaic Cladding",
+   "qty": 4,
+   "material": "GRP sandwich panel with glass mosaic",
+   "colour": "#E6DEC6 / #86CCC0 / #E0AE2C",
+   "size_mm": [
+    11330.0,
+    690.1,
+    1120.0
+   ],
+   "moving": true,
+   "triangles": 208,
+   "glb_mesh": "Diagonal_Arm_0_Mosaic_Cladding"
+  },
+  {
+   "part": "Diagonal arm: Gilded Lozenge",
+   "qty": 8,
+   "material": "Gold-plated / gilded metal",
+   "colour": "#D9A21C",
+   "size_mm": [
+    1200.0,
+    362.9,
+    400.0
+   ],
+   "moving": true,
+   "triangles": 4,
+   "glb_mesh": "Diagonal_Arm_0_Gilded_Lozenge"
+  },
+  {
+   "part": "Diagonal arm: Cladding Bronze Tip",
+   "qty": 4,
+   "material": "Bronze-finish cast shoe",
+   "colour": "#80521F",
+   "size_mm": [
+    300.0,
+    70.0,
+    540.0
+   ],
+   "moving": true,
+   "triangles": 6,
+   "glb_mesh": "Diagonal_Arm_0_Cladding_Bronze_Tip"
+  },
+  {
+   "part": "Diagonal arm: Lower Strut",
+   "qty": 8,
+   "material": "Welded steel box section, painted",
+   "colour": "#EDEBE3",
+   "size_mm": [
+    6615.4,
+    380.0,
+    520.0
+   ],
+   "moving": true,
+   "triangles": 84,
+   "glb_mesh": "Diagonal_Arm_0_Lower_Strut"
+  },
+  {
+   "part": "Diagonal arm: Upper Strut",
+   "qty": 8,
+   "material": "Welded steel box section, painted",
+   "colour": "#EDEBE3",
+   "size_mm": [
+    2990.6,
+    220.0,
+    440.0
+   ],
+   "moving": true,
+   "triangles": 60,
+   "glb_mesh": "Diagonal_Arm_0_Upper_Strut"
+  },
+  {
+   "part": "Diagonal arm: Corner Extension",
+   "qty": 4,
+   "material": "Welded steel box section, painted",
+   "colour": "#EDEBE3",
+   "size_mm": [
+    5498.6,
+    220.0,
+    200.0
+   ],
+   "moving": true,
+   "triangles": 12,
+   "glb_mesh": "Diagonal_Arm_0_Corner_Extension"
+  },
+  {
+   "part": "Diagonal arm: Corner Tip",
+   "qty": 4,
+   "material": "Gold-plated / gilded metal",
+   "colour": "#D9A21C",
+   "size_mm": [
+    325.0,
+    152.2,
+    160.0
+   ],
+   "moving": true,
+   "triangles": 168,
+   "glb_mesh": "Diagonal_Arm_0_Corner_Tip"
+  },
+  {
+   "part": "Diagonal arm: Passive Arm A",
+   "qty": 4,
+   "material": "Welded steel box section, painted",
+   "colour": "#EDEBE3",
+   "size_mm": [
+    5218.8,
+    170.0,
+    150.0
+   ],
+   "moving": true,
+   "triangles": 140,
+   "glb_mesh": "Diagonal_Arm_0_Passive_Arm_A"
+  },
+  {
+   "part": "Diagonal arm: Passive Arm B",
+   "qty": 4,
+   "material": "Welded steel box section, painted",
+   "colour": "#EDEBE3",
+   "size_mm": [
+    5218.8,
+    170.0,
+    150.0
+   ],
+   "moving": true,
+   "triangles": 140,
+   "glb_mesh": "Diagonal_Arm_0_Passive_Arm_B"
+  },
+  {
+   "part": "Middle arm: Outer Section",
+   "qty": 4,
+   "material": "Welded steel box section, painted",
+   "colour": "#EDEBE3",
+   "size_mm": [
+    8554.6,
+    908.7,
+    300.0
+   ],
+   "moving": true,
+   "triangles": 60,
+   "glb_mesh": "Middle_Arm_1_Outer_Section"
+  },
+  {
+   "part": "Middle arm: Outer Hinge Pins",
+   "qty": 4,
+   "material": "Bronze-finish hinge pin and bush",
+   "colour": "#B88533",
+   "size_mm": [
+    240.0,
+    240.0,
+    480.0
+   ],
+   "moving": true,
+   "triangles": 48,
+   "glb_mesh": "Middle_Arm_1_Outer_Hinge_Pins"
+  },
+  {
+   "part": "Middle arm: Mosaic Cladding",
+   "qty": 4,
+   "material": "GRP sandwich panel with glass mosaic",
+   "colour": "#E6DEC6 / #86CCC0 / #E0AE2C",
+   "size_mm": [
+    10240.0,
+    689.0,
+    1120.0
+   ],
+   "moving": true,
+   "triangles": 203,
+   "glb_mesh": "Middle_Arm_1_Mosaic_Cladding"
+  },
+  {
+   "part": "Middle arm: Tip",
+   "qty": 4,
+   "material": "Gold-plated / gilded metal",
+   "colour": "#D9A21C",
+   "size_mm": [
+    273.9,
+    171.0,
+    180.0
+   ],
+   "moving": true,
+   "triangles": 168,
+   "glb_mesh": "Middle_Arm_1_Tip"
+  },
+  {
+   "part": "Middle arm: Passive Arm A",
+   "qty": 4,
+   "material": "Welded steel box section, painted",
+   "colour": "#EDEBE3",
+   "size_mm": [
+    5648.7,
+    170.0,
+    150.0
+   ],
+   "moving": true,
+   "triangles": 140,
+   "glb_mesh": "Middle_Arm_1_Passive_Arm_A"
+  },
+  {
+   "part": "Middle arm: Passive Arm B",
+   "qty": 4,
+   "material": "Welded steel box section, painted",
+   "colour": "#EDEBE3",
+   "size_mm": [
+    5648.7,
+    170.0,
+    150.0
+   ],
+   "moving": true,
+   "triangles": 140,
+   "glb_mesh": "Middle_Arm_1_Passive_Arm_B"
+  },
+  {
+   "part": "PTFE Membrane 25.5m",
+   "qty": 1,
+   "material": "PTFE fabric with blue tapes",
+   "colour": "#F4F0E6 / #2E447A",
+   "size_mm": [
+    25500.0,
+    4350.0,
+    25500.0
+   ],
+   "moving": true,
+   "triangles": 25344,
+   "glb_mesh": "PTFE_Membrane_25.5m"
+  },
+  {
+   "part": "Membrane Collar Ring",
+   "qty": 1,
+   "material": "Gold-plated / gilded metal",
+   "colour": "#D9A21C",
+   "size_mm": [
+    1170.0,
+    90.0,
+    1170.0
+   ],
+   "moving": false,
+   "triangles": 512,
+   "glb_mesh": "Membrane_Collar_Ring"
+  },
+  {
+   "part": "Upper Canopy over Hub",
+   "qty": 1,
+   "material": "PTFE fabric with blue tapes",
+   "colour": "#F4F0E6 / #2E447A",
+   "size_mm": [
+    6606.5,
+    891.5,
+    6606.5
+   ],
+   "moving": true,
+   "triangles": 672,
+   "glb_mesh": "Upper_Canopy_over_Hub"
+  },
+  {
+   "part": "Cooling Fan Housing",
+   "qty": 2,
+   "material": "Fan housing, painted",
+   "colour": "#E6DBC7",
+   "size_mm": [
+    1330.0,
+    1480.0,
+    520.0
+   ],
+   "moving": false,
+   "triangles": 436,
+   "glb_mesh": "Cooling_Fan_Housing"
+  },
+  {
+   "part": "Cooling Fan Guard and Mist Ring",
+   "qty": 2,
+   "material": "Fan guard and mist ring",
+   "colour": "#595449",
+   "size_mm": [
+    1116.0,
+    1116.0,
+    490.0
+   ],
+   "moving": false,
+   "triangles": 1496,
+   "glb_mesh": "Cooling_Fan_Guard_and_Mist_Ring"
+  }
+ ]
+}
