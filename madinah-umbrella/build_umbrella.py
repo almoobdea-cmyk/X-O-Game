@@ -390,6 +390,133 @@ def sta(y, a, w):
 
 
 # --------------------------------------------------------------------------
+# Opening / closing mechanism
+#
+# Read off the designer's section drawing (which overlays the folded state) and
+# checked against photos of half-open, bare-frame and closed umbrellas:
+#   * an electric spindle in the telescopic shaft pushes the top hub up 3.55 m
+#   * the UPPER STRUT (hub -> inner arm) swings the inner arm from 10 deg above
+#     horizontal up to vertical about its root hinge on the fixed mast
+#   * the outer arm is hinged to the inner arm at the elbow; the LOWER STRUT
+#     (fixed mast -> outer arm, just past the elbow) makes it fold down as the
+#     elbow rises, so the arm ends as an inverted V: inner arm up, outer arm down
+#   * the cladding panels on the outer arms then face outward and close into the
+#     eight-sided casing; their pointed ends (at the elbows) form the crown
+# Hinges per arm: root, elbow, 2 x upper strut, 2 x lower strut = six. [D: "six hinges"]
+# --------------------------------------------------------------------------
+K_A = (0.45, 14.15)       # [M] inner-arm root hinge on the fixed mast
+K_L = (0.46, 10.86)       # [M] lower-strut hinge on the fixed mast
+K_HX, K_H0 = 0.34, 15.95  # [M] upper-strut hinge on the sliding hub, open height
+K_U = 2.47                # [M] upper strut meets the inner arm this far from its root
+K_LI = 4.69               # [M] inner arm, root -> elbow
+K_LO = 8.00               # [M/P] outer arm, elbow -> tip
+K_YOFF = 0.30             # [P] outer-arm axis sits this far above the elbow pin
+K_QY = 0.20               # [P] lower-strut pin, height above the elbow pin line
+K_TH0 = math.radians(10.3)     # [M] inner arm slope when open
+K_PHIC = math.radians(-91.6)   # [P] outer arm when folded: hangs, leaning in so the casing tapers downward
+NKEY, ANIM_SECONDS = 49, 12.0  # animation samples; the real umbrella takes 180 s [D]
+
+
+def _rot2(a, v):
+    c, s = math.cos(a), math.sin(a)
+    return np.array([c * v[0] - s * v[1], s * v[0] + c * v[1]])
+
+
+def _sm(x):
+    x = min(max(x, 0.0), 1.0)
+    return x * x * (3 - 2 * x)
+
+
+def kin_theta(h, Lu):
+    A = np.array(K_A); H = np.array([K_HX, h]); d = np.linalg.norm(H - A)
+    b = math.atan2(H[1] - A[1], H[0] - A[0])
+    return b - math.acos(max(-1.0, min(1.0, (K_U ** 2 + d * d - Lu * Lu) / (2 * K_U * d))))
+
+
+def kin_design(tip_axis_h):
+    """Size the linkage so that it passes through both the open pose and the folded pose."""
+    A = np.array(K_A); L = np.array(K_L)
+    Lu = float(np.linalg.norm(A + K_U * np.array([math.cos(K_TH0), math.sin(K_TH0)]) - np.array([K_HX, K_H0])))
+    hc = A[1] + math.sqrt((K_U + Lu) ** 2 - (A[0] - K_HX) ** 2) - 0.004
+    thc = kin_theta(hc, Lu)
+    E0 = A + K_LI * np.array([math.cos(K_TH0), math.sin(K_TH0)]); Ec = A + K_LI * np.array([math.cos(thc), math.sin(thc)])
+    phi0 = 0.0
+    for _ in range(30):
+        phi0 += (tip_axis_h - (E0[1] + _rot2(phi0, (K_LO, K_YOFF))[1])) / K_LO
+    f = lambda qx: np.linalg.norm(E0 + _rot2(phi0, (qx, K_QY)) - L) - np.linalg.norm(Ec + _rot2(K_PHIC, (qx, K_QY)) - L)
+    lo, hi = 0.2, 3.0
+    for _ in range(60):
+        mid = (lo + hi) / 2
+        if f(lo) * f(mid) <= 0:
+            hi = mid
+        else:
+            lo = mid
+    qx = (lo + hi) / 2
+    Ls = float(np.linalg.norm(E0 + _rot2(phi0, (qx, K_QY)) - L))
+    return dict(Lu=Lu, hc=hc, phi0=phi0, qx=qx, Ls=Ls)
+
+
+def kin_solve(d):
+    """Sample the mechanism from open (s=0) to folded (s=1)."""
+    A = np.array(K_A); L = np.array(K_L)
+    rho = math.hypot(d["qx"], K_QY); dl = math.atan2(K_QY, d["qx"]); phi = d["phi0"]; out = []
+    for k in range(NKEY):
+        s = k / (NKEY - 1); h = K_H0 + (d["hc"] - K_H0) * s; th = kin_theta(h, d["Lu"])
+        E = A + K_LI * np.array([math.cos(th), math.sin(th)])
+        D = np.linalg.norm(L - E); b = math.atan2(L[1] - E[1], L[0] - E[0])
+        c = (rho * rho + D * D - d["Ls"] ** 2) / (2 * rho * D)
+        assert abs(c) <= 1.0005, "linkage cannot reach s=%.2f" % s
+        g = math.acos(max(-1.0, min(1.0, c)))
+        cands = [((x - phi + math.pi) % (2 * math.pi)) - math.pi + phi for x in (b + g - dl, b - g - dl)]
+        phi = min(cands, key=lambda x: abs(x - phi))
+        Q = E + _rot2(phi, (d["qx"], K_QY)); U = A + K_U * np.array([math.cos(th), math.sin(th)])
+        e = _sm((s - 0.03) / 0.69)                         # corner extension and passive arms fold away first
+        out.append(dict(s=s, h=h, th=th, phi=phi, e=e,
+                        psi=-d["phi0"] * (1 - e) - math.pi * e,
+                        low=math.atan2(Q[1] - L[1], Q[0] - L[0]), up=math.atan2(U[1] - h, U[0] - K_HX),
+                        squeeze=1 - 0.86 * _sm(s / 0.85), flat=1 - 0.90 * _sm((s - 0.30) / 0.65)))
+    return out
+
+
+def qz(a):
+    return [0.0, 0.0, math.sin(a / 2), math.cos(a / 2)]
+
+
+def mat_trs(t=(0, 0, 0), r=(0, 0, 0, 1), s=(1, 1, 1)):
+    x, y, z, w = r
+    R = np.array([[1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+                  [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+                  [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)]])
+    M = np.eye(4); M[:3, :3] = R * np.asarray(s, float)[None, :]; M[:3, 3] = t
+    return M
+
+
+class Rig:
+    """Node hierarchy with one sampled pose per animation key."""
+    def __init__(self):
+        self.nodes = {}          # name -> dict(parent, t, r, s) ; t/r/s are either a value or a list of NKEY values
+
+    def add(self, name, parent=None, t=(0, 0, 0), r=(0, 0, 0, 1), s=(1, 1, 1)):
+        self.nodes[name] = dict(parent=parent, t=t, r=r, s=s); return name
+
+    def val(self, name, path, k):
+        v = self.nodes[name][path]
+        return v[k] if (isinstance(v, list) and len(v) == NKEY and isinstance(v[0], (list, tuple, np.ndarray))) else v
+
+    def keyed(self, name, path):
+        v = self.nodes[name][path]
+        return isinstance(v, list) and len(v) == NKEY and isinstance(v[0], (list, tuple, np.ndarray))
+
+    def world(self, name, k):
+        n = self.nodes[name]
+        M = mat_trs(self.val(name, "t", k), self.val(name, "r", k), self.val(name, "s", k))
+        return M if n["parent"] is None else self.world(n["parent"], k) @ M
+
+
+RIG = {}
+
+
+# --------------------------------------------------------------------------
 # Membrane surface definition (shared by mesh and texture)
 # --------------------------------------------------------------------------
 # Funnel profile measured off the section drawing: fraction of rise vs r/R.
@@ -648,7 +775,7 @@ MATERIALS = {
     "glass":     dict(color=(0.70, 0.83, 0.92), alpha=0.30, rough=0.05, metal=0.0, double=True),
     "reflector": dict(color=(0.86, 0.89, 0.93), rough=0.30, metal=0.7, emissive=(1.0, 0.86, 0.62), estr=1.0, double=True),
     "steel":     dict(color=(0.93, 0.92, 0.89), rough=0.45, metal=0.15),
-    "mosaic":    dict(tex="mosaic", rough=0.3, metal=0.0),
+    "cladding":  dict(tex="cladding", rough=0.35, metal=0.0, double=True),
     "fan":       dict(color=(0.90, 0.86, 0.78), rough=0.6, metal=0.0),
     "fan_dark":  dict(color=(0.35, 0.33, 0.30), rough=0.6, metal=0.3),
     "floor":     dict(tex="floor", rough=0.36, metal=0.0),
@@ -976,88 +1103,208 @@ def build_parts(variant):
     add("Lamp_Reflector", "Lantern", rf, "reflector", R4)
     add("Lamp_Glass", "Lantern", gl, "glass", R4)
 
-    # ---------------- mast, hubs, finial ------------------------------------
-    m = Mesh()
-    cyl(m, (0, H_FUNNEL, 0), (0, 16.45, 0), .30, .27, n=20)                    # upper steel column / telescopic shaft
-    for y, r, hgt in ((H_LOWER_PIVOT, .44, .40), (H_ARM_PIVOT, .46, .55), (H_UPPER_PIVOT, .42, .40)):
+    # ---------------- mechanism: mast, sliding hub, arms, struts ---------------
+    kd = kin_design(tip_h + 0.10)
+    keys = kin_solve(kd)
+    rig = Rig()
+    QX, LS, LU = kd["qx"], kd["Ls"], kd["Lu"]
+
+    def addn(name, node, mesh, mat):
+        parts.append(dict(name=name, group=None, mesh=mesh, mat=mat, rot=None, node=node))
+
+    m = Mesh()                                            # fixed upper steel column with its two hinge collars
+    cyl(m, (0, H_FUNNEL, 0), (0, K_A[1] + .42, 0), .30, .30, n=20)
+    for y, r, hgt in ((K_L[1], .44, .40), (K_A[1], .46, .55)):
         mm = Mesh(); loft(mm, [(y - hgt / 2, r, None), (y + hgt / 2, r, None)], cap_top=True, cap_bot=True)
-        m.P += mm.P; k = len(m.N); m.N += mm.N; m.UV += mm.UV; m.I += [i + k for i in mm.I]
-    lathe(m, [(.30, 16.40), (.52, 16.45), (.50, 16.60), (.34, 16.78)], 24)
-    add("Mast_and_Hubs", "Structure", m, "steel")
-    m = Mesh()                                            # gilded crown and lance [D: gold-plated]
-    lathe(m, [(.86, 16.55), (.90, 16.60), (.80, 16.68), (.52, 16.95), (.34, 17.25), (.22, 17.50), (.16, 17.62)], 48, flutes=16, flute_depth=0.16)
-    lathe(m, [(.16, 17.62), (.24, 17.66), (.24, 17.70), (.12, 17.74), (.10, 17.80)], 24)
-    sphere(m, (0, 17.98, 0), .20, 16, sy=1.05)
-    lathe(m, [(.07, 18.16), (.13, 18.20), (.07, 18.26), (.055, 18.40), (.085, 18.52), (.05, 18.66), (.03, 19.00), (.004, 19.45)], 16)
-    add("Finial_Crown_and_Lance", "Finial", m, "gold")
+        k0 = len(m.P); m.P += mm.P; m.N += mm.N; m.UV += mm.UV; m.I += [i + k0 for i in mm.I]
+    add("Fixed_Upper_Column", "Structure", m, "steel")
 
-    # ---------------- arms ---------------------------------------------------
-    def arm_height(k, r):
-        """height of the arm centre line at radius r for reach factor k"""
-        re = R_ELBOW * k; rt = HALF * k
-        if r <= re:
-            return H_ARM_PIVOT + (elbow_h - H_ARM_PIVOT) * (r - .45) / (re - .45)
-        return elbow_h + (tip_h - elbow_h) * (r - re) / (rt - re)
+    rig.add("Hub", None, t=[(0.0, kk["h"], 0.0) for kk in keys])
+    m = Mesh()                                            # sliding hub on the telescopic shaft (spindle inside)
+    cyl(m, (0, -5.45, 0), (0, .25, 0), .225, .225, n=18)
+    mm = Mesh(); loft(mm, [(-.22, .42, None), (.22, .42, None)], cap_top=True, cap_bot=True)
+    k0 = len(m.P); m.P += mm.P; m.N += mm.N; m.UV += mm.UV; m.I += [i + k0 for i in mm.I]
+    lathe(m, [(.42, .22), (.50, .26), (.46, .36), (.30, .46)], 24)
+    addn("Sliding_Hub_and_Telescopic_Shaft", "Hub", m, "steel")
+    m = Mesh()                                            # gilded crown and lance; tip at 21.7 m when folded [D]
+    lathe(m, [(.60, .30), (.64, .34), (.56, .40), (.38, .56), (.24, .72), (.16, .84), (.12, .90)], 48, flutes=16, flute_depth=0.16)
+    lathe(m, [(.12, .90), (.17, .93), (.17, .96), (.09, .99), (.08, 1.03)], 24)
+    sphere(m, (0, 1.19, 0), .165, 16, sy=1.05)
+    lathe(m, [(.06, 1.34), (.11, 1.37), (.06, 1.42), (.045, 1.52), (.07, 1.60), (.04, 1.70), (.025, 1.92), (.004, 2.205)], 16)
+    addn("Finial_Crown_and_Lance", "Hub", m, "gold")
 
-    def arm_assembly(k, direction):
-        dx, dz = direction
-        P = lambda r, y, off=0.0: (dx * r - dz * off, y, dz * r + dx * off)
-        st, cl, hg = Mesh(), Mesh(), Mesh()
-        re, rt = R_ELBOW * k, HALF * k
-        side = (-dz, 0, dx)
-        beam(st, P(.45, H_ARM_PIVOT), P(re, elbow_h), .34, .44, .30, .36)                  # inner arm section
-        beam(st, P(re, elbow_h), P(rt - .15, tip_h + .02), .28, .34, .14, .16)             # outer arm section
-        ru = 2.83 * k
-        beam(st, P(.34, H_UPPER_PIVOT), P(ru, arm_height(k, ru) + .22), .20, .22)          # upper strut
-        rl = 6.30 * k; pl0 = np.array(P(.46, H_LOWER_PIVOT)); pl1 = np.array(P(rl, arm_height(k, rl) - .20))
-        mid = pl0 + (pl1 - pl0) * .55
-        beam(st, pl0, mid, .30, .32)                                                       # lower strut (telescopic)
-        beam(st, mid, pl1, .22, .24)
-        beam(st, mid - (pl1 - pl0) * .01, mid + (pl1 - pl0) * .012, .36, .38)
-        for (r, y, rad, ln) in ((.45, H_ARM_PIVOT, .16, .62), (re, elbow_h, .20, .56), (ru, arm_height(k, ru) + .22, .10, .40),
-                                (rl, arm_height(k, rl) - .20, .12, .44), (.34, H_UPPER_PIVOT, .11, .44), (.46, H_LOWER_PIVOT, .13, .52)):
-            c = np.array(P(r, y)); s = np.array(side)
-            cyl(hg, c - s * ln / 2, c + s * ln / 2, rad, n=14)                              # hinge pins (6 per arm [D])
-        for sg in (-1, 1):                                                                 # elbow cheek plates
-            c = np.array(P(re, elbow_h)) + np.array(side) * sg * .19
-            beam(st, c - np.array(P(.55, 0)) + 0, c + np.array(P(.55, 0)), .03, .50)
-        # cladding flaps with glass mosaic (form the prismatic casing when folded)
-        for (ra, rb, wa, wb) in ((1.4 * k, re - .45, .46, .62), (re + .45, rt - .9, .62, .30)):
-            a = np.array(P(ra, arm_height(k, ra) + .30)); b = np.array(P(rb, arm_height(k, rb) + .27 if rb < re else arm_height(k, rb) + .22))
-            beam(cl, a, b, wa, .05, wb, .05, uvlen=wa)
-            for t in (.15, .5, .85):
-                c = a + (b - a) * t
-                beam(st, c - (0, .24, 0), c, .06, .06, up=(dx, 0, dz))
-        tipm = Mesh()                                                                      # gilded tip shoe
-        cyl(tipm, P(rt - .22, tip_h + .02), P(rt + .10, tip_h - .02), .09, .035, n=10)
-        sphere(tipm, P(rt + .12, tip_h - .02), .055, 8)
-        # suspension ties from arm to membrane
-        q = {(1, 0): 3.0, (SQ2 / 2, SQ2 / 2): 6.0}[(round(dx, 6) if abs(dx - 1) < 1e-6 else SQ2 / 2, round(dz, 6) if abs(dz) < 1e-6 else SQ2 / 2)]
-        for sig in (.42, .62, .82):
-            mx, my, mz = membrane_point(q, sig, tip_h)
-            r = math.hypot(mx, mz)
-            cyl(st, (mx, my, mz), P(r, arm_height(k, r) - .15), .018, n=6, caps=False)
-        return st, cl, hg, tipm
+    # ---- part meshes in their own hinge frames (x along the member, y up, z across) ----
+    inner = Mesh()
+    beam(inner, (0, 0, 0), (K_LI, 0, 0), .34, .44, .30, .38)
+    for sg in (-1, 1):
+        beam(inner, (K_LI - .45, 0, sg * .19), (K_LI + .22, 0, sg * .19), .03, .46)          # elbow cheek plates
+        beam(inner, (K_U - .2, .2, sg * .12), (K_U + .2, .2, sg * .12), .03, .22)            # upper-strut lug
+    hin_in = Mesh()
+    cyl(hin_in, (0, 0, -.31), (0, 0, .31), .16, n=14); cyl(hin_in, (K_LI, 0, -.28), (K_LI, 0, .28), .19, n=16)
+    cyl(hin_in, (K_U, .22, -.2), (K_U, .22, .2), .10, n=12)
 
-    st, cl, hg, tp = arm_assembly(1.0, (1, 0))
-    add("Middle_Arm_Steel", "Arms", st, "steel", R4); add("Middle_Arm_Mosaic_Cladding", "Arms", cl, "mosaic", R4)
-    add("Middle_Arm_Hinges", "Arms", hg, "gold_dark", R4); add("Middle_Arm_Tip", "Arms", tp, "gold", R4)
-    st, cl, hg, tp = arm_assembly(SQ2, (SQ2 / 2, SQ2 / 2))
-    # 4 passive arms hinged off each diagonal arm (16 in total [D])
-    for (rh, tips) in ((11.0, ((HALF, TIP_STEP), (TIP_STEP, HALF))), (14.5, ((HALF, 2 * TIP_STEP), (2 * TIP_STEP, HALF)))):
-        hpt = np.array((rh * SQ2 / 2, arm_height(SQ2, rh) - .05, rh * SQ2 / 2))
-        for (tx, tz) in tips:
-            tpt = np.array((tx, tip_h - .06, tz))
-            cyl(st, hpt, tpt, .075, .04, n=10)
-            sphere(tp, tuple(tpt), .05, 8)
-        sphere(hg, tuple(hpt), .13, 10)
-    add("Diagonal_Arm_Steel_and_Passive_Arms", "Arms", st, "steel", R4); add("Diagonal_Arm_Mosaic_Cladding", "Arms", cl, "mosaic", R4)
-    add("Diagonal_Arm_Hinges", "Arms", hg, "gold_dark", R4); add("Diagonal_Arm_Tips", "Arms", tp, "gold", R4)
+    def outer_mesh(diag):
+        o, hg, tp = Mesh(), Mesh(), Mesh()
+        beam(o, (-.22, .12, 0), (1.45, K_YOFF, 0), .30, .46, .30, .40)                       # knuckle body
+        beam(o, (1.2, K_YOFF, 0), (K_LO, K_YOFF, 0), .30, .38, .20 if diag else .15, .22 if diag else .17)
+        cyl(hg, (QX, K_QY, -.24), (QX, K_QY, .24), .12, n=12)                                # lower-strut pin
+        for xx in (1.6, 4.0, 6.6):                                                           # cladding stand-offs
+            beam(o, (xx, K_YOFF + .1, 0), (xx, K_YOFF + .44 - .026 * xx, 0), .07, .07, up=(1, 0, 0))
+        if diag:
+            cyl(hg, (K_LO, K_YOFF - .17, -.2), (K_LO, K_YOFF - .17, .2), .10, n=12)          # corner-extension hinge
+        else:
+            cyl(tp, (K_LO - .15, K_YOFF, 0), (K_LO + .12, K_YOFF - .02, 0), .09, .035, n=10)
+            sphere(tp, (K_LO + .14, K_YOFF - .02, 0), .055, 8)
+        return o, hg, tp
 
-    # ---------------- membrane ----------------------------------------------
-    add("PTFE_Membrane_25.5m", "Membrane", build_membrane(tip_h), "membrane")
+    def cladding_mesh():
+        """GRP panel with glass mosaic on top of the outer arm: closes into one face of the casing.
+        Hat section, 0.88 m wide at the elbow end and 0.68 m at the tip end, pointed past the elbow."""
+        c = Mesh(); X0, X1 = -1.06, K_LO + .85; secs = []
+        xs = [X0 + 1.06 * (1 - math.cos(k / 9 * math.pi / 2)) for k in range(10)] + list(np.linspace(0.45, X1, 12))
+        for x in xs:
+            if x < 0:
+                t = -x / 1.06; g = max((1 - t ** 2.1) ** .62, .04); yb = K_YOFF + .46 - .42 * t * t; w = .96 * g
+            else:
+                yb = K_YOFF + .46 - .22 * x / X1; w = .96 + (.78 - .96) * x / X1
+            v = (x - X0) / (X1 - X0)
+            secs.append([(x, yb - .12, -w / 2, 0.0, v), (x, yb, -w * .29, .22, v), (x, yb, w * .29, .78, v), (x, yb - .12, w / 2, 1.0, v)])
+        for a, b in zip(secs[:-1], secs[1:]):
+            for i in range(3):
+                c.quad(a[i][:3], a[i + 1][:3], b[i + 1][:3], b[i][:3],
+                       uv=(a[i][3:], a[i + 1][3:], b[i + 1][3:], b[i][3:]), hint=(0, 1, 0))
+        e = secs[-1]
+        c.quad(e[0][:3], e[1][:3], e[2][:3], e[3][:3], uv=((0, 1), (.22, 1), (.78, 1), (1, 1)), hint=(1, 0, 0))
+        return c
+
+    lower = Mesh()                                        # telescopic-looking lower strut
+    beam(lower, (0, 0, 0), (LS * .55, 0, 0), .30, .32); beam(lower, (LS * .55, 0, 0), (LS, 0, 0), .22, .24)
+    beam(lower, (LS * .54, 0, 0), (LS * .57, 0, 0), .36, .38)
+    cyl(lower, (0, 0, -.26), (0, 0, .26), .13, n=12)
+    upper = Mesh()
+    beam(upper, (0, 0, 0), (LU, 0, 0), .20, .22); cyl(upper, (0, 0, -.22), (0, 0, .22), .11, n=12)
+
+    def tube(length, r0, r1, ball=True):
+        t = Mesh(); cyl(t, (0, 0, 0), (length, 0, 0), r0, r1, n=10)
+        if ball:
+            sphere(t, (length, 0, 0), r1 * 1.3, 8)
+        return t
+
+    o_mid, h_mid, t_mid = outer_mesh(False); o_dia, h_dia, _ = outer_mesh(True)
+    clad = cladding_mesh()
+    EXT_Y = K_YOFF - .17
+    E0 = np.array(K_A) + K_LI * np.array([math.cos(K_TH0), math.sin(K_TH0)])
+    tip_r = float(E0[0] + _rot2(kd["phi0"], (K_LO, EXT_Y))[0])
+    EXT_L = HALF * SQ2 + .25 - tip_r                       # diagonal arms carry a fold-back corner extension [assumed]
+    ext = Mesh(); beam(ext, (0, 0, 0), (EXT_L, 0, 0), .20, .22, .12, .13); ext_tip = Mesh()
+    cyl(ext_tip, (EXT_L - .15, 0, 0), (EXT_L + .1, 0, 0), .08, .035, n=10); sphere(ext_tip, (EXT_L + .12, 0, 0), .055, 8)
+
+    # ---- the eight arms -------------------------------------------------------
+    PAS_X = {False: 6.00, True: 6.15}                      # passive-arm hinges on the outer arm
+    joint_outer, joint_ext, plane_ang = {}, {}, {}
+    for j in range(8):
+        diag = (j % 2 == 0); ang = -45.0 + 45.0 * j; tag = ("Diagonal" if diag else "Middle") + "_Arm_%d" % j
+        P = rig.add("ArmPlane_%d" % j, None, r=quat_y(-ang))
+        I = rig.add("Inner_%d" % j, P, t=(K_A[0], K_A[1], 0.0), r=[qz(kk["th"]) for kk in keys])
+        O = rig.add("Outer_%d" % j, I, t=(K_LI, 0.0, 0.0), r=[qz(kk["phi"] - kk["th"]) for kk in keys])
+        X = rig.add("Ext_%d" % j, O, t=(K_LO, EXT_Y, 0.0), r=[qz(kk["psi"]) for kk in keys])
+        LSN = rig.add("LowerStrut_%d" % j, P, t=(K_L[0], K_L[1], 0.0), r=[qz(kk["low"]) for kk in keys])
+        HP = rig.add("HubPlane_%d" % j, "Hub", r=quat_y(-ang))
+        USN = rig.add("UpperStrut_%d" % j, HP, t=(K_HX, 0.0, 0.0), r=[qz(kk["up"]) for kk in keys])
+        joint_outer[3 * j] = rig.add("MemOuter_%d" % (3 * j), O, s=[(1.0, kk["flat"], 1.0) for kk in keys])
+        joint_ext[3 * j] = rig.add("MemExt_%d" % (3 * j), X, s=[(1.0, kk["flat"], 1.0) for kk in keys])
+        plane_ang[3 * j] = math.radians(ang)
+        addn(tag + "_Inner_Section", I, inner, "steel"); addn(tag + "_Hinge_Pins", I, hin_in, "gold_dark")
+        addn(tag + "_Outer_Section", O, o_dia if diag else o_mid, "steel")
+        addn(tag + "_Outer_Hinge_Pins", O, h_dia if diag else h_mid, "gold_dark")
+        addn(tag + "_Mosaic_Cladding", O, clad, "cladding")
+        addn(tag + "_Lower_Strut", LSN, lower, "steel"); addn(tag + "_Upper_Strut", USN, upper, "steel")
+        if diag:
+            addn(tag + "_Corner_Extension", X, ext, "steel"); addn(tag + "_Corner_Tip", X, ext_tip, "gold")
+        else:
+            addn(tag + "_Tip", O, t_mid, "gold")
+        # two passive arms per main arm (16 in all [D]); they fold back along the outer arm
+        Winv = np.linalg.inv(rig.world(O, 0))
+        for side, dq in (("A", -1), ("B", 1)):
+            ex, ez = edge_base(3 * j + dq)
+            tgt = (Winv @ np.array([ex, tip_h + .02, ez, 1.0]))[:3]
+            hinge = np.array([PAS_X[diag], K_YOFF, .22 * (1 if tgt[2] > 0 else -1)])
+            d0 = tgt - hinge; Lp = float(np.linalg.norm(d0)); d0 /= Lp
+            d1 = _unit((-1.0, -.06, .03 * (1 if tgt[2] > 0 else -1)))
+            om = math.acos(max(-1, min(1, float(np.dot(d0, d1))))); rots = []
+            for kk in keys:
+                e = kk["e"]
+                dv = (math.sin((1 - e) * om) * d0 + math.sin(e * om) * d1) / math.sin(om)
+                rots.append(quat_from_to((1, 0, 0), dv))
+            PN = rig.add("Passive_%d%s" % (j, side), O, t=tuple(hinge), r=rots)
+            addn(tag + "_Passive_Arm_" + side, PN, tube(Lp, .075, .04), "steel")
+
+    # virtual two-bar rigs for the 16 membrane rays that end on passive-arm tips
+    for q in range(24):
+        if q % 3 == 0:
+            continue
+        ex, ez = edge_base(q); ang = math.atan2(ez, ex); plane_ang[q] = ang
+        P = rig.add("RayPlane_%d" % q, None, r=quat_y(-math.degrees(ang)))
+        I = rig.add("RayInner_%d" % q, P, t=(K_A[0], K_A[1], 0.0), r=[qz(kk["th"]) for kk in keys])
+        RO = rig.add("RayOuter_%d" % q, I, t=(K_LI, 0.0, 0.0), r=[qz(kk["phi"] - kk["th"]) for kk in keys])
+        RX = rig.add("RayExt_%d" % q, RO, t=(K_LO, EXT_Y, 0.0), r=[qz(kk["psi"]) for kk in keys])
+        joint_outer[q] = rig.add("MemOuter_%d" % q, RO, s=[(1.0, kk["flat"], 1.0) for kk in keys])
+        joint_ext[q] = rig.add("MemExt_%d" % q, RX, s=[(1.0, kk["flat"], 1.0) for kk in keys])
+    rig.add("Funnel_Gather", None, s=[(kk["squeeze"], 1.0, kk["squeeze"]) for kk in keys])
+
+    joints = ["Funnel_Gather", "Hub"] + ["Inner_%d" % j for j in range(8)] + [joint_outer[q] for q in range(24)] + [joint_ext[q] for q in range(24)]
+    JI = {n: i for i, n in enumerate(joints)}
+
+    def pack(wd):
+        it = sorted(wd.items(), key=lambda kv: -kv[1])[:4]; tot = sum(w for _, w in it)
+        it += [(it[0][0], 0.0)] * (4 - len(it))
+        return [JI[n] for n, _ in it], [w / tot for _, w in it]
+
+    # ---------------- membrane (skinned to the mechanism) ----------------------
+    mem = build_membrane(tip_h)
+    NQ, NS = 24 * 12, 44
+    MJ, MW = [], []
+    for vi, p in enumerate(mem.P):
+        a = vi // (NS + 1); qf = 24.0 * a / NQ; q0 = int(math.floor(qf)) % 24; f = qf - math.floor(qf); wd = {}
+        for qi, wa in ((q0, 1 - f), ((q0 + 1) % 24, f)):
+            if wa <= 1e-6:
+                continue
+            x = p[0] * math.cos(plane_ang[qi]) + p[2] * math.sin(plane_ang[qi])
+            w_ext = _sm((x - 12.6) / 1.0); w_arm = _sm((x - 3.4) / 2.2)
+            for n, w in (("Funnel_Gather", 1 - w_arm), (joint_outer[qi], w_arm * (1 - w_ext)), (joint_ext[qi], w_arm * w_ext)):
+                if w > 1e-5:
+                    wd[n] = wd.get(n, 0.0) + wa * w
+        jj, ww = pack(wd); MJ.append(jj); MW.append(ww)
+    parts.append(dict(name="PTFE_Membrane_25.5m", group=None, mesh=mem, mat="membrane", rot=None, skin=(MJ, MW)))
     m = Mesh(); torus(m, (0, H_FUNNEL + .02, 0), R_FUNNEL + .02, .045, n=32, k=8)
     add("Membrane_Collar_Ring", "Membrane", m, "gold")
+
+    # small upper canopy over the hub, seen from above as an eight-pointed tent [P]
+    cap = Mesh(); CV, CT, CJ, CW, CUV = [], [], [], [], []
+    NA, NR = 48, 7
+    U0 = np.array(K_A) + 2.9 * np.array([math.cos(K_TH0), math.sin(K_TH0)])
+    for a in range(NA + 1):
+        jf = 8.0 * a / NA; j0 = int(math.floor(jf)) % 8; f = jf - math.floor(jf); angw = math.radians(-45 + 45 * jf)
+        sc = 4 * f * (1 - f)
+        for k in range(NR + 1):
+            t = k / NR
+            r = .52 + (U0[0] * (1 - .16 * sc) - .52) * t
+            y = (K_H0 + .30) + ((U0[1] + .22 - .25 * sc) - (K_H0 + .30)) * (t ** 1.25)
+            CV.append((r * math.cos(angw), y, r * math.sin(angw))); CUV.append((.015, .015))
+            wd = {"Hub": 1 - t}
+            if t > 0:
+                wd["Inner_%d" % j0] = t * (1 - f)
+                if f > 1e-6:
+                    wd["Inner_%d" % ((j0 + 1) % 8)] = t * f
+            wd = {n: w for n, w in wd.items() if w > 1e-6}
+            jj, ww = pack(wd); CJ.append(jj); CW.append(ww)
+    for a in range(NA):
+        for k in range(NR):
+            i0 = a * (NR + 1) + k; i1 = i0 + 1; j0 = i0 + NR + 1; j1 = j0 + 1
+            CT += [(i0, j0, j1), (i0, j1, i1)]
+    cap.smooth(CV, CT, CUV, up_hint=(0, 1, 0))
+    parts.append(dict(name="Upper_Canopy_over_Hub", group=None, mesh=cap, mat="membrane", rot=None, skin=(CJ, CW)))
+    RIG["rig"], RIG["joints"] = rig, joints
 
     # ---------------- evaporative cooling fans ------------------------------
     f, fd = Mesh(), Mesh()
@@ -1112,8 +1359,9 @@ def quat_from_to(a, b):
     return [float(x) for x in q]
 
 
-def write_glb(path, parts, textures, variant):
-    bin_ = bytearray(); views = []; accs = []
+def write_glb(path, parts, textures, variant, pose=0, animate=True):
+    rig, joints = RIG["rig"], RIG["joints"]
+    bin_ = bytearray(); views = []; accs = []; cache = {}
 
     def view(data, target=None):
         while len(bin_) % 4:
@@ -1123,11 +1371,18 @@ def write_glb(path, parts, textures, variant):
             v["target"] = target
         bin_.extend(data); views.append(v); return len(views) - 1
 
-    def acc(arr, typ, ctype, target, minmax=False):
-        a = dict(bufferView=view(arr.tobytes(), target), componentType=ctype, count=int(arr.shape[0]), type=typ)
+    def acc(arr, typ, ctype, target=None, minmax=False, share=False):
+        raw = arr.tobytes()
+        if share and (raw, typ) in cache:
+            return cache[(raw, typ)]
+        a = dict(bufferView=view(raw, target), componentType=ctype, count=int(arr.shape[0]), type=typ)
         if minmax:
-            a["min"] = [float(x) for x in arr.min(0)]; a["max"] = [float(x) for x in arr.max(0)]
-        accs.append(a); return len(accs) - 1
+            mn, mx = arr.min(0), arr.max(0)
+            a["min"] = [float(x) for x in np.atleast_1d(mn)]; a["max"] = [float(x) for x in np.atleast_1d(mx)]
+        accs.append(a)
+        if share:
+            cache[(raw, typ)] = len(accs) - 1
+        return len(accs) - 1
 
     tex_names = list(textures)
     images = []
@@ -1151,23 +1406,71 @@ def write_glb(path, parts, textures, variant):
         mats.append(mt)
 
     nodes = [dict(name="Madinah_Piazza_Umbrella_U26_" + variant, children=[])]
-    groups = {}; meshes = []; ntri = 0
+    scene_nodes = [0]
+    # mechanism nodes, posed at key `pose`
+    ridx = {}
+    for name in rig.nodes:
+        nd = dict(name=name)
+        t, r, s = rig.val(name, "t", pose), rig.val(name, "r", pose), rig.val(name, "s", pose)
+        if tuple(t) != (0, 0, 0):
+            nd["translation"] = [float(x) for x in t]
+        if tuple(r) != (0, 0, 0, 1):
+            nd["rotation"] = [float(x) for x in r]
+        if tuple(s) != (1, 1, 1):
+            nd["scale"] = [float(x) for x in s]
+        nodes.append(nd); ridx[name] = len(nodes) - 1
+    for name, n in rig.nodes.items():
+        par = 0 if n["parent"] is None else ridx[n["parent"]]
+        nodes[par].setdefault("children", []).append(ridx[name])
+
+    groups = {}; meshes = []; ntri = 0; mesh_cache = {}
     for p in parts:
-        P, N, UV, I = p["mesh"].arrays()
-        ntri += len(I) // 3 * (len(p["rot"]) if p["rot"] else 1)
-        prim = dict(attributes=dict(POSITION=acc(P, "VEC3", 5126, 34962, True), NORMAL=acc(N, "VEC3", 5126, 34962),
-                                    TEXCOORD_0=acc(UV, "VEC2", 5126, 34962)),
-                    indices=acc(I, "SCALAR", 5125, 34963), material=mat_names.index(p["mat"]))
-        meshes.append(dict(name=p["name"], primitives=[prim])); mi = len(meshes) - 1
-        if p["group"] not in groups:
-            nodes.append(dict(name=p["group"], children=[])); groups[p["group"]] = len(nodes) - 1
-            nodes[0]["children"].append(groups[p["group"]])
-        gi = groups[p["group"]]
-        for r in (p["rot"] or [None]):
-            nd = dict(name=p["name"] + ("" if r is None else "_%03d" % r), mesh=mi)
-            if r:
-                nd["rotation"] = quat_y(r)
-            nodes.append(nd); nodes[gi]["children"].append(len(nodes) - 1)
+        if id(p["mesh"]) in mesh_cache:
+            mi = mesh_cache[id(p["mesh"])]
+        else:
+            P, N, UV, I = p["mesh"].arrays()
+            attrs = dict(POSITION=acc(P, "VEC3", 5126, 34962, True), NORMAL=acc(N, "VEC3", 5126, 34962), TEXCOORD_0=acc(UV, "VEC2", 5126, 34962))
+            if p.get("skin"):
+                attrs["JOINTS_0"] = acc(np.asarray(p["skin"][0], np.uint8), "VEC4", 5121, 34962)
+                attrs["WEIGHTS_0"] = acc(np.asarray(p["skin"][1], np.float32), "VEC4", 5126, 34962)
+            meshes.append(dict(name=p["name"], primitives=[dict(attributes=attrs, indices=acc(I, "SCALAR", 5125, 34963),
+                                                                material=mat_names.index(p["mat"]))]))
+            mi = len(meshes) - 1; mesh_cache[id(p["mesh"])] = mi
+        tri = len(p["mesh"].I) // 3
+        if p.get("skin"):
+            nodes.append(dict(name=p["name"], mesh=mi, skin=0)); scene_nodes.append(len(nodes) - 1); ntri += tri
+        elif p.get("node"):
+            nodes.append(dict(name=p["name"], mesh=mi)); nodes[ridx[p["node"]]].setdefault("children", []).append(len(nodes) - 1); ntri += tri
+        else:
+            if p["group"] not in groups:
+                nodes.append(dict(name=p["group"], children=[])); groups[p["group"]] = len(nodes) - 1
+                nodes[0]["children"].append(groups[p["group"]])
+            gi = groups[p["group"]]
+            for r in (p["rot"] or [None]):
+                nd = dict(name=p["name"] + ("" if r is None else "_%03d" % r), mesh=mi)
+                if r:
+                    nd["rotation"] = quat_y(r)
+                nodes.append(nd); nodes[gi]["children"].append(len(nodes) - 1); ntri += tri
+
+    ibm = np.stack([np.linalg.inv(rig.world(n, 0)).T for n in joints]).astype(np.float32).reshape(-1, 16)
+    skins = [dict(name="Membrane_Rig", joints=[ridx[n] for n in joints], inverseBindMatrices=acc(ibm, "MAT4", 5126))]
+
+    animations = []
+    if animate:
+        times = (np.arange(NKEY, dtype=np.float32) / (NKEY - 1) * ANIM_SECONDS)
+        tacc = acc(times, "SCALAR", 5126, None, True)
+        samplers, channels = [], []
+        for name in rig.nodes:
+            for tpath, key, typ in (("translation", "t", "VEC3"), ("rotation", "r", "VEC4"), ("scale", "s", "VEC3")):
+                if rig.keyed(name, key):
+                    arr = np.asarray(rig.nodes[name][key], np.float32)
+                    if tpath == "rotation":                     # keep quaternions on one hemisphere for clean interpolation
+                        for k in range(1, len(arr)):
+                            if np.dot(arr[k], arr[k - 1]) < 0:
+                                arr[k] = -arr[k]
+                    samplers.append(dict(input=tacc, output=acc(arr, typ, 5126, None, share=True), interpolation="LINEAR"))
+                    channels.append(dict(sampler=len(samplers) - 1, target=dict(node=ridx[name], path=tpath)))
+        animations.append(dict(name="Close", samplers=samplers, channels=channels))
 
     # lighting design: facade uplights wash the membrane, bay lanterns light the piazza
     lights = [dict(name="Membrane_Uplight", type="spot", color=[1.0, 0.90, 0.74], intensity=4000.0,
@@ -1182,10 +1485,9 @@ def write_glb(path, parts, textures, variant):
         nodes.append(dict(name="Membrane_Uplight_%d" % k, translation=[r * math.cos(a), H_LANT1 + .42, r * math.sin(a)],
                           rotation=quat_from_to((0, 0, -1), d), extensions={"KHR_lights_punctual": {"light": 0}}))
         nodes[li]["children"].append(len(nodes) - 1)
-    nodes.append(dict(name="Collar_Glow", translation=[0.0, H_LANT1 + .45, 0.0],          # lifts the pleats above the crown
-                      extensions={"KHR_lights_punctual": {"light": 2}}))
+    nodes.append(dict(name="Collar_Glow", translation=[0.0, H_LANT1 + .45, 0.0], extensions={"KHR_lights_punctual": {"light": 2}}))
     nodes[li]["children"].append(len(nodes) - 1)
-    for k in range(4):                                    # piazza lighting: one downlight per bay lantern
+    for k in range(4):                                    # piazza lighting: one downlight per lamp
         a = math.radians(90 * k)
         d = (math.cos(a) * 0.75, -0.66, math.sin(a) * 0.75)
         nodes.append(dict(name="Piazza_Downlight_%d" % k, translation=[1.30 * math.cos(a), H_LANT0 + .05, 1.30 * math.sin(a)],
@@ -1197,10 +1499,12 @@ def write_glb(path, parts, textures, variant):
     gltf = dict(asset=dict(version="2.0", generator="build_umbrella.py (parametric, metres, Y-up)"),
                 extensionsUsed=["KHR_lights_punctual", "KHR_materials_emissive_strength"],
                 extensions={"KHR_lights_punctual": {"lights": lights}},
-                scene=0, scenes=[dict(name="Scene", nodes=[0])], nodes=nodes, meshes=meshes, materials=mats,
+                scene=0, scenes=[dict(name="Scene", nodes=scene_nodes)], nodes=nodes, meshes=meshes, materials=mats, skins=skins,
                 textures=[dict(source=i, sampler=0) for i in range(len(images))], images=images,
                 samplers=[dict(magFilter=9729, minFilter=9987, wrapS=10497, wrapT=10497)],
                 accessors=accs, bufferViews=views, buffers=[dict(byteLength=len(bin_))])
+    if animations:
+        gltf["animations"] = animations
     js = json.dumps(gltf, separators=(",", ":")).encode()
     js += b" " * ((4 - len(js) % 4) % 4)
     with open(path, "wb") as f:
@@ -1210,18 +1514,50 @@ def write_glb(path, parts, textures, variant):
     return ntri, os.path.getsize(path)
 
 
+def tex_cladding(w=256, h=1024):
+    """Mosaic of one casing panel, elbow end at the top: gold lozenge on the pointed end,
+    triple gold chevrons, turquoise-striped field, chevrons again, plain speckled cream below. [P]"""
+    rng = np.random.default_rng(41)
+    a = np.ones((h, w, 3), np.float32) * np.array([232, 224, 200], np.float32)
+    a += rng.normal(0, 7, (h, w, 1)); a[rng.random((h, w)) > 0.97] *= 0.9
+    im = Image.fromarray(np.clip(a, 0, 255).astype(np.uint8)); d = ImageDraw.Draw(im)
+    gold, turq = (222, 176, 48), (118, 196, 190)
+    X = lambda u: u * w; Y = lambda v: v * h
+    d.polygon([(X(.5), Y(.030)), (X(.70), Y(.095)), (X(.5), Y(.170)), (X(.30), Y(.095))], fill=gold)
+    d.line([(X(.5), Y(.030)), (X(.70), Y(.095)), (X(.5), Y(.170)), (X(.30), Y(.095)), (X(.5), Y(.030))], fill=(170, 128, 30), width=2)
+    n = 15; v0, v1 = .262, .545
+    for i in range(n):
+        if i % 2 == 0:
+            d.rectangle((X(.235), Y(v0 + (v1 - v0) * i / n), X(.765), Y(v0 + (v1 - v0) * (i + 1) / n)), fill=turq)
+    for vc in (.200, .560):
+        for k in range(3):
+            v = vc + k * .0165
+            d.line([(X(0), Y(v + .022)), (X(.22), Y(v)), (X(.78), Y(v)), (X(1), Y(v + .022))], fill=gold, width=max(int(h * .0085), 3))
+    for u in (.22, .78):
+        d.line([(X(u), Y(.11)), (X(u), Y(1))], fill=(200, 192, 170), width=2)
+    return im
+
+
 def main():
     textures = dict(membrane=tex_membrane(), stone=tex_stone(), granite=tex_stone(256, joints=False), gold_engraved=tex_gold_engraved(),
-                    mosaic=tex_mosaic(), floor=tex_floor())
+                    cladding=tex_cladding(), floor=tex_floor())
     os.makedirs(os.path.join(HERE, "textures"), exist_ok=True)
     for n, im in textures.items():
         im.save(os.path.join(HERE, "textures", n + ".jpg"), quality=86, optimize=True)
     out = {}
     for v in VARIANTS:
+        parts = build_parts(v)
         path = os.path.join(HERE, "madinah_umbrella_%s.glb" % v)
-        ntri, size = write_glb(path, build_parts(v), textures, v)
+        ntri, size = write_glb(path, parts, textures, v)
         out[v] = path
-        print("%s: %d triangles, %.2f MB" % (os.path.basename(path), ntri, size / 1e6))
+        print("%s: %d triangles, %.2f MB (animated open -> closed)" % (os.path.basename(path), ntri, size / 1e6))
+        if v == "low":
+            cp = os.path.join(HERE, "madinah_umbrella_closed.glb")
+            ntri, size = write_glb(cp, parts, textures, "closed", pose=NKEY - 1, animate=False)
+            print("%s: %d triangles, %.2f MB (static, folded)" % (os.path.basename(cp), ntri, size / 1e6))
+            kd = kin_design(VARIANTS[v]["tip"] + 0.10); ks = kin_solve(kd)
+            print("linkage: upper strut %.2f m, lower strut %.2f m, strut pin %.2f m past the elbow, hub travel %.2f m, hub %.2f -> %.2f m"
+                  % (kd["Lu"], kd["Ls"], kd["qx"], kd["hc"] - K_H0, K_H0, kd["hc"]))
     tpl = os.path.join(HERE, "viewer.template.html")
     if os.path.exists(tpl):
         html = open(tpl, encoding="utf-8").read()

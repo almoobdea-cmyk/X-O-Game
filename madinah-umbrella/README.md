@@ -7,6 +7,7 @@ Prophet's Mosque in Madinah (SL Rasch "U26 Piazza", 250 units, completed 2010–
 |---|---|
 | `madinah_umbrella_low.glb` | Open umbrella, arm tips at 14.5 m |
 | `madinah_umbrella_high.glb` | Open umbrella, arm tips at 15.3 m (the neighbour that overlaps the low one) |
+| `madinah_umbrella_closed.glb` | Folded umbrella, 21.7 m tall, static |
 | `viewer.html` | Self-contained interactive viewer (both models embedded; needs internet once for three.js) |
 | `build_umbrella.py` | The generator — every dimension is a named constant at the top |
 | `textures/` | Generated textures (membrane ornament, stone, carved capital, frieze, mosaic, glass, floor) |
@@ -82,10 +83,43 @@ The lantern does two jobs, as labelled on the section drawing ("Piazza – and F
 They are stored in the GLB as `KHR_lights_punctual` lights. The viewer's
 "Night lighting" button switches them on.
 
+## Opening and closing
+
+`madinah_umbrella_low.glb` and `_high.glb` carry one animation clip, `Close` (open at 0 s,
+folded at 12 s; the real umbrella takes 180 s). `madinah_umbrella_closed.glb` is the folded
+state as a static model. In the viewer use "Close umbrella" or drag the slider.
+
+How it works, as read from the designer's section drawing (which overlays the folded state and
+the arm sweep) and from the cladding maker's photos of bare, half-open and closed umbrellas:
+
+1. An electric spindle inside the telescopic shaft pushes the top hub up by 3.55 m (15.95 → 19.50 m).
+2. Each **upper strut** (2.88 m, hub to inner arm) swings its **inner arm** (4.69 m) from 10° above
+   horizontal to vertical about the root hinge on the fixed mast at 14.15 m.
+3. The **outer arm** (8.0 m) is hinged to the inner arm at the elbow. The **lower strut** (7.0 m, from
+   the fixed mast at 10.86 m to a pin 0.97 m past the elbow) forces it to fold downward as the
+   elbow rises, so each arm ends as an inverted V: inner arm up, outer arm hanging down.
+4. The corner extensions of the diagonal arms and the 16 passive arms fold back along the outer arms first.
+5. The mosaic cladding on top of the outer arms then faces outward. The eight panels close into
+   the eight-sided casing; their pointed ends, at the elbows, form the crown with the gold lozenges.
+   The membrane hangs gathered inside.
+
+That is six hinges per arm (root, elbow, two per strut), matching the designer's description.
+Folded, the finial tip is at 21.7 m, as published; the casing runs from 10.0 to 19.9 m.
+
+The strut lengths are not published. The hinge heights and inner-arm length are measured off the
+drawing; the script then solves the lower-strut pin position so that one rigid linkage passes
+through both the open and the folded pose (`kin_design`), and steps it through 49 positions (`kin_solve`).
+
 ## Known limits
 
-- Only the open state is modelled. The folded state (arms upright, cladding
-  closed into a prismatic casing, 21.7 m tall) is not.
+- The linkage is a consistent reconstruction, not the fabrication geometry: the lower-strut pin
+  position and the 8.0 m outer-arm length are solved or estimated.
+- The fold-back corner extension on the diagonal arms is my assumption for how a 36 m diagonal
+  packs into a 9.5 m casing; I found no drawing of it.
+- The membrane is moved by the arm rig and flattened inside the casing. It is not a cloth
+  simulation, so half-open folds are approximate.
+- The casing pattern (gold lozenge, triple chevrons, turquoise stripes) follows the photos; the
+  real surface is glass mosaic, here a flat texture.
 - This is a reconstruction from one section drawing and published photographs,
   not from a survey or the fabrication drawings. Treat the `[P]` items and all
   small-part sizes as approximate (roughly ±10 %).
