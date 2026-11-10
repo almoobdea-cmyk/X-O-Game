@@ -545,7 +545,7 @@ def _noise(size, seed, scale):
     return (out - out.mean()) * scale
 
 
-def tex_stone(size=512):
+def tex_stone(size=512, joints=True):
     """Beige granite-like cladding with one horizontal joint per V repeat."""
     rng = np.random.default_rng(1)
     base = np.array([196, 176, 160], np.float32)
@@ -554,9 +554,10 @@ def tex_stone(size=512):
     a += rng.normal(0, 7, (size, size, 1))
     spk = rng.random((size, size)) > 0.985
     a[spk] *= 0.78
-    a[:5, :, :] *= 0.72; a[5:8, :, :] *= 1.06            # joint + highlight
-    for x in (0, size // 2):
-        a[:, x:x + 3, :] *= 0.86                          # vertical joints
+    if joints:
+        a[:5, :, :] *= 0.72; a[5:8, :, :] *= 1.06        # joint + highlight
+        for x in (0, size // 2):
+            a[:, x:x + 3, :] *= 0.86                      # vertical joints
     return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8))
 
 
@@ -639,7 +640,7 @@ MATERIALS = {
     "membrane":  dict(tex="membrane", rough=0.85, metal=0.0, double=True),
     "stone":     dict(tex="stone", rough=0.55, metal=0.0),
     "base":      dict(color=(0.90, 0.80, 0.74), tex="stone", rough=0.22, metal=0.0),
-    "caststone": dict(color=(0.69, 0.67, 0.63), rough=0.85, metal=0.0),
+    "caststone": dict(tex="granite", rough=0.55, metal=0.0),      # carved parts: same granite as the shaft, no joints
     "slate":     dict(color=(0.30, 0.38, 0.46), rough=0.55, metal=0.0),
     "gold_engraved": dict(tex="gold_engraved", rough=0.32, metal=1.0, double=True),
     "gold":      dict(color=(1.0, 0.62, 0.11), rough=0.24, metal=1.0),
@@ -1210,7 +1211,7 @@ def write_glb(path, parts, textures, variant):
 
 
 def main():
-    textures = dict(membrane=tex_membrane(), stone=tex_stone(), gold_engraved=tex_gold_engraved(),
+    textures = dict(membrane=tex_membrane(), stone=tex_stone(), granite=tex_stone(256, joints=False), gold_engraved=tex_gold_engraved(),
                     mosaic=tex_mosaic(), floor=tex_floor())
     os.makedirs(os.path.join(HERE, "textures"), exist_ok=True)
     for n, im in textures.items():
