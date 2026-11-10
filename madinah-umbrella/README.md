@@ -106,7 +106,7 @@ the arm sweep) and from the cladding maker's photos of bare, half-open and close
    petals and its eight ridges show in the notches between them, so casing and column read as one piece.
 7. At the bottom, the four middle panels stop on the lamp roofs. The four diagonal panels carry a
    narrow tail that runs down between the lamps into the corner notches of the lantern block,
-   ending just above the pointed stops at 8.6 m.
+   ending on bronze arrow-shaped shoes set in those notches at 8.3–8.7 m.
 
 That is six hinges per arm (root, elbow, two per strut), matching the designer's description.
 Folded, the finial tip is at 21.7 m, as published; the casing runs from 8.7 m (diagonal tails) to 20.0 m.
