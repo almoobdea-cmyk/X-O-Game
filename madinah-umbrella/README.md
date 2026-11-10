@@ -100,11 +100,16 @@ the arm sweep) and from the cladding maker's photos of bare, half-open and close
    elbow rises, so each arm ends as an inverted V: inner arm up, outer arm hanging down.
 4. The corner extensions of the diagonal arms and the 16 passive arms fold back along the outer arms first.
 5. The mosaic cladding on top of the outer arms then faces outward. The eight panels close into
-   the eight-sided casing; their pointed ends, at the elbows, form the crown with the gold lozenges.
-   The membrane hangs gathered inside.
+   the eight-sided casing. Each panel has a shallow ridge down its middle and a pointed petal at
+   the elbow end carrying a faceted gilded lozenge.
+6. The hub keeps rising until the gilded crown lands on the casing top: its skirt sits behind the
+   petals and its eight ridges show in the notches between them, so casing and column read as one piece.
+7. At the bottom, the four middle panels stop on the lamp roofs. The four diagonal panels carry a
+   narrow tail that runs down between the lamps into the corner notches of the lantern block,
+   ending just above the pointed stops at 8.6 m.
 
 That is six hinges per arm (root, elbow, two per strut), matching the designer's description.
-Folded, the finial tip is at 21.7 m, as published; the casing runs from 10.0 to 19.9 m.
+Folded, the finial tip is at 21.7 m, as published; the casing runs from 8.7 m (diagonal tails) to 20.0 m.
 
 The strut lengths are not published. The hinge heights and inner-arm length are measured off the
 drawing; the script then solves the lower-strut pin position so that one rigid linkage passes
@@ -118,8 +123,9 @@ through both the open and the folded pose (`kin_design`), and steps it through 4
   packs into a 9.5 m casing; I found no drawing of it.
 - The membrane is moved by the arm rig and flattened inside the casing. It is not a cloth
   simulation, so half-open folds are approximate.
-- The casing pattern (gold lozenge, triple chevrons, turquoise stripes) follows the photos; the
-  real surface is glass mosaic, here a flat texture.
+- The casing pattern (triple gold chevrons peaking on each panel ridge, fine turquoise stripes)
+  follows the photos; the real surface is glass mosaic, here a flat texture. Panel stand-off from
+  the arms (about 0.5 m) is set so the casing meets the lantern block; it is not a measured value.
 - This is a reconstruction from one section drawing and published photographs,
   not from a survey or the fabrication drawings. Treat the `[P]` items and all
   small-part sizes as approximate (roughly ±10 %).

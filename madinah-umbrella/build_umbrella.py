@@ -135,13 +135,13 @@ def loft(m, stations, uv_mode="wrap", vscale=1.0, cap_top=False, cap_bot=False, 
             m.tri((0, y, 0), (s[i][0], y, s[i][1]), (s[j][0], y, s[j][1]))
 
 
-def lathe(m, profile, n=32, flutes=0, flute_depth=0.0):
+def lathe(m, profile, n=32, flutes=0, flute_depth=0.0, phase=0.0):
     """Smooth surface of revolution about Y.  profile = [(r, y)] bottom->top."""
     V, UVs, T = [], [], []
     for k, (r, y) in enumerate(profile):
         for i in range(n + 1):
             th = 2 * math.pi * i / n
-            rr = r * (1 - flute_depth * (0.5 - 0.5 * math.cos(flutes * th))) if flutes else r
+            rr = r * (1 - flute_depth * (0.5 - 0.5 * math.cos(flutes * (th - phase)))) if flutes else r
             V.append((rr * math.cos(th), y, rr * math.sin(th)))
             UVs.append((i / n * 4, k / max(len(profile) - 1, 1)))
     for k in range(len(profile) - 1):
@@ -1122,12 +1122,15 @@ def build_parts(variant):
     rig.add("Hub", None, t=[(0.0, kk["h"], 0.0) for kk in keys])
     m = Mesh()                                            # sliding hub on the telescopic shaft (spindle inside)
     cyl(m, (0, -5.45, 0), (0, .25, 0), .225, .225, n=18)
-    mm = Mesh(); loft(mm, [(-.22, .42, None), (.22, .42, None)], cap_top=True, cap_bot=True)
+    mm = Mesh(); loft(mm, [(-.22, .38, None), (.18, .38, None)], cap_top=True, cap_bot=True)
     k0 = len(m.P); m.P += mm.P; m.N += mm.N; m.UV += mm.UV; m.I += [i + k0 for i in mm.I]
-    lathe(m, [(.42, .22), (.50, .26), (.46, .36), (.30, .46)], 24)
+    lathe(m, [(.34, .18), (.36, .24), (.30, .34), (.24, .44)], 24)
     addn("Sliding_Hub_and_Telescopic_Shaft", "Hub", m, "steel")
     m = Mesh()                                            # gilded crown and lance; tip at 21.7 m when folded [D]
-    lathe(m, [(.60, .30), (.64, .34), (.56, .40), (.38, .56), (.24, .72), (.16, .84), (.12, .90)], 48, flutes=16, flute_depth=0.16)
+    # wide gilded cap with eight ridges: when the hub is fully raised its skirt lands on the casing
+    # top, the ridges showing in the notches between the petal-shaped panel ends [P]
+    lathe(m, [(1.21, -.47), (1.23, -.43), (1.18, -.38), (.95, -.18), (.66, .14), (.40, .48), (.22, .76), (.14, .88), (.12, .90)],
+          64, flutes=8, flute_depth=0.19, phase=math.radians(22.5))
     lathe(m, [(.12, .90), (.17, .93), (.17, .96), (.09, .99), (.08, 1.03)], 24)
     sphere(m, (0, 1.19, 0), .165, 16, sy=1.05)
     lathe(m, [(.06, 1.34), (.11, 1.37), (.06, 1.42), (.045, 1.52), (.07, 1.60), (.04, 1.70), (.025, 1.92), (.004, 2.205)], 16)
@@ -1149,7 +1152,7 @@ def build_parts(variant):
         beam(o, (1.2, K_YOFF, 0), (K_LO, K_YOFF, 0), .30, .38, .20 if diag else .15, .22 if diag else .17)
         cyl(hg, (QX, K_QY, -.24), (QX, K_QY, .24), .12, n=12)                                # lower-strut pin
         for xx in (1.6, 4.0, 6.6):                                                           # cladding stand-offs
-            beam(o, (xx, K_YOFF + .1, 0), (xx, K_YOFF + .44 - .026 * xx, 0), .07, .07, up=(1, 0, 0))
+            beam(o, (xx, K_YOFF + .1, 0), (xx, .80 - .0076 * xx, 0), .07, .07, up=(1, 0, 0))
         if diag:
             cyl(hg, (K_LO, K_YOFF - .17, -.2), (K_LO, K_YOFF - .17, .2), .10, n=12)          # corner-extension hinge
         else:
@@ -1157,25 +1160,51 @@ def build_parts(variant):
             sphere(tp, (K_LO + .14, K_YOFF - .02, 0), .055, 8)
         return o, hg, tp
 
-    def cladding_mesh():
-        """GRP panel with glass mosaic on top of the outer arm: closes into one face of the casing.
-        Hat section, 0.88 m wide at the elbow end and 0.68 m at the tip end, pointed past the elbow."""
-        c = Mesh(); X0, X1 = -1.06, K_LO + .85; secs = []
-        xs = [X0 + 1.06 * (1 - math.cos(k / 9 * math.pi / 2)) for k in range(10)] + list(np.linspace(0.45, X1, 12))
+    CL_X0, CL_PET, CL_LEN = -1.20, 0.30, 10.50            # panel top, end of the petal arch, texture length
+
+    def clad_y(x):                                        # stand-off of the panel ridge above the elbow pin line
+        return .83 - .0076 * max(x, 0.0)
+
+    def cladding_mesh(diag):
+        """GRP panel with glass mosaic on the outer arm; the eight close into the casing. [P]
+        Shallow ridge down the middle, returns at the edges, a pointed petal at the elbow end that
+        curls inward under the crown.  Middle panels stop on the lamp roofs; diagonal panels carry
+        a narrow tail that runs down between the lamps into the corner notch of the lantern block."""
+        c = Mesh(); X1 = K_LO + (2.17 if diag else 1.30); secs = []
+        xs = [CL_X0 + (CL_PET - CL_X0) * (1 - math.cos(k / 12 * math.pi / 2)) for k in range(13)] + list(np.linspace(0.8, 9.0, 12))
+        xs += [9.35, X1] if diag else [X1]
         for x in xs:
-            if x < 0:
-                t = -x / 1.06; g = max((1 - t ** 2.1) ** .62, .04); yb = K_YOFF + .46 - .42 * t * t; w = .96 * g
+            if x < CL_PET:
+                t = (CL_PET - x) / (CL_PET - CL_X0); g = max(1 - t ** 1.55, .02); yb = clad_y(x) - .50 * t * t; w = 1.12 * g
             else:
-                yb = K_YOFF + .46 - .22 * x / X1; w = .96 + (.78 - .96) * x / X1
-            v = (x - X0) / (X1 - X0)
-            secs.append([(x, yb - .12, -w / 2, 0.0, v), (x, yb, -w * .29, .22, v), (x, yb, w * .29, .78, v), (x, yb - .12, w / 2, 1.0, v)])
-        for a, b in zip(secs[:-1], secs[1:]):
-            for i in range(3):
-                c.quad(a[i][:3], a[i + 1][:3], b[i + 1][:3], b[i][:3],
-                       uv=(a[i][3:], a[i + 1][3:], b[i + 1][3:], b[i][3:]), hint=(0, 1, 0))
+                yb = clad_y(x); w = 1.12 + (.86 - 1.12) * min(x, 9.0) / 9.0
+                if diag and x > 9.0:
+                    w = .86 + (.54 - .86) * min((x - 9.0) / .35, 1.0)
+            v = min((x - CL_X0) / CL_LEN, .995)
+            secs.append([(x, yb - .14, -w / 2, 0.0, v), (x, yb - .035, -w * .32, .18, v), (x, yb + .04, 0.0, .5, v),
+                         (x, yb - .035, w * .32, .82, v), (x, yb - .14, w / 2, 1.0, v)])
+        for a_, b_ in zip(secs[:-1], secs[1:]):
+            for i in range(4):
+                c.quad(a_[i][:3], a_[i + 1][:3], b_[i + 1][:3], b_[i][:3],
+                       uv=(a_[i][3:], a_[i + 1][3:], b_[i + 1][3:], b_[i][3:]), hint=(0, 1, 0))
         e = secs[-1]
-        c.quad(e[0][:3], e[1][:3], e[2][:3], e[3][:3], uv=((0, 1), (.22, 1), (.78, 1), (1, 1)), hint=(1, 0, 0))
+        for i in (1, 2, 3):
+            tri_h(c, e[0][:3], e[i][:3], e[i + 1][:3], (1, 0, 0))
         return c
+
+    def lozenge_mesh():
+        """Faceted gilded lozenge on each petal (a low four-sided pyramid). [P]"""
+        g = Mesh(); xa, xb, hw = -.98, .22, .20; xm = xa + (xb - xa) * .42
+
+        def surf(x, z):
+            t = max((CL_PET - x) / (CL_PET - CL_X0), 0.0)
+            w = 1.12 * max(1 - t ** 1.55, .02); yb = clad_y(x) - .50 * t * t
+            return yb + .04 - .075 * min(abs(z) / (w * .32), 1.0) + .012
+        P = [(xa, surf(xa, 0), 0.0), (xm, surf(xm, hw), hw), (xb, surf(xb, 0), 0.0), (xm, surf(xm, hw), -hw)]
+        apex = (xm, surf(xm, 0) + .065, 0.0)
+        for i in range(4):
+            tri_h(g, P[i], P[(i + 1) % 4], apex, (0, 1, 0))
+        return g
 
     lower = Mesh()                                        # telescopic-looking lower strut
     beam(lower, (0, 0, 0), (LS * .55, 0, 0), .30, .32); beam(lower, (LS * .55, 0, 0), (LS, 0, 0), .22, .24)
@@ -1191,7 +1220,7 @@ def build_parts(variant):
         return t
 
     o_mid, h_mid, t_mid = outer_mesh(False); o_dia, h_dia, _ = outer_mesh(True)
-    clad = cladding_mesh()
+    clad_mid, clad_dia, loz = cladding_mesh(False), cladding_mesh(True), lozenge_mesh()
     EXT_Y = K_YOFF - .17
     E0 = np.array(K_A) + K_LI * np.array([math.cos(K_TH0), math.sin(K_TH0)])
     tip_r = float(E0[0] + _rot2(kd["phi0"], (K_LO, EXT_Y))[0])
@@ -1217,7 +1246,8 @@ def build_parts(variant):
         addn(tag + "_Inner_Section", I, inner, "steel"); addn(tag + "_Hinge_Pins", I, hin_in, "gold_dark")
         addn(tag + "_Outer_Section", O, o_dia if diag else o_mid, "steel")
         addn(tag + "_Outer_Hinge_Pins", O, h_dia if diag else h_mid, "gold_dark")
-        addn(tag + "_Mosaic_Cladding", O, clad, "cladding")
+        addn(tag + "_Mosaic_Cladding", O, clad_dia if diag else clad_mid, "cladding")
+        addn(tag + "_Gilded_Lozenge", O, loz, "gold")
         addn(tag + "_Lower_Strut", LSN, lower, "steel"); addn(tag + "_Upper_Strut", USN, upper, "steel")
         if diag:
             addn(tag + "_Corner_Extension", X, ext, "steel"); addn(tag + "_Corner_Tip", X, ext_tip, "gold")
@@ -1288,8 +1318,8 @@ def build_parts(variant):
         sc = 4 * f * (1 - f)
         for k in range(NR + 1):
             t = k / NR
-            r = .52 + (U0[0] * (1 - .16 * sc) - .52) * t
-            y = (K_H0 + .30) + ((U0[1] + .22 - .25 * sc) - (K_H0 + .30)) * (t ** 1.25)
+            r = 1.15 + (U0[0] * (1 - .16 * sc) - 1.15) * t                     # starts under the crown skirt
+            y = (K_H0 - .42) + ((U0[1] + .22 - .25 * sc) - (K_H0 - .42)) * (t ** 1.25)
             CV.append((r * math.cos(angw), y, r * math.sin(angw))); CUV.append((.015, .015))
             wd = {"Hub": 1 - t}
             if t > 0:
@@ -1515,27 +1545,29 @@ def write_glb(path, parts, textures, variant, pose=0, animate=True):
 
 
 def tex_cladding(w=256, h=1024):
-    """Mosaic of one casing panel, elbow end at the top: gold lozenge on the pointed end,
-    triple gold chevrons, turquoise-striped field, chevrons again, plain speckled cream below. [P]"""
+    """Mosaic of one casing panel, petal end at the top (v = 0), 10.5 m long: plain petal (the
+    gilded lozenge is geometry), three gold chevrons, fine turquoise stripes, three chevrons,
+    then plain speckled cream.  Chevrons peak on the panel ridge and dip at the joints. [P]"""
     rng = np.random.default_rng(41)
-    a = np.ones((h, w, 3), np.float32) * np.array([232, 224, 200], np.float32)
+    a = np.ones((h, w, 3), np.float32) * np.array([230, 222, 198], np.float32)
     a += rng.normal(0, 7, (h, w, 1)); a[rng.random((h, w)) > 0.97] *= 0.9
     im = Image.fromarray(np.clip(a, 0, 255).astype(np.uint8)); d = ImageDraw.Draw(im)
-    gold, turq = (222, 176, 48), (118, 196, 190)
+    gold, turq = (224, 174, 44), (134, 204, 192)
     X = lambda u: u * w; Y = lambda v: v * h
-    d.polygon([(X(.5), Y(.030)), (X(.70), Y(.095)), (X(.5), Y(.170)), (X(.30), Y(.095))], fill=gold)
-    d.line([(X(.5), Y(.030)), (X(.70), Y(.095)), (X(.5), Y(.170)), (X(.30), Y(.095)), (X(.5), Y(.030))], fill=(170, 128, 30), width=2)
-    n = 15; v0, v1 = .262, .545
+    v0, v1, n = .214, .462, 23
     for i in range(n):
         if i % 2 == 0:
-            d.rectangle((X(.235), Y(v0 + (v1 - v0) * i / n), X(.765), Y(v0 + (v1 - v0) * (i + 1) / n)), fill=turq)
-    for vc in (.200, .560):
+            d.rectangle((X(0), Y(v0 + (v1 - v0) * i / n), X(1), Y(v0 + (v1 - v0) * (i + 1) / n)), fill=turq)
+    for vc in (.158, .470):
+        d.polygon([(X(0), Y(vc + .028)), (X(.18), Y(vc + .011)), (X(.5), Y(vc - .004)), (X(.82), Y(vc + .011)), (X(1), Y(vc + .028)),
+                   (X(1), Y(vc + .074)), (X(.82), Y(vc + .057)), (X(.5), Y(vc + .042)), (X(.18), Y(vc + .057)), (X(0), Y(vc + .074))],
+                  fill=(230, 222, 198))
         for k in range(3):
             v = vc + k * .0165
-            d.line([(X(0), Y(v + .022)), (X(.22), Y(v)), (X(.78), Y(v)), (X(1), Y(v + .022))], fill=gold, width=max(int(h * .0085), 3))
-    for u in (.22, .78):
-        d.line([(X(u), Y(.11)), (X(u), Y(1))], fill=(200, 192, 170), width=2)
-    return im
+            d.line([(X(0), Y(v + .032)), (X(.18), Y(v + .015)), (X(.5), Y(v)), (X(.82), Y(v + .015)), (X(1), Y(v + .032))],
+                   fill=gold, width=max(int(h * .0085), 3), joint="curve")
+    a = np.asarray(im, np.float32) + rng.normal(0, 4, (h, w, 1))      # mosaic sparkle
+    return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8))
 
 
 def main():
