@@ -70,10 +70,12 @@
     <tr><td>Arm-tip height (low / high)</td><td>14.5 / 15.3 m</td></tr>
     <tr><td>Folded height</td><td>21.7 m</td></tr>
     <tr><td>Finial tip when open</td><td>19.45 m</td></tr>
-    <tr><td>Membrane collar</td><td>10.3 m</td></tr>
-    <tr><td>Lantern zone</td><td>7.9 – 9.35 m</td></tr>
+    <tr><td>Membrane collar</td><td>10.0 m</td></tr>
+    <tr><td>Lamps (sill to eave)</td><td>7.78 – 9.30 m</td></tr>
+    <tr><td>Slate frieze</td><td>6.78 – 7.48 m</td></tr>
+    <tr><td>Carved capital</td><td>5.69 – 6.67 m</td></tr>
     <tr><td>Cooling-fan axis</td><td>3.96 m</td></tr>
-    <tr><td>Column shaft, across flats</td><td>1.10 m</td></tr>
+    <tr><td>Column shaft, across flats</td><td>0.90 m</td></tr>
     <tr><td>Base plinth</td><td>1.88 m</td></tr>
     <tr><td>Arms: middle / diagonal / passive</td><td>4 / 4 / 16</td></tr>
     <tr><td>Grid spacing in the piazza</td><td>≈ 24 m</td></tr>
@@ -85,6 +87,7 @@
   <button data-view="hero">Overview</button>
   <button data-view="under">Underside</button>
   <button data-view="lantern">Lantern</button>
+  <button data-view="capital">Capital</button>
   <button data-view="top">From above</button>
   <button data-view="crown">Crown</button>
   <span class="sep"></span>
@@ -105,7 +108,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 const GLB = { low: "__GLB_LOW__", high: "__GLB_HIGH__" };
 const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0)).buffer;
@@ -123,7 +125,15 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.maxDistance = 160; controls.minDistance = 1.5;
 
 const pmrem = new THREE.PMREMGenerator(renderer);
-scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+// bright desert-sky environment so polished gold reflects light, as on site
+const envScene = new THREE.Scene();
+{ const g = new THREE.SphereGeometry(60, 48, 24), p = g.attributes.position, c = new Float32Array(p.count * 3);
+  for (let i = 0; i < p.count; i++) { const h = p.getY(i) / 60;
+    const col = h > 0 ? [0.80 - 0.42 * h, 0.82 - 0.30 * h, 0.86 - 0.06 * h] : [0.80 + 0.36 * h, 0.82 + 0.46 * h, 0.86 + 0.62 * h];
+    c.set(col, i * 3); }
+  g.setAttribute('color', new THREE.BufferAttribute(c, 3));
+  envScene.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide }))); }
+scene.environment = pmrem.fromScene(envScene, 0.02).texture;
 
 const hemi = new THREE.HemisphereLight(0xdfeaff, 0xcbb89a, 1.0); scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xfff1dc, 3.2);
@@ -131,6 +141,9 @@ sun.position.set(26, 44, 18); sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.05;
 Object.assign(sun.shadow.camera, { left: -45, right: 45, top: 45, bottom: -45, near: 1, far: 140 });
 scene.add(sun);
+// light bounced off the pale marble paving, and a soft side fill, so the carving under the canopy reads
+const bounce = new THREE.DirectionalLight(0xfff0dc, 0.85); bounce.position.set(-8, -12, 10); scene.add(bounce);
+const fill = new THREE.DirectionalLight(0xdfe8ff, 0.5); fill.position.set(-20, 6, -14); scene.add(fill);
 
 // extended piazza paving so the model does not float in a void
 const ground = new THREE.Mesh(new THREE.CircleGeometry(220, 64), new THREE.MeshStandardMaterial({ color: 0xd9d4ca, roughness: 0.5 }));
@@ -140,7 +153,7 @@ const umbrellas = [];           // {root, lights[], glass[], membrane[]}
 const loader = new GLTFLoader();
 function load(kind) {
   return new Promise((res, rej) => loader.parse(b64(GLB[kind]), '', g => {
-    const u = { root: g.scene, up: [], down: [], glass: [], membrane: [] };
+    const u = { root: g.scene, up: [], down: [], glow: [], glass: [], membrane: [] };
     g.scene.traverse(o => {
       if (o.isMesh) {
         const n = o.material.name;
@@ -152,6 +165,7 @@ function load(kind) {
         if (n === 'glass') u.glass.push(o.material);
         if (o.material.map) o.material.map.anisotropy = 8;
       }
+      if (o.isPointLight) { u.glow.push(o); o.decay = 1.6; o.castShadow = false; }
       if (o.isSpotLight) { (o.parent.name.startsWith('Membrane') || o.name.startsWith('Membrane') ? u.up : u.down).push(o); o.castShadow = false; o.penumbra = 0.9; o.decay = 1.6;
         o.target.position.set(0, 0, -1); o.add(o.target); }   // aim along the glTF node's -Z
     });
@@ -164,17 +178,18 @@ function applyLighting() {
   const dark = night;
   scene.background = new THREE.Color(dark ? 0x070b14 : 0xbfd7ee);
   scene.fog = new THREE.Fog(scene.background, 140, 420);
-  hemi.intensity = dark ? 0.10 : 1.0; sun.intensity = dark ? 0 : 3.2;
-  scene.environmentIntensity = dark ? 0.25 : 1.0;
+  hemi.intensity = dark ? 0.10 : 0.55; sun.intensity = dark ? 0 : 3.2;
+  bounce.intensity = dark ? 0 : 1.1; fill.intensity = dark ? 0 : 0.5;
   renderer.toneMappingExposure = dark ? 1.0 : 0.95;
   ground.material.color.set(dark ? 0x6f6c66 : 0xd9d4ca);
   ground.material.roughness = dark ? 0.22 : 0.5;
   for (const u of umbrellas) {
     u.up.forEach(l => l.intensity = dark ? 26 : 0);
     u.down.forEach(l => l.intensity = dark ? 60 : 0);
-    u.glass.forEach(m => m.emissiveIntensity = dark ? 2.2 : 0.35);
-    u.membrane.forEach(m => m.emissiveIntensity = dark ? 0.05 : 0.45);
-    u.root.traverse(o => { if (o.isMesh && o.material.envMapIntensity !== undefined) o.material.envMapIntensity = (o.material.name.startsWith('gold') ? 2.2 : 1.0) * (dark ? 0.3 : 1.0); });
+    u.glow.forEach(l => l.intensity = dark ? 7 : 0);
+    u.glass.forEach(m => m.emissiveIntensity = dark ? 2.6 : 0.12);
+    u.membrane.forEach(m => m.emissiveIntensity = dark ? 0.10 : 0.45);
+    u.root.traverse(o => { if (o.isMesh && o.material.envMapIntensity !== undefined) o.material.envMapIntensity = (o.material.name.startsWith('gold') ? 0.95 : 0.58) * (dark ? 0.25 : 1.0); });
   }
 }
 
@@ -197,7 +212,7 @@ function dim(a, b, text) {
 dim([-12.75, 0.05, 13.6], [12.75, 0.05, 13.6], '25.5 m');
 dim([13.6, 0, -12.75], [13.6, 14.5, -12.75], '14.5 m tip');
 dim([-13.6, 0, 0], [-13.6, 19.45, 0], '19.45 m finial');
-dim([2.2, 0, 2.2], [2.2, 7.9, 2.2], '7.9 m lantern');
+dim([2.2, 0, 2.2], [2.2, 7.78, 2.2], '7.78 m lamps');
 dim([-2.4, 0, 2.4], [-2.4, 3.96, 2.4], '3.96 m fan');
 let showDims = true;
 function updateLabels() {
@@ -222,7 +237,8 @@ fig.add(body, head); fig.position.set(3.2, 0, 1.6); fig.traverse(o => { if (o.is
 const VIEWS = {
   hero:    [[37, 15, 39], [0, 9.0, 0]],
   under:   [[9.5, 1.7, 8], [0, 12.2, 0]],
-  lantern: [[4.6, 7.6, 4.2], [0, 8.4, 0]],
+  lantern: [[5.6, 5.4, 2.6], [0, 8.05, 0]],
+  capital: [[3.3, 5.2, 1.5], [0, 6.6, 0]],
   top:     [[14, 46, 20], [0, 13, 0]],
   crown:   [[5.5, 19.5, 5.5], [0, 16.6, 0]],
 };

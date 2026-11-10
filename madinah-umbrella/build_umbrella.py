@@ -27,15 +27,18 @@ VARIANTS = {            # [D] two deployed heights so neighbouring canopies over
     "low":  dict(tip=14.5, elbow=15.35),
     "high": dict(tip=15.3, elbow=14.90),
 }
-R_FUNNEL, H_FUNNEL = 0.55, 10.30     # [M] membrane collar above the lantern
+R_FUNNEL, H_FUNNEL = 0.52, 10.00     # [P] membrane pleats leave the faceted crown
 H_ARM_PIVOT = 14.15                  # [M] arm root hinge on the mast
 H_UPPER_PIVOT = 16.20                # [M] upper strut hinge
 H_LOWER_PIVOT = 10.86                # [M] lower strut hinge
 R_ELBOW = 6.60                       # [M] inner/outer arm hinge radius (middle arm)
 H_FAN = 3.96                         # [M] evaporative cooling fan axis
 H_SHAFT0, H_SHAFT1 = 1.40, 5.50      # [M]
-H_FRIEZE0, H_FRIEZE1 = 6.75, 7.55    # [M]
-H_LANT0, H_LANT1 = 7.90, 9.35        # [M] lantern (piazza + facade lighting)
+H_FRIEZE0, H_FRIEZE1 = 6.78, 7.48    # [P] slate frieze band
+H_LANT0, H_LANT1 = 7.78, 9.30        # [M/P] lamp frames (piazza + facade lighting)
+A_SHAFT = 0.45                       # [M/P] shaft apothem: 0.90 m across flats
+H_CAP0, H_CAP1 = 5.69, 6.67          # [P] carved capital
+H_BODY0 = 7.635                      # [P] underside of the lantern block
 
 
 # --------------------------------------------------------------------------
@@ -256,6 +259,137 @@ def pchip(xs, ys):
 
 
 # --------------------------------------------------------------------------
+# Relief carving helpers: everything is modelled as real geometry on a face frame
+# --------------------------------------------------------------------------
+def _unit(v):
+    v = np.asarray(v, float); return v / np.linalg.norm(v)
+
+
+class Frame:
+    """Local 2D frame on a planar face: p(a, b, h) = origin + a*U + b*V + h*N (N points outward)."""
+    def __init__(self, o, u, v):
+        self.o = np.asarray(o, float); self.u = _unit(u); self.v = _unit(v)
+        n = _unit(np.cross(self.u, self.v))
+        if np.dot(n, (self.o[0], 0, self.o[2])) < 0:
+            n = -n
+        self.n = n
+
+    def p(self, a, b, h=0.0):
+        return self.o + self.u * a + self.v * b + self.n * h
+
+
+def tri_h(m, a, b, c, hint):
+    if np.dot(np.cross(np.subtract(b, a), np.subtract(c, a)), hint) < 0:
+        b, c = c, b
+    m.tri(a, b, c)
+
+
+def curve(pts, sub=6, closed=False):
+    """Catmull-Rom smoothing of a 2D polyline."""
+    P = [np.asarray(p, float) for p in pts]; n = len(P); out = []
+    rng = range(n) if closed else range(n - 1)
+    for i in rng:
+        p0 = P[(i - 1) % n] if (closed or i > 0) else P[0]
+        p1 = P[i]; p2 = P[(i + 1) % n]
+        p3 = P[(i + 2) % n] if (closed or i + 2 < n) else P[-1]
+        for k in range(sub):
+            t = k / sub
+            out.append(0.5 * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t + (-p0 + 3 * p1 - 3 * p2 + p3) * t ** 3))
+    if not closed:
+        out.append(P[-1])
+    return out
+
+
+def ribbon(m, F, pts, hw, h, closed=False, top=0.42):
+    """Raised moulding along a 2D path: flat crest of half-width hw*top, chamfered flanks."""
+    P = [np.asarray(p, float) for p in pts]; n = len(P)
+    if n < 2:
+        return
+    nr = []
+    for i in range(n):
+        a = P[(i - 1) % n] if (closed or i > 0) else P[i]
+        b = P[(i + 1) % n] if (closed or i < n - 1) else P[i]
+        t = b - a; L = np.linalg.norm(t)
+        t = t / L if L > 1e-9 else np.array([1.0, 0.0])
+        nr.append(np.array([-t[1], t[0]]))
+    segs = range(n) if closed else range(n - 1)
+    for i in segs:
+        j = (i + 1) % n
+        row = []
+        for k in (i, j):
+            p, q = P[k], nr[k]
+            row.append([F.p(*(p + q * hw)), F.p(*(p + q * hw * top), h), F.p(*(p - q * hw * top), h), F.p(*(p - q * hw))])
+        A, B = row
+        for c in range(3):
+            m.quad(A[c], A[c + 1], B[c + 1], B[c], hint=F.n)
+
+
+def pyramid(m, F, base, h):
+    c = np.mean(np.asarray(base, float), 0); apex = F.p(c[0], c[1], h)
+    for i in range(len(base)):
+        a = base[i]; b = base[(i + 1) % len(base)]
+        tri_h(m, F.p(*a), F.p(*b), apex, F.n)
+
+
+def plate(m, F, poly, h, inset=0.012):
+    """Raised polygon (star-shaped about its centroid) with chamfered rim."""
+    poly = [np.asarray(p, float) for p in poly]; c = np.mean(poly, 0)
+    top = []
+    for p in poly:
+        d = c - p; L = np.linalg.norm(d)
+        top.append(p + d / L * min(inset, L * 0.4))
+    n = len(poly)
+    for i in range(n):
+        j = (i + 1) % n
+        m.quad(F.p(*poly[i]), F.p(*poly[j]), F.p(*top[j], h), F.p(*top[i], h), hint=F.n)
+        tri_h(m, F.p(*c, h), F.p(*top[i], h), F.p(*top[j], h), F.n)
+
+
+def dome(m, F, c, ru, rv, h, n=16, k=5):
+    V, T = [], []
+    for j in range(k + 1):
+        ph = j / k * math.pi / 2
+        for i in range(n):
+            th = 2 * math.pi * i / n
+            V.append(F.p(c[0] + ru * math.cos(ph) * math.cos(th), c[1] + rv * math.cos(ph) * math.sin(th), h * math.sin(ph)))
+    for j in range(k):
+        for i in range(n):
+            a = j * n + i; b = j * n + (i + 1) % n; c2 = a + n; d = b + n
+            T += [(a, b, d), (a, d, c2)]
+    m.smooth(V, T, up_hint=F.n)
+
+
+def in_poly(p, poly):
+    x, y = p; inside = False; n = len(poly)
+    for i in range(n):
+        x1, y1 = poly[i]; x2, y2 = poly[(i + 1) % n]
+        if (y1 > y) != (y2 > y) and x < (x2 - x1) * (y - y1) / (y2 - y1) + x1:
+            inside = not inside
+    return inside
+
+
+def spiral(c, r0, r1, a0, turns, sgn=1, n=28):
+    out = []
+    for k in range(n + 1):
+        t = k / n; r = r0 + (r1 - r0) * t; a = a0 + sgn * turns * 2 * math.pi * t
+        out.append((c[0] + r * math.cos(a), c[1] + r * math.sin(a)))
+    return out
+
+
+def rot4(p, k):
+    """Rotate a point (x, y, z) about the Y axis by k quarter turns."""
+    x, y, z = p
+    for _ in range(k % 4):
+        x, z = -z, x
+    return (x, y, z)
+
+
+def sta(y, a, w):
+    """Loft station for a chamfered square given main-face apothem a and main-face half-width w."""
+    return (y, a, (a + w) / SQ2)
+
+
+# --------------------------------------------------------------------------
 # Membrane surface definition (shared by mesh and texture)
 # --------------------------------------------------------------------------
 # Funnel profile measured off the section drawing: fraction of rise vs r/R.
@@ -296,12 +430,14 @@ def membrane_point(q, sig, tip_h):
     dth = (th_tip - th_uni + math.pi) % (2 * math.pi) - math.pi
     b = min(max((r - 1.0) / 6.0, 0), 1); b = b * b * (3 - 2 * b)
     th = th_uni + dth * b
+    fade = max(0.0, 1 - sig / 0.10) ** 2          # gathered pleats where the fabric leaves the crown
+    r *= 1 + 0.085 * fade * math.cos(4 * math.pi * q)
     return r * math.cos(th), y, r * math.sin(th)
 
 
 def build_membrane(tip_h):
     m = Mesh()
-    NQ, NS = 24 * 10, 44
+    NQ, NS = 24 * 12, 44
     sigs = np.linspace(0, 1, NS + 1) ** 1.6
     V, UVs, T = [], [], []
     for a in range(NQ + 1):
@@ -346,7 +482,8 @@ def tex_membrane(size=2048, ss=2):
         q = i / 4.0
         wt = 7 if i % 4 == 0 else 4 if i % 2 == 0 else 2
         r1 = redge(q) if i % 2 == 0 else redge(q) * 0.62
-        pts = [pol(q, R_FUNNEL + (r1 - R_FUNNEL) * k / 60) for k in range(61)]
+        r0 = R_FUNNEL if i % 4 == 0 else 1.3 if i % 2 == 0 else 2.4     # keep the gathered collar mostly white
+        pts = [pol(q, r0 + (r1 - r0) * k / 60) for k in range(61)]
         d.line(pts, fill=BLUE if i % 2 == 0 else (120, 135, 170), width=wt * ss // 2 + 1)
 
     def petal(qc, r0, r1, W, width=5, fill=None):
@@ -411,7 +548,7 @@ def _noise(size, seed, scale):
 def tex_stone(size=512):
     """Beige granite-like cladding with one horizontal joint per V repeat."""
     rng = np.random.default_rng(1)
-    base = np.array([203, 182, 150], np.float32)
+    base = np.array([200, 186, 170], np.float32)
     a = np.ones((size, size, 3), np.float32) * base
     a += _noise(size, 5, 26)[..., None]
     a += rng.normal(0, 7, (size, size, 1))
@@ -423,60 +560,26 @@ def tex_stone(size=512):
     return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8))
 
 
-def tex_carved(size=512):
-    """Capital face: arabesque shield medallion in low relief (painted shading)."""
-    im = Image.fromarray(np.asarray(tex_stone(size))[8:, 8:].copy()).resize((size, size))
-    hi = Image.new("L", (size, size), 0); lo = Image.new("L", (size, size), 0)
-    dh, dl = ImageDraw.Draw(hi), ImageDraw.Draw(lo)
-    c = size / 2
-
-    def shape(scale, off=0):
-        pts = []
-        for k in range(200):
-            t = k / 200 * 2 * math.pi
-            # pointed shield / palmette outline
-            r = scale * (0.62 + 0.10 * math.cos(8 * t)) * (1 + 0.28 * math.cos(t) ** 3)
-            pts.append((c + r * math.sin(t) * 0.78, c * 0.98 - r * math.cos(t) * 1.0 + off))
-        return pts
-    for sc, wd in ((0.40 * size, 7), (0.30 * size, 5), (0.19 * size, 5)):
-        p = shape(sc)
-        dl.line(p + [p[0]], fill=255, width=wd)
-        dh.line([(x - 3, y - 3) for x, y in p + [p[0]]], fill=255, width=3)
-    for k in range(8):                                   # rosette
-        t = k * math.pi / 4
-        x, y = c + 0.085 * size * math.sin(t), c * 0.98 - 0.085 * size * math.cos(t)
-        dl.ellipse((x - 20, y - 20, x + 20, y + 20), outline=255, width=4)
-    dl.ellipse((c - 16, c * 0.98 - 16, c + 16, c * 0.98 + 16), fill=255)
-    for sx in (-1, 1):                                   # scroll tendrils in the corners
-        for k in range(60):
-            t = k / 60 * 3.2 * math.pi; r = 6 + t * 7
-            x = c + sx * (0.36 * size + r * math.cos(t) * 0.6); y = 0.14 * size + r * math.sin(t) * 0.6
-            dl.ellipse((x - 3, y - 3, x + 3, y + 3), fill=255)
-            y2 = 0.88 * size - r * math.sin(t) * 0.5
-            dl.ellipse((x - 3, y2 - 3, x + 3, y2 + 3), fill=255)
-    dl.rectangle((6, 6, size - 6, size - 6), outline=255, width=5)
-    a = np.asarray(im, np.float32)
-    a *= (1 - 0.42 * np.asarray(lo.filter(ImageFilter.GaussianBlur(1.2)), np.float32)[..., None] / 255)
-    a *= (1 + 0.16 * np.asarray(hi.filter(ImageFilter.GaussianBlur(1.5)), np.float32)[..., None] / 255)
-    return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8))
-
-
-def tex_frieze(size=512):
-    """Dark grey-green frieze panel.  The real plaques carry inscriptions; an abstract
-    geometric band is used here instead of imitating sacred calligraphy."""
-    a = np.ones((size, size, 3), np.float32) * np.array([92, 96, 84], np.float32)
-    a += _noise(size, 9, 18)[..., None]
+def tex_gold_engraved(size=256):
+    """Gilded sheet with chased arabesque scrollwork (lamp header, side panels, frames)."""
+    a = np.ones((size, size, 3), np.float32) * np.array([246, 168, 40], np.float32)
+    a += _noise(size, 31, 14)[..., None]
     im = Image.fromarray(np.clip(a, 0, 255).astype(np.uint8)); d = ImageDraw.Draw(im)
-    d.rectangle((26, 60, size - 26, size - 60), outline=(60, 62, 52), width=8)
-    d.rectangle((34, 68, size - 34, size - 68), fill=(70, 78, 66), outline=(150, 140, 100), width=3)
-    gold = (176, 160, 110)
-    y0, y1 = size * 0.36, size * 0.64; n = 9; w = (size - 110) / n
-    for i in range(n):                                   # interlaced meander
-        x = 55 + i * w
-        d.line([(x, y1), (x, y0), (x + w * 0.6, y0), (x + w * 0.6, (y0 + y1) / 2), (x + w * 0.3, (y0 + y1) / 2)], fill=gold, width=5)
-        d.line([(x + w * 0.3, y1), (x + w, y1)], fill=gold, width=5)
-    d.line([(55, y0 - 22), (size - 55, y0 - 22)], fill=gold, width=2)
-    d.line([(55, y1 + 22), (size - 55, y1 + 22)], fill=gold, width=2)
+    dark, lite = (176, 118, 30), (255, 222, 130)
+    n = 4; c = size / n
+    for j in range(n):
+        for i in range(n):
+            cx, cy = (i + .5) * c, (j + .5) * c; sg = 1 if (i + j) % 2 == 0 else -1
+            pts = []
+            for k in range(70):
+                t = k / 69 * 2.6 * math.pi; r = c * 0.06 + c * 0.38 * (1 - k / 69)
+                pts.append((cx + r * math.cos(t) * sg, cy + r * math.sin(t)))
+            d.line(pts, fill=dark, width=4); d.line([(x + 1.5, y - 1.5) for x, y in pts], fill=lite, width=1)
+            d.ellipse((cx - 5, cy - 5, cx + 5, cy + 5), fill=dark)
+            for q in range(4):                       # leaves in the gaps
+                t = q * math.pi / 2 + math.pi / 4
+                x, y = cx + c * 0.47 * math.cos(t), cy + c * 0.47 * math.sin(t)
+                d.polygon([(x - 7, y), (x, y - 7), (x + 7, y), (x, y + 7)], fill=dark)
     return im
 
 
@@ -518,12 +621,14 @@ def tex_floor(size=512):
 
 
 def tex_glass(size=256):
-    """Lantern diffuser: warm prismatic glass with horizontal louvre shading."""
-    a = np.ones((size, size, 3), np.float32) * np.array([255, 238, 200], np.float32)
-    y = np.arange(size)[:, None]
-    a *= (0.80 + 0.20 * np.abs(np.sin(y / size * math.pi * 9)))[..., None]
-    x = np.arange(size)[None, :]
-    a *= (0.93 + 0.07 * np.cos(x / size * math.pi * 40))[..., None]
+    """Lamp glass: bluish prismatic panes over a horizontally ribbed reflector."""
+    a = np.ones((size, size, 3), np.float32) * np.array([196, 210, 220], np.float32)
+    y = np.arange(size)[:, None] / size
+    rib = (y * 14) % 1.0
+    a *= (0.88 + 0.14 * rib)[..., None]
+    a *= (1.04 - 0.12 * y)[..., None]
+    x = np.arange(size)[None, :] / size
+    a *= (0.94 + 0.06 * np.cos(x * math.pi * 2))[..., None]
     return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8))
 
 
@@ -533,17 +638,18 @@ def tex_glass(size=256):
 MATERIALS = {
     "membrane":  dict(tex="membrane", rough=0.85, metal=0.0, double=True),
     "stone":     dict(tex="stone", rough=0.55, metal=0.0),
-    "base":      dict(color=(0.80, 0.74, 0.64), tex="stone", rough=0.35, metal=0.0),
-    "carved":    dict(tex="carved", rough=0.7, metal=0.0),
-    "frieze":    dict(tex="frieze", rough=0.5, metal=0.1),
-    "gold":      dict(color=(1.0, 0.76, 0.33), rough=0.22, metal=1.0),
+    "base":      dict(color=(0.86, 0.84, 0.80), tex="stone", rough=0.35, metal=0.0),
+    "caststone": dict(color=(0.69, 0.67, 0.63), rough=0.85, metal=0.0),
+    "slate":     dict(color=(0.30, 0.38, 0.46), rough=0.55, metal=0.0),
+    "gold_engraved": dict(tex="gold_engraved", rough=0.32, metal=1.0, double=True),
+    "gold":      dict(color=(1.0, 0.62, 0.11), rough=0.24, metal=1.0),
     "gold_dark": dict(color=(0.72, 0.52, 0.20), rough=0.4, metal=1.0),
-    "glass":     dict(tex="glass", rough=0.25, metal=0.0, emissive=(1.0, 0.86, 0.62), estr=1.0),
+    "glass":     dict(tex="glass", rough=0.08, metal=0.35, emissive=(1.0, 0.86, 0.62), estr=1.0),
     "steel":     dict(color=(0.93, 0.92, 0.89), rough=0.45, metal=0.15),
     "mosaic":    dict(tex="mosaic", rough=0.3, metal=0.0),
     "fan":       dict(color=(0.90, 0.86, 0.78), rough=0.6, metal=0.0),
     "fan_dark":  dict(color=(0.35, 0.33, 0.30), rough=0.6, metal=0.3),
-    "floor":     dict(tex="floor", rough=0.18, metal=0.0),
+    "floor":     dict(tex="floor", rough=0.36, metal=0.0),
 }
 
 
@@ -561,81 +667,274 @@ def build_parts(variant):
     R4 = [0, 90, 180, 270]
 
     # ---------------- column -------------------------------------------------
+    AS = A_SHAFT
     m = Mesh()                                            # plinth + torus mouldings [M]
     loft(m, [(0, .94, None), (.10, .94, None), (.10, .87, None), (.62, .87, None), (.70, .80, None),
-             (.78, .80, None), (.84, .76, None), (.92, .80, None), (1.00, .80, None), (1.07, .75, None),
-             (1.13, .67, None), (1.21, .67, None), (1.31, .59, None), (H_SHAFT0, .55, None)], vscale=1.2, cap_bot=True)
+             (.78, .80, None), (.84, .76, None), (.92, .80, None), (1.00, .80, None), (1.07, .72, None),
+             (1.13, .60, None), (1.21, .60, None), (1.31, .50, None), (H_SHAFT0, AS, None)], vscale=1.2, cap_bot=True)
     add("Base_Plinth", "Column", m, "base")
-    m = Mesh()                                            # shaft, 1.10 m across flats
-    loft(m, [(H_SHAFT0, .55, None), (H_SHAFT1, .55, None)], vscale=1 / 1.025)
+    m = Mesh()                                            # shaft, regular octagon 0.90 m across flats
+    loft(m, [(H_SHAFT0, AS, None), (H_SHAFT1, AS, None)], vscale=1 / 1.025)
     add("Shaft", "Column", m, "stone")
-    m = Mesh()                                            # astragal rings under the capital
-    loft(m, [(H_SHAFT1, .55, None), (5.53, .60, None), (5.58, .60, None), (5.60, .57, None),
-             (5.63, .61, None), (5.68, .61, None), (5.70, .56, None)], vscale=1.0)
-    add("Astragal", "Column", m, "base")
-    m = Mesh()                                            # capital: octagon -> chamfered square [P]
-    loft(m, [(5.70, .56, .56), (5.95, .58, .60), (6.35, .66, .76), (H_FRIEZE0 - .08, .71, .86)], uv_mode="face")
-    add("Capital_Carved", "Column", m, "carved")
-    m = Mesh()
-    loft(m, [(H_FRIEZE0 - .08, .71, .86), (H_FRIEZE0 - .06, .74, .89), (H_FRIEZE0, .74, .89), (H_FRIEZE0, .71, .86)])
-    loft(m, [(H_FRIEZE1, .71, .86), (H_FRIEZE1, .75, .90), (H_FRIEZE1 + .07, .75, .90),
-             (H_FRIEZE1 + .12, .72, .87), (H_LANT0, .80, .95)])
-    add("Frieze_Cornices", "Column", m, "base")
-    m = Mesh()
-    loft(m, [(H_FRIEZE0, .71, .86), (H_FRIEZE1, .71, .86)], uv_mode="face")
-    add("Frieze_Panels", "Column", m, "frieze")
+    m = Mesh()                                            # three roll mouldings under the capital [P]
+    prof = [(H_SHAFT1, AS)]
+    for (y0, y1, r) in ((5.505, 5.56, .045), (5.565, 5.615, .035), (5.62, 5.685, .05)):
+        for k in range(7):
+            t = k / 6 * math.pi
+            prof.append((y0 + (y1 - y0) * (1 - math.cos(t)) / 2, AS + .005 + r * math.sin(t)))
+    prof.append((H_CAP0, AS + .005))
+    loft(m, [(y, a, None) for (y, a) in prof])
+    add("Astragal_Rolls", "Column", m, "caststone")
 
-    # ---------------- lantern ------------------------------------------------
+    # capital: regular octagon at the shaft -> chamfered square under the frieze.
+    # Main faces are trapezoids (0.37 -> 1.20 m), corner faces stay 0.37 m wide. [P]
+    CA1, CW1 = .86, .60
     m = Mesh()
-    loft(m, [(H_LANT0, .80, .95), (H_LANT1, .92, 1.08)], vscale=1.0)
-    add("Lantern_Body", "Lantern", m, "stone")
-    m = Mesh()                                            # gold crown / membrane collar
-    loft(m, [(H_LANT1, .92, 1.08), (H_LANT1, 1.00, 1.16), (H_LANT1 + .10, 1.02, 1.18), (H_LANT1 + .16, .96, 1.10),
-             (H_LANT1 + .30, .80, .90), (9.95, .62, .66), (H_FUNNEL, .56, .56), (H_FUNNEL + .25, .50, .50)])
-    add("Lantern_Crown", "Lantern", m, "gold")
-    m = Mesh()                                            # cresting leaves on the cornice
-    for s in (-0.42, -0.14, 0.14, 0.42):
-        y = H_LANT1 + .10
-        m.tri((1.02, y, s - .12), (1.02, y, s + .12), (1.00, y + .22, s))
-        m.tri((1.02, y, s + .12), (1.02, y, s - .12), (0.98, y + .22, s))
-    add("Lantern_Cresting", "Lantern", m, "gold", R4)
+    loft(m, [(H_CAP0, AS + .005, None), sta(H_CAP1, CA1, CW1)])
+    loft(m, [sta(H_CAP1, CA1, CW1), sta(H_CAP1, CA1 + .018, CW1 + .012), sta(H_CAP1 + .03, CA1 + .018, CW1 + .012),
+             sta(H_CAP1 + .03, CA1 + .008, CW1 + .008), sta(H_FRIEZE0, CA1 + .008, CW1 + .008)])      # plain necking band
+    add("Capital_Core", "Column", m, "caststone")
 
-    # one bay lantern on the +X face (instanced x4): gold frame, glass, louvres, gable
-    x0 = 0.84; x1 = 1.20; hw = 0.40; yb, yt = H_LANT0 + 0.12, H_LANT1 - 0.12
-    g = Mesh(); gl = Mesh()
-    fr = 0.07
-    for z in (-hw + fr / 2, hw - fr / 2):                 # corner posts
-        beam(g, (x1 - fr / 2, yb, z), (x1 - fr / 2, yt, z), fr, fr, up=(1, 0, 0))
-        beam(g, (x0, yb, z), (x0, yt, z), fr, fr, up=(1, 0, 0))
-    for y in (yb + fr / 2, yt - fr / 2):                  # rails front + sides
-        beam(g, (x1 - fr / 2, y, -hw), (x1 - fr / 2, y, hw), fr, fr)
-        for z in (-hw + fr / 2, hw - fr / 2):
-            beam(g, (x0, y, z), (x1, y, z), fr, fr)
-    beam(g, ((x0 + x1) / 2, yb - .03, 0), ((x0 + x1) / 2, yb + .01, 0), 2 * hw + .08, x1 - x0 + .1, up=(1, 0, 0))  # sill
-    beam(g, ((x0 + x1) / 2 - .05, yb - .16, 0), ((x0 + x1) / 2 - .05, yb - .03, 0), 2 * hw - .2, .2, 2 * hw + .04, x1 - x0, up=(1, 0, 0))
-    for sgn in (-1, 1):                                   # arch spandrels
-        zc = sgn * (hw - fr)
-        g.quad((x1 - .02, yt - fr, zc), (x1 - .02, yt - fr - .26, zc), (x1 - .02, yt - fr - .10, zc - sgn * .10),
-               (x1 - .02, yt - fr, zc - sgn * .26), hint=(1, 0, 0))
-    n_l = 7
-    for k in range(n_l):                                  # louvre blades
-        y = yb + fr + (yt - yb - 2 * fr) * (k + .5) / n_l
-        beam(g, (x1 - .05, y, -hw + fr), (x1 - .05, y, hw - fr), .012, .05, up=(1, 0.6, 0))
-    beam(g, (x1 - .03, yb, 0), (x1 - .03, yt, 0), .025, .025, up=(1, 0, 0))     # mullion
-    # gable roof
-    yr = yt + .02; ridge = yt + .34
-    A = (x0 - .02, yr, -hw - .06); B = (x1 + .07, yr, -hw - .06); C = (x1 + .07, yr, hw + .06); D = (x0 - .02, yr, hw + .06)
-    E = (x0 - .02, ridge, 0); F = (x1 + .02, ridge - .04, 0)
-    g.quad(A, B, F, E, hint=(0, 1, -1)); g.quad(D, C, F, E, hint=(0, 1, 1)); g.tri(B, C, F)
-    g.quad(A, B, C, D, hint=(0, -1, 0))
-    sphere(g, (x1 + .02, ridge + .05, 0), .05, 8)
-    # glass (front + sides), set just inside the frame
-    gl.quad((x1 - .09, yb, -hw + fr), (x1 - .09, yb, hw - fr), (x1 - .09, yt, hw - fr), (x1 - .09, yt, -hw + fr), hint=(1, 0, 0))
-    for sgn in (-1, 1):
-        z = sgn * (hw - fr * .8)
-        gl.quad((x0, yb, z), (x1 - .09, yb, z), (x1 - .09, yt, z), (x0, yt, z), hint=(0, 0, sgn))
-    add("Lantern_Bay_Frame", "Lantern", g, "gold", R4)
-    add("Lantern_Bay_Glass", "Lantern", gl, "glass", R4)
+    a0 = AS + .005; w0 = a0 * (SQ2 - 1)
+    Fm = Frame((a0, H_CAP0, 0), (0, 0, 1), (CA1 - a0, H_CAP1 - H_CAP0, 0))
+    Lm = math.hypot(CA1 - a0, H_CAP1 - H_CAP0)
+    hwf = lambda v: w0 + (CW1 - w0) * v / Lm
+    m = Mesh()
+    # shield medallion outline (right half, top -> bottom), mirrored
+    half = [(0.0, .955), (.032, .925), (.030, .895), (.10, .915), (.20, .905), (.290, .880), (.335, .800),
+            (.315, .700), (.275, .580), (.222, .460), (.150, .320), (.070, .190), (0.0, .112)]
+    half = [(u * 0.92, v * Lm / 1.06) for u, v in half]
+    outline = half + [(-u, v) for u, v in half[-2:0:-1]]
+    shield = curve(outline, 5, closed=True)
+    ribbon(m, Fm, shield, .024, .034, closed=True)
+    cen = np.array((0.0, .60 * Lm / 1.06))
+    inner = [tuple(cen + (np.asarray(p) - cen) * .80) for p in shield]
+    ribbon(m, Fm, inner, .012, .020, closed=True)
+    bc = (0.0, .70 * Lm / 1.06)                            # sphere boss with collar
+    dome(m, Fm, bc, .088, .088, .075, n=20, k=6)
+    ribbon(m, Fm, [(bc[0] + .118 * math.cos(t), bc[1] + .118 * math.sin(t)) for t in np.linspace(0, 2 * math.pi, 28, endpoint=False)], .011, .018, closed=True)
+    ribbon(m, Fm, [(0, bc[1] - .118), (0, .30), (0, .185)], .011, .020)                      # stem
+    pyramid(m, Fm, [(0, .36), (.028, .40), (0, .44), (-.028, .40)], .022)
+    for sg in (-1, 1):                                    # scrollwork inside the shield
+        ribbon(m, Fm, spiral((sg * .098, .475), .070, .014, math.pi / 2 if sg > 0 else math.pi / 2, 1.15, sgn=-sg), .010, .018)
+        ribbon(m, Fm, spiral((sg * .058, .305), .046, .010, math.pi / 2, 1.05, sgn=-sg), .008, .015)
+        ribbon(m, Fm, curve([(sg * .012, .56), (sg * .10, .60), (sg * .19, .66), (sg * .225, .75), (sg * .19, .81)], 5), .010, .018)
+        ribbon(m, Fm, spiral((sg * .168, .805), .030, .008, 0 if sg > 0 else math.pi, .9, sgn=sg), .008, .015)
+        ribbon(m, Fm, curve([(sg * .03, .875), (sg * .075, .86), (sg * .10, .835)], 4), .008, .015)
+        ribbon(m, Fm, curve([(sg * .012, .245), (sg * .05, .262), (sg * .085, .30)], 4), .007, .013)
+    ribbon(m, Fm, spiral((0, .905), .026, .026, 0, 1.0, n=14), .007, .014, closed=False)      # finial eye
+    # quilted diamond lattice filling the rest of the face
+    guard = [tuple(cen + (np.asarray(p) - cen) * 1.075) for p in shield]
+    pch = .060
+    for j in range(1, int(Lm / (pch / 2))):
+        v = j * pch / 2
+        for i in range(-12, 13):
+            u = (i + (0.5 if j % 2 else 0.0)) * pch
+            base = [(u, v - pch / 2 * .93), (u + pch / 2 * .93, v), (u, v + pch / 2 * .93), (u - pch / 2 * .93, v)]
+            if v - pch / 2 < .03 or v + pch / 2 > Lm - .03:
+                continue
+            if any(abs(bu) > hwf(bv) - .018 for bu, bv in base) or any(in_poly(b, guard) for b in base) or in_poly((u, v), guard):
+                continue
+            pyramid(m, Fm, base, .013)
+    ribbon(m, Fm, [(-hwf(.02) + .02, .02), (hwf(.02) - .02, .02)], .010, .014)
+    ribbon(m, Fm, [(-CW1 + .02, Lm - .02), (CW1 - .02, Lm - .02)], .012, .016)
+    add("Capital_Shield_and_Lattice", "Column", m, "caststone", R4)
+
+    d0 = a0; d1 = (CA1 + CW1) / SQ2                         # corner face: arabesque panel + bud [P]
+    Fc = Frame((d0 / SQ2, H_CAP0, d0 / SQ2), (-1, 0, 1), ((d1 - d0) / SQ2, H_CAP1 - H_CAP0, (d1 - d0) / SQ2))
+    Lc = math.hypot(d1 - d0, H_CAP1 - H_CAP0)
+    m = Mesh()
+    pu, pv0, pv1 = .125, .06, .64
+    ribbon(m, Fc, [(-pu, pv0), (pu, pv0), (pu, pv1), (-pu, pv1)], .014, .022, closed=True)
+    ribbon(m, Fc, [(0, pv0 + .02), (0, pv1 - .02)], .008, .016)
+    for vc in (.155, .30, .445, .575):
+        hh = .068 if vc < .55 else .045
+        for sg in (-1, 1):
+            ribbon(m, Fc, curve([(0, vc - hh), (sg * .060, vc - hh * .45), (sg * .088, vc), (sg * .060, vc + hh * .45), (0, vc + hh)], 5), .008, .015)
+            ribbon(m, Fc, spiral((sg * .052, vc), .026, .007, math.pi / 2, .95, sgn=-sg, n=16), .006, .012)
+        pyramid(m, Fc, [(0, vc - .022), (.016, vc), (0, vc + .022), (-.016, vc)], .020)
+    for vc in (.228, .372, .512):
+        for sg in (-1, 1):
+            pyramid(m, Fc, [(sg * .095, vc - .020), (sg * .112, vc), (sg * .095, vc + .020), (sg * .078, vc)], .014)
+    bv = .84                                               # bud above the panel
+    dome(m, Fc, (0, bv), .060, .115, .072, n=16, k=5)
+    ribbon(m, Fc, [(-.07, bv - .125), (.07, bv - .125)], .012, .020)
+    for sg in (-1, 1):
+        ribbon(m, Fc, curve([(sg * .02, bv - .11), (sg * .105, bv - .05), (sg * .112, bv + .05), (sg * .05, bv + .15)], 5), .009, .016)
+        ribbon(m, Fc, curve([(sg * .03, .70), (sg * .10, .685), (sg * .135, .715)], 4), .007, .013)
+    pyramid(m, Fc, [(0, bv + .12), (.02, bv + .16), (0, bv + .215), (-.02, bv + .16)], .02)
+    add("Capital_Corner_Arabesque", "Column", m, "caststone", R4)
+
+    # frieze: slate panels with bevelled frame and three eight-pointed stars; light chamfer faces [P]
+    FA, FW, REC = .84, .62, .032
+    FH = H_FRIEZE1 - H_FRIEZE0
+    m = Mesh(); loft(m, [sta(H_FRIEZE0, FA, FW), sta(H_FRIEZE1, FA, FW)], faces=(1, 3, 5, 7))
+    Ff = Frame(((FA + FW) / 2, H_FRIEZE0, (FA + FW) / 2), (-1, 0, 1), (0, 1, 0))
+    cwid = (FA - FW) * SQ2 / 2
+    mc = Mesh()
+    ribbon(mc, Ff, [(-cwid + .045, .08), (cwid - .045, .08), (cwid - .045, FH - .08), (-cwid + .045, FH - .08)], .012, .016, closed=True)
+    plate(mc, Ff, [(0, .17), (.05, FH / 2), (0, FH - .17), (-.05, FH / 2)], .014, inset=.014)
+    dome(mc, Ff, (0, FH / 2), .022, .022, .028, n=10, k=3)
+    add("Frieze_Chamfer_Faces", "Column", m, "caststone"); add("Frieze_Chamfer_Panels", "Column", mc, "caststone", R4)
+    m = Mesh()
+    Fs = Frame((FA - REC, H_FRIEZE0, 0), (0, 0, 1), (0, 1, 0))
+    b1, b2 = .105, .145                                    # frame width, bevel foot
+    O = [(-FW, 0), (FW, 0), (FW, FH), (-FW, FH)]
+    I1 = [(-FW + b1, b1), (FW - b1, b1), (FW - b1, FH - b1), (-FW + b1, FH - b1)]
+    I2 = [(-FW + b2, b2), (FW - b2, b2), (FW - b2, FH - b2), (-FW + b2, FH - b2)]
+    for i in range(4):
+        j = (i + 1) % 4
+        m.quad(Fs.p(*O[i], REC), Fs.p(*O[j], REC), Fs.p(*I1[j], REC), Fs.p(*I1[i], REC), hint=Fs.n)     # frame
+        m.quad(Fs.p(*I1[i], REC), Fs.p(*I1[j], REC), Fs.p(*I2[j]), Fs.p(*I2[i]), hint=Fs.n)             # bevel
+    m.quad(Fs.p(*I2[0]), Fs.p(*I2[1]), Fs.p(*I2[2]), Fs.p(*I2[3]), hint=Fs.n)                           # sunk panel
+    for uc in (-.305, 0.0, .305):                          # eight-pointed stars in low relief
+        star = []
+        for k in range(16):
+            t = math.pi / 2 + k * math.pi / 8; r = .135 if k % 2 == 0 else .135 * .765
+            star.append((uc + r * math.cos(t), FH / 2 + r * math.sin(t)))
+        plate(m, Fs, star, .013, inset=.016)
+        ros = []
+        for k in range(32):
+            t = k * math.pi / 16; r = .062 + .014 * math.cos(8 * t)
+            ros.append((uc + r * math.cos(t), FH / 2 + r * math.sin(t)))
+        Fr = Frame(Fs.p(0, 0, .013), (0, 0, 1), (0, 1, 0))
+        ribbon(m, Fr, ros, .008, .009, closed=True)
+        dome(m, Fr, (uc, FH / 2), .026, .026, .016, n=12, k=3)
+    add("Frieze_Slate_Star_Panel", "Column", m, "slate", R4)
+
+    # dog-tooth cornice between frieze and lantern block [P]
+    BA, BW = .90, .66
+    CY0, CY1 = H_FRIEZE1 + .02, H_BODY0 - .015
+    m = Mesh()
+    loft(m, [sta(H_FRIEZE1, FA, FW), sta(CY0, FA + .012, FW + .008), sta(CY1, BA + .035, BW + .02),
+             sta(H_BODY0, BA + .035, BW + .02), sta(H_BODY0, BA, BW)])
+    add("Cornice_Core", "Column", m, "caststone")
+    m = Mesh()
+    Fd = Frame((FA + .012, CY0, 0), (0, 0, 1), (BA + .035 - FA - .012, CY1 - CY0, 0))
+    Ld = math.hypot(BA + .035 - FA - .012, CY1 - CY0); nt = 9
+    for i in range(nt):
+        ua = -FW + (2 * FW) * i / nt; ub = ua + 2 * FW / nt
+        pyramid(m, Fd, [(ua + .006, .004), (ub - .006, .004), (ub - .006, Ld - .004), (ua + .006, Ld - .004)], .036)
+    add("Cornice_Dogtooth_Main", "Column", m, "caststone", R4)
+    m = Mesh()
+    e0 = (FA + .012 + FW + .008) / 2; e1 = (BA + .035 + BW + .02) / 2
+    Fe = Frame((e0, CY0, e0), (-1, 0, 1), (e1 - e0, CY1 - CY0, e1 - e0))
+    Le = math.hypot((e1 - e0) * SQ2, CY1 - CY0); ch = (FA - FW) * SQ2 / 2
+    for i in range(3):
+        ua = -ch + 2 * ch * i / 3; ub = ua + 2 * ch / 3
+        pyramid(m, Fe, [(ua + .005, .004), (ub - .005, .004), (ub - .005, Le - .004), (ua + .005, Le - .004)], .032)
+    add("Cornice_Dogtooth_Corner", "Column", m, "caststone", R4)
+
+    # ---------------- lantern block ------------------------------------------
+    # granite block, chamfered square below; the corners are cut back to re-entrant
+    # notches beside the lamps, each ending in a pointed stop. [P]
+    YB, YS0, YS1, YT = H_BODY0, 8.50, 8.63, H_LANT1
+    NN = .715
+    m = Mesh()
+    for k in range(4):
+        q = lambda x, y, z: rot4((x, y, z), k)
+        hx = np.array(rot4((1, 0, 0), k)); hd = np.array(rot4((1, 0, 1), k)); hz = np.array(rot4((0, 0, 1), k))
+        m.quad(q(BA, YB, -BW), q(BA, YB, BW), q(BA, YT, BW), q(BA, YT, -BW),
+               uv=((0, -YB), (1.3, -YB), (1.3, -YT), (0, -YT)), hint=hx)                              # main face
+        m.quad(q(BA, YB, BW), q(BW, YB, BA), q(BW, YS0, BA), q(BA, YS0, BW),
+               uv=((0, -YB), (.35, -YB), (.35, -YS0), (0, -YS0)), hint=hd)                            # lower chamfer
+        tri_h(m, q(BA, YS0, BW), q(BW, YS0, BA), q(NN, YS1, NN), hd + (0, .6, 0))                     # pointed stop
+        tri_h(m, q(BA, YS0, BW), q(NN, YS1, NN), q(BA, YS1, BW), hz)
+        tri_h(m, q(BW, YS0, BA), q(NN, YS1, NN), q(BW, YS1, BA), hx)
+        m.quad(q(BA, YS1, BW), q(NN, YS1, NN), q(NN, YT, NN), q(BA, YT, BW), hint=hz)                 # notch returns
+        m.quad(q(BW, YS1, BA), q(NN, YS1, NN), q(NN, YT, NN), q(BW, YT, BA), hint=hx)
+    add("Lantern_Block_Granite", "Lantern", m, "stone")
+
+    # gilded roof deck, faceted crown and collar [P]
+    m = Mesh()
+    loft(m, [sta(YT, BA + .02, BW + .02), sta(YT + .03, BA + .02, BW + .02), (9.66, .50, None)])
+    ang = lambda i, off: math.radians(45 * i + off)
+    RB, RT, y0c, y1c = .585, .585, 9.66, 9.92
+    bot = [(RB * math.cos(ang(i, 22.5)), y0c, RB * math.sin(ang(i, 22.5))) for i in range(8)]
+    topr = [(RT * math.cos(ang(i, 0)), y1c, RT * math.sin(ang(i, 0))) for i in range(8)]
+    for i in range(8):                                    # antiprism band = alternating triangular facets
+        hint = (math.cos(ang(i, 0)), 0, math.sin(ang(i, 0)))
+        tri_h(m, bot[i - 1], bot[i], topr[i], hint)
+        hint2 = (math.cos(ang(i, 22.5)), 0, math.sin(ang(i, 22.5)))
+        tri_h(m, bot[i], topr[(i + 1) % 8], topr[i], hint2)
+    for i in range(8):                                    # lower lip of the crown
+        j = (i + 1) % 8
+        m.quad(bot[i], bot[j], (bot[j][0] * .9, y0c - .04, bot[j][2] * .9), (bot[i][0] * .9, y0c - .04, bot[i][2] * .9),
+               hint=(bot[i][0] + bot[j][0], -.5, bot[i][2] + bot[j][2]))
+        m.quad(topr[i], topr[j], (topr[j][0] * .93, y1c + .05, topr[j][2] * .93), (topr[i][0] * .93, y1c + .05, topr[i][2] * .93),
+               hint=(topr[i][0] + topr[j][0], .5, topr[i][2] + topr[j][2]))
+    add("Lantern_Roof_Deck_and_Faceted_Crown", "Lantern", m, "gold")
+
+    # one lamp on the +X face (instanced x4) -------------------------------------
+    XB = BA; D = .36; HW = .38
+    yF0, yF1 = H_LANT0, YT                                 # gold back frame
+    yH = YT - .20                                          # underside of the engraved header
+    yG1, yG0 = yH - .02, 8.07                              # glass top / bottom of the sloping front
+    g, ge, gl = Mesh(), Mesh(), Mesh()
+    for sg in (-1, 1):                                    # frame stiles against the stone
+        beam(ge, (XB + .018, yF0 + .06, sg * (HW - .035)), (XB + .018, yH, sg * (HW - .035)), .07, .036, up=(1, 0, 0), uvlen=.25)
+    # engraved header box
+    hx0, hx1 = XB, XB + D
+    ge.quad((hx1, yH, -HW), (hx1, yH, HW), (hx1, YT, HW), (hx1, YT, -HW), uv=((0, 1), (3, 1), (3, .2), (0, .2)), hint=(1, 0, 0))
+    for sg in (-1, 1):
+        ge.quad((hx0, yH, sg * HW), (hx1, yH, sg * HW), (hx1, YT, sg * HW), (hx0, YT, sg * HW), uv=((0, 1), (1.4, 1), (1.4, .2), (0, .2)), hint=(0, 0, sg))
+    g.quad((hx0, yH, -HW), (hx1, yH, -HW), (hx1, yH, HW), (hx0, yH, HW), hint=(0, -1, 0))
+    beam(g, (hx1 + .006, yH + .012, -HW - .006), (hx1 + .006, yH + .012, HW + .006), .024, .024)          # bead under the header
+    beam(g, (hx1 + .006, YT - .012, -HW - .006), (hx1 + .006, YT - .012, HW + .006), .024, .024)
+    # arched side panels: full depth under the roof, sweeping back to a narrow strip at the wall
+    strip, yspr, ybot = .085, yH - .52, yF0 + .06
+
+    def side_x(y):
+        if y <= yspr:
+            return strip
+        t = math.asin(min((y - yspr) / (yH - yspr), 1.0))
+        return strip + (D - strip) * (1 - math.cos(t))
+    ys = [ybot, yspr] + [yspr + (yH - yspr) * math.sin(k / 14 * math.pi / 2) for k in range(1, 15)]
+    for sg in (-1, 1):
+        for k in range(len(ys) - 1):
+            ya, yb2 = ys[k], ys[k + 1]
+            for zz, hh in ((sg * HW, sg), (sg * (HW - .02), -sg)):
+                ge.quad((XB, ya, zz), (XB + side_x(ya), ya, zz), (XB + side_x(yb2), yb2, zz), (XB, yb2, zz),
+                        uv=((0, ya * 4), (side_x(ya) * 4, ya * 4), (side_x(yb2) * 4, yb2 * 4), (0, yb2 * 4)), hint=(0, 0, hh))
+            g.quad((XB + side_x(ya), ya, sg * HW), (XB + side_x(ya), ya, sg * (HW - .02)),                 # polished edge of the cut-out
+                   (XB + side_x(yb2), yb2, sg * (HW - .02)), (XB + side_x(yb2), yb2, sg * HW), hint=(1, -.6, 0))
+    # front arch spandrels under the header
+    for sg in (-1, 1):
+        zc = sg * (HW - .02); C = (hx1 - .004, yH, zc)
+        arc = [(hx1 - .004, yH - .20 * (1 - math.sin(t)), zc - sg * .20 * (1 - math.cos(t))) for t in np.linspace(0, math.pi / 2, 9)]
+        for k in range(len(arc) - 1):
+            tri_h(ge, C, arc[k], arc[k + 1], (1, 0, 0)); tri_h(ge, C, arc[k + 1], arc[k], (-1, 0, 0))
+    # glass: tapered prism, deeper and wider at the top, with a bevelled bottom
+    gx = lambda y: XB + (.15 + (.335 - .15) * (y - yG0) / (yG1 - yG0))
+    gz = lambda y: .262 + (.300 - .262) * (y - yG0) / (yG1 - yG0)
+    F0 = [(gx(yG0), yG0, -gz(yG0)), (gx(yG0), yG0, gz(yG0))]; F1 = [(gx(yG1), yG1, -gz(yG1)), (gx(yG1), yG1, gz(yG1))]
+    gl.quad(F0[0], F0[1], F1[1], F1[0], uv=((0, 1), (1, 1), (1, 0), (0, 0)), hint=(1, 0, 0))
+    for sg, i in ((-1, 0), (1, 1)):
+        gl.quad((XB + .01, yG0, sg * gz(yG0)), F0[i], F1[i], (XB + .01, yG1, sg * gz(yG1)), uv=((0, 1), (.6, 1), (.6, 0), (0, 0)), hint=(0, 0, sg))
+    yv = yG0 - .075; bx = XB + .07; bz = .215
+    gl.quad((bx, yv, -bz), (bx, yv, bz), F0[1], F0[0], uv=((0, 1), (1, 1), (1, .9), (0, .9)), hint=(1, -1, 0))
+    for sg, i in ((-1, 0), (1, 1)):
+        gl.quad((XB + .01, yv, sg * bz), (bx, yv, sg * bz), F0[i], (XB + .01, yG0, sg * gz(yG0)), hint=(0, -1, sg))
+    gl.quad((XB + .01, yv, -bz), (bx, yv, -bz), (bx, yv, bz), (XB + .01, yv, bz), hint=(0, -1, 0))
+    for (p, q2) in ((F0[0], F1[0]), (F0[1], F1[1])):       # slim gilt glazing bars on the front arrises
+        cyl(g, p, q2, .009, n=6, caps=False)
+    cyl(g, F0[0], F0[1], .009, n=6, caps=False)
+    # stepped gilt base with studs
+    yy = yv
+    for (hgt, dep, hwz) in ((.055, .20, .30), (.045, .15, .33), (.04, .105, .30), (.045, .075, .345), (.04, .05, .38)):
+        beam(g, (XB + dep / 2, yy - hgt, 0), (XB + dep / 2, yy, 0), 2 * hwz, dep, up=(1, 0, 0)); yy -= hgt
+    for zz in (-.15, 0, .15):
+        sphere(g, (XB + .205, yv - .028, zz), .016, 8)
+    # hipped roof: eave slab, then slopes running back to the crown
+    ex0, ex1, ez, ye = XB - .03, XB + D + .075, HW + .085, YT
+    beam(g, ((ex0 + ex1) / 2, ye, 0), ((ex0 + ex1) / 2, ye + .035, 0), 2 * ez, ex1 - ex0, up=(1, 0, 0))
+    beam(g, ((ex0 + ex1) / 2, ye + .035, 0), ((ex0 + ex1) / 2, ye + .06, 0), 2 * ez - .03, ex1 - ex0 - .015, 2 * ez - .07, ex1 - ex0 - .035, up=(1, 0, 0))
+    yr = ye + .06; rz = ez - .035; rx = ex1 - .0175
+    apex = (.50, 9.69, 0); P0 = (ex0, yr, -rz); P1 = (rx, yr, -rz); P2 = (rx, yr, rz); P3 = (ex0, yr, rz)
+    tri_h(g, P1, P2, apex, (1, 1, 0)); tri_h(g, P0, P1, apex, (0, 1, -1)); tri_h(g, P2, P3, apex, (0, 1, 1))
+    add("Lamp_Polished_Gilt", "Lantern", g, "gold", R4)
+    add("Lamp_Engraved_Gilt", "Lantern", ge, "gold_engraved", R4)
+    add("Lamp_Glass", "Lantern", gl, "glass", R4)
 
     # ---------------- mast, hubs, finial ------------------------------------
     m = Mesh()
@@ -722,7 +1021,7 @@ def build_parts(variant):
 
     # ---------------- evaporative cooling fans ------------------------------
     f, fd = Mesh(), Mesh()
-    cx = 0.55 + 0.12 + 0.56; R = 0.56; dep = 0.50
+    cx = A_SHAFT + 0.12 + 0.56; R = 0.56; dep = 0.50
     prof = [(R - .05, -dep / 2), (R, -dep / 2 + .04), (R, dep / 2 - .06), (R + .04, dep / 2), (R - .03, dep / 2 + .02), (R - .07, dep / 2 - .04), (R - .07, -dep / 2)]
     sub = Mesh(); lathe(sub, prof, 32)
     for p, n in zip(sub.P, sub.N):                        # rotate lathe axis Y -> Z, move to fan centre
@@ -745,7 +1044,7 @@ def build_parts(variant):
     for i in range(4):
         a = math.pi / 4 + i * math.pi / 2
         cyl(fd, (cx + .12 * math.cos(a), H_FAN + .12 * math.sin(a), dep / 2 - .02), (cx + .5 * math.cos(a), H_FAN + .5 * math.sin(a), dep / 2 - .02), .012, n=6, caps=False)
-    beam(f, (0.50, H_FAN + R + .19, 0), (cx + .30, H_FAN + R + .19, 0), .50, .26)           # bracket housing
+    beam(f, (A_SHAFT - .05, H_FAN + R + .19, 0), (cx + .30, H_FAN + R + .19, 0), .50, .26)           # bracket housing
     beam(f, (cx, H_FAN + R - .02, 0), (cx, H_FAN + R + .08, 0), .20, .20, up=(1, 0, 0))
     add("Cooling_Fan_Housing", "Cooling", f, "fan", [0, 180]); add("Cooling_Fan_Guard_and_Mist_Ring", "Cooling", fd, "fan_dark", [0, 180])
 
@@ -830,14 +1129,18 @@ def write_glb(path, parts, textures, variant):
     lights = [dict(name="Membrane_Uplight", type="spot", color=[1.0, 0.90, 0.74], intensity=4000.0,
                    spot=dict(innerConeAngle=0.5, outerConeAngle=1.15), range=30.0),
               dict(name="Piazza_Downlight", type="spot", color=[1.0, 0.84, 0.60], intensity=6000.0,
-                   spot=dict(innerConeAngle=0.6, outerConeAngle=1.2), range=40.0)]
+                   spot=dict(innerConeAngle=0.6, outerConeAngle=1.2), range=40.0),
+              dict(name="Collar_Glow", type="point", color=[1.0, 0.90, 0.74], intensity=600.0, range=6.0)]
     nodes.append(dict(name="Lighting", children=[])); li = len(nodes) - 1; nodes[0]["children"].append(li)
     for k in range(8):                                    # facade lighting: 8 uplights on the lantern crown
-        a = math.radians(45 * k); r = 1.25 if k % 2 == 0 else 1.4
-        d = (math.cos(a) * 0.95, 0.62, math.sin(a) * 0.95)
-        nodes.append(dict(name="Membrane_Uplight_%d" % k, translation=[r * math.cos(a), H_LANT1 + .25, r * math.sin(a)],
+        a = math.radians(45 * k); r = 1.05 if k % 2 == 0 else 1.15
+        d = (math.cos(a) * 0.75, 0.66, math.sin(a) * 0.75)
+        nodes.append(dict(name="Membrane_Uplight_%d" % k, translation=[r * math.cos(a), H_LANT1 + .42, r * math.sin(a)],
                           rotation=quat_from_to((0, 0, -1), d), extensions={"KHR_lights_punctual": {"light": 0}}))
         nodes[li]["children"].append(len(nodes) - 1)
+    nodes.append(dict(name="Collar_Glow", translation=[0.0, H_LANT1 + .45, 0.0],          # lifts the pleats above the crown
+                      extensions={"KHR_lights_punctual": {"light": 2}}))
+    nodes[li]["children"].append(len(nodes) - 1)
     for k in range(4):                                    # piazza lighting: one downlight per bay lantern
         a = math.radians(90 * k)
         d = (math.cos(a) * 0.75, -0.66, math.sin(a) * 0.75)
@@ -864,7 +1167,7 @@ def write_glb(path, parts, textures, variant):
 
 
 def main():
-    textures = dict(membrane=tex_membrane(), stone=tex_stone(), carved=tex_carved(), frieze=tex_frieze(),
+    textures = dict(membrane=tex_membrane(), stone=tex_stone(), gold_engraved=tex_gold_engraved(),
                     mosaic=tex_mosaic(), floor=tex_floor(), glass=tex_glass())
     os.makedirs(os.path.join(HERE, "textures"), exist_ok=True)
     for n, im in textures.items():

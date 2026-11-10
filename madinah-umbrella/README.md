@@ -36,12 +36,13 @@ height; cross-checked against the +15.3 and +14.5 level marks and the 1.75 m fig
 | Item | Value |
 |---|---|
 | Base plinth width / height | 1.88 m / 1.40 m to the shaft |
-| Lower column shaft | 1.10 m across flats, 1.40 → 5.50 m |
+| Lower column shaft | 0.90 m across flats, 1.40 → 5.50 m |
 | Cooling-fan axis | 3.96 m, drum Ø 1.12 m |
-| Capital | 5.70 → 6.67 m |
-| Frieze band | 6.75 → 7.55 m, 1.42 m wide |
-| Lantern (piazza and facade lighting) | 7.90 → 9.35 m, 2.4 m across the bays |
-| Membrane collar | 10.3 m |
+| Capital | 5.69 → 6.67 m, 0.90 m wide at the shaft, 1.72 m at the top |
+| Slate frieze | 6.78 → 7.48 m, 1.68 m across flats |
+| Lantern block | 7.64 → 9.30 m, 1.80 m across flats |
+| Lamps (sill to eave) | 7.78 → 9.30 m, 2.67 m eave to eave |
+| Membrane collar | 10.0 m |
 | Lower strut hinge / arm root hinge / upper strut hinge | 10.86 / 14.15 / 16.20 m |
 | Arm elbow radius | 6.6 m (middle arm), ×√2 on the diagonal |
 | Membrane profile | steep funnel at the mast, 85 % of its rise reached at half span |
@@ -49,10 +50,16 @@ height; cross-checked against the +15.3 and +14.5 level marks and the 1.75 m fig
 
 **[P] Interpreted from photographs** — these are plausible, not surveyed
 
-- Octagonal column with granite-like cladding, torus base mouldings, astragal rings
-- Capital changing from octagon to chamfered square, with a carved shield medallion per face
-- Dark frieze with a framed plaque per face
-- Four gilded bay lanterns with arched spandrels, louvred glass and gable roofs; gilded crown
+- Octagonal column with granite-like cladding, torus base mouldings, three roll mouldings under the capital
+- Capital (modelled as real relief, from the close-up photos): octagon at the shaft widening to a
+  chamfered square; each main face has a shield medallion with a sphere boss and scrollwork on a
+  quilted diamond lattice; each corner face has an arabesque panel with a bud above it
+- Slate-blue frieze: bevelled sunk panel with three eight-pointed stars per main face, light chamfer faces
+- Dog-tooth cornice under the lantern block
+- Granite lantern block with re-entrant corner notches that end in pointed stops
+- Four gilded lamps: engraved header, arched side panels sweeping back to a strip at the wall,
+  tapered glass prism with bevelled bottom, stepped base with three studs, hipped roof
+- Faceted (antiprism) gold crown from which the membrane pleats emerge
 - Lotus ornament on the membrane: two inner petal tiers, a ring of 24 large blue diamonds,
   a ring of small diamonds, tall outer arches, blue scalloped edge trim; 6 scallops per side
 - Gilded fluted crown and lance at the mast head (its height above the open arms is estimated)
@@ -65,9 +72,10 @@ The lantern does two jobs, as labelled on the section drawing ("Piazza – and F
 - 8 uplights on the lantern crown wash the underside of the membrane, which then
   works as a large soft reflector (`Membrane_Uplight_0…7`, warm white)
 - 4 downlights, one per bay lantern, light the piazza floor (`Piazza_Downlight_0…3`)
+- 1 small point light above the crown lifts the gathered pleats (`Collar_Glow`)
 - The bay glass is an emissive material
 
-They are stored in the GLB as `KHR_lights_punctual` spot lights. The viewer's
+They are stored in the GLB as `KHR_lights_punctual` lights. The viewer's
 "Night lighting" button switches them on.
 
 ## Known limits
@@ -79,7 +87,10 @@ They are stored in the GLB as `KHR_lights_punctual` spot lights. The viewer's
   small-part sizes as approximate (roughly ±10 %).
 - The frieze plaques on the real columns carry inscriptions. The model uses an
   abstract geometric band instead of imitating them.
-- Carving is painted into the texture, not modelled as relief.
+- The capital, frieze and lamp ornament follow the layout seen in the photos, but the exact
+  scroll and arabesque line-work is my own drawing in the same style, not a tracing.
+- The column-top proportions come from photo ratios tied to the drawing's levels; widths there
+  are good to roughly ±10 %.
 
 ## Sources
 
