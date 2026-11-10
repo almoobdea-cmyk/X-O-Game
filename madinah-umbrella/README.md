@@ -104,9 +104,10 @@ the arm sweep) and from the cladding maker's photos of bare, half-open and close
    the elbow end carrying a faceted gilded lozenge.
 6. The hub keeps rising until the gilded crown lands on the casing top: its skirt sits behind the
    petals and its eight ridges show in the notches between them, so casing and column read as one piece.
-7. At the bottom, the four middle panels stop on the lamp roofs. The four diagonal panels carry a
-   narrow tail that runs down between the lamps into the corner notches of the lantern block,
-   ending on bronze arrow-shaped shoes set in those notches at 8.3–8.7 m.
+7. At the bottom the casing stays in one plane with no step. The four middle panels run straight
+   down behind the pyramid roofs of the lamps. The four diagonal panels are trimmed along the roof
+   slopes of the two neighbouring lamps and continue as a 0.54 m strip between the lamps, ending
+   in a bronze V point at 8.4 m over the corner notch of the lantern block.
 
 That is six hinges per arm (root, elbow, two per strut), matching the designer's description.
 Folded, the finial tip is at 21.7 m, as published; the casing runs from 8.7 m (diagonal tails) to 20.0 m.

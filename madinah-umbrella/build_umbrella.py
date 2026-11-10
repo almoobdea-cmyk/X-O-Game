@@ -771,7 +771,7 @@ MATERIALS = {
     "slate":     dict(color=(0.30, 0.38, 0.46), rough=0.55, metal=0.0),
     "gold_engraved": dict(tex="gold_engraved", rough=0.32, metal=1.0, double=True),
     "gold":      dict(color=(1.0, 0.62, 0.11), rough=0.24, metal=1.0),
-    "bronze":    dict(color=(0.50, 0.32, 0.12), rough=0.38, metal=1.0),
+    "bronze":    dict(color=(0.50, 0.32, 0.12), rough=0.38, metal=1.0, double=True),
     "gold_dark": dict(color=(0.72, 0.52, 0.20), rough=0.4, metal=1.0),
     "glass":     dict(color=(0.70, 0.83, 0.92), alpha=0.30, rough=0.05, metal=0.0, double=True),
     "reflector": dict(color=(0.86, 0.89, 0.93), rough=0.30, metal=0.7, emissive=(1.0, 0.86, 0.62), estr=1.0, double=True),
@@ -999,16 +999,6 @@ def build_parts(variant):
         m.quad(q(BA, YS1, BW), q(NN, YS1, NN), q(NN, YT, NN), q(BA, YT, BW), hint=hz)                 # notch returns
         m.quad(q(BW, YS1, BA), q(NN, YS1, NN), q(NN, YT, NN), q(BW, YT, BA), hint=hx)
     add("Lantern_Block_Granite", "Lantern", m, "stone")
-    # bronze shoes in the corner notches: arrow-shaped stops pointing outward that receive the
-    # tails of the diagonal casing panels when the umbrella is folded [P, from close-up photos]
-    m = Mesh()
-    dpt = lambda r, y, z: (r / SQ2 - z / SQ2, y, r / SQ2 + z / SQ2)
-    Al, Ar = dpt(1.02, 8.69, -.37), dpt(1.02, 8.69, .37)
-    Bl, Br = dpt(1.06, 8.30, -.27), dpt(1.06, 8.30, .27)
-    Tl, Tr = dpt(1.42, 8.45, -.23), dpt(1.42, 8.45, .23)
-    m.quad(Al, Ar, Tr, Tl, hint=(1, 2, 1)); m.quad(Bl, Br, Tr, Tl, hint=(1, -2, 1))
-    tri_h(m, Al, Bl, Tl, (-1, 0, 1)); tri_h(m, Ar, Br, Tr, (1, 0, -1))
-    add("Corner_Notch_Bronze_Shoe", "Lantern", m, "bronze", R4)
 
     # gilded roof deck, faceted crown and collar [P]
     m = Mesh()
@@ -1107,8 +1097,9 @@ def build_parts(variant):
     beam(g, ((ex0 + ex1) / 2, ye, 0), ((ex0 + ex1) / 2, ye + .075, 0), 2 * ez, ex1 - ex0, up=(1, 0, 0))
     beam(g, ((ex0 + ex1) / 2 - .006, ye + .075, 0), ((ex0 + ex1) / 2 - .006, ye + .095, 0), 2 * ez - .02, ex1 - ex0 - .012, 2 * ez - .05, ex1 - ex0 - .03, up=(1, 0, 0))
     yr = ye + .095; rz2 = ez - .025; rx = ex1 - .024
-    apex = (.50, 9.72, 0); P0 = (ex0, yr, -rz2); P1 = (rx, yr, -rz2); P2 = (rx, yr, rz2); P3 = (ex0, yr, rz2)
-    tri_h(g, P1, P2, apex, (1, 1, 0)); tri_h(g, P0, P1, apex, (0, 1, -1)); tri_h(g, P2, P3, apex, (0, 1, 1))
+    apex = (1.13, 9.82, 0)                               # pyramid roof; the folded casing stands just behind its peak [P]
+    P0 = (ex0, yr, -rz2); P1 = (rx, yr, -rz2); P2 = (rx, yr, rz2); P3 = (ex0, yr, rz2)
+    tri_h(g, P1, P2, apex, (1, 1, 0)); tri_h(g, P0, P1, apex, (0, 1, -1)); tri_h(g, P2, P3, apex, (0, 1, 1)); tri_h(g, P3, P0, apex, (-1, 1, 0))
     add("Lamp_Polished_Gilt", "Lantern", g, "gold", R4)
     add("Lamp_Engraved_Gilt", "Lantern", ge, "gold_engraved", R4)
     add("Lamp_Reflector", "Lantern", rf, "reflector", R4)
@@ -1163,7 +1154,7 @@ def build_parts(variant):
         beam(o, (1.2, K_YOFF, 0), (K_LO, K_YOFF, 0), .30, .38, .20 if diag else .15, .22 if diag else .17)
         cyl(hg, (QX, K_QY, -.24), (QX, K_QY, .24), .12, n=12)                                # lower-strut pin
         for xx in (1.6, 4.0, 6.6):                                                           # cladding stand-offs
-            beam(o, (xx, K_YOFF + .1, 0), (xx, .80 - .0076 * xx, 0), .07, .07, up=(1, 0, 0))
+            beam(o, (xx, K_YOFF + .1, 0), (xx, .80, 0), .07, .07, up=(1, 0, 0))
         if diag:
             cyl(hg, (K_LO, K_YOFF - .17, -.2), (K_LO, K_YOFF - .17, .2), .10, n=12)          # corner-extension hinge
         else:
@@ -1174,35 +1165,43 @@ def build_parts(variant):
     CL_X0, CL_PET, CL_LEN = -1.20, 0.30, 10.50            # panel top, end of the petal arch, texture length
 
     def clad_y(x):                                        # stand-off of the panel ridge above the elbow pin line
-        return .83 - .0076 * max(x, 0.0)
+        return .83 + .001 * max(x, 0.0)                 # chosen so the casing clears the lantern block corners
 
     def cladding_mesh(diag):
         """GRP panel with glass mosaic on the outer arm; the eight close into the casing. [P]
         Shallow ridge down the middle, returns at the edges, a pointed petal at the elbow end that
-        curls inward under the crown.  Middle panels stop on the lamp roofs; diagonal panels carry
-        a narrow tail that runs down between the lamps into the corner notch of the lantern block."""
-        c = Mesh(); X1 = K_LO + (2.17 if diag else 1.30); secs = []
-        xs = [CL_X0 + (CL_PET - CL_X0) * (1 - math.cos(k / 12 * math.pi / 2)) for k in range(13)] + list(np.linspace(0.8, 9.0, 12))
-        xs += [9.35, X1] if diag else [X1]
+        curls inward under the crown.  Middle panels run straight down behind the lamp roofs.
+        Diagonal panels are trimmed along the roof slopes of the two neighbouring lamps and carry
+        on, in the same plane, as a strip between the lamps that ends in a V point.
+        Returns (panel, bronze tip or None)."""
+        c = Mesh(); secs = []
+        xs = [CL_X0 + (CL_PET - CL_X0) * (1 - math.cos(k / 12 * math.pi / 2)) for k in range(13)] + list(np.linspace(0.8, 9.03, 12))
+        xs += [9.43, 10.13] if diag else [9.42]
         for x in xs:
+            drop, sh = .14, .035
             if x < CL_PET:
-                t = (CL_PET - x) / (CL_PET - CL_X0); g = max(1 - t ** 1.55, .02); yb = clad_y(x) - .50 * t * t; w = 1.12 * g; drop = .14
+                t = (CL_PET - x) / (CL_PET - CL_X0); g = max(1 - t ** 1.55, .02); yb = clad_y(x) - .50 * t * t; w = 1.12 * g
             else:
-                yb = clad_y(x); w = 1.12 + (.86 - 1.12) * min(x, 9.0) / 9.0; drop = .14
-                if diag and x > 9.0:                       # tail: steps out to clear the block corner, between the lamps
-                    f = min((x - 9.0) / .35, 1.0)
-                    w = .86 + (.74 - .86) * f; yb += .10 * f; drop = .14 - .07 * f
+                yb = clad_y(x); w = 1.12 + (.92 - 1.12) * min(x, 9.03) / 9.03
+                if diag and x > 9.03:                      # trimmed along the lamp roofs, then a flat strip
+                    f = min((x - 9.03) / .40, 1.0); w = .92 + (.54 - .92) * f; drop = .14 - .11 * f; sh = .035 - .045 * f
             v = min((x - CL_X0) / CL_LEN, .995)
-            secs.append([(x, yb - drop, -w / 2, 0.0, v), (x, yb - .035, -w * .32, .18, v), (x, yb + .04, 0.0, .5, v),
-                         (x, yb - .035, w * .32, .82, v), (x, yb - drop, w / 2, 1.0, v)])
+            secs.append([(x, yb - drop, -w / 2, 0.0, v), (x, yb - sh, -w * .32, .18, v), (x, yb + .04, 0.0, .5, v),
+                         (x, yb - sh, w * .32, .82, v), (x, yb - drop, w / 2, 1.0, v)])
         for a_, b_ in zip(secs[:-1], secs[1:]):
             for i in range(4):
                 c.quad(a_[i][:3], a_[i + 1][:3], b_[i + 1][:3], b_[i][:3],
                        uv=(a_[i][3:], a_[i + 1][3:], b_[i + 1][3:], b_[i][3:]), hint=(0, 1, 0))
         e = secs[-1]
-        for i in (1, 2, 3):
-            tri_h(c, e[0][:3], e[i][:3], e[i + 1][:3], (1, 0, 0))
-        return c
+        if not diag:
+            for i in (1, 2, 3):
+                tri_h(c, e[0][:3], e[i][:3], e[i + 1][:3], (1, 0, 0))
+            return c, None
+        tip = Mesh(); xt = 10.43; pt = (xt, clad_y(xt) + .03, 0.0); back = (10.13, clad_y(10.13) - .08, 0.0)   # bronze V point
+        for i in range(4):
+            tri_h(tip, e[i][:3], e[i + 1][:3], pt, (0, 1, 0))
+        tri_h(tip, e[0][:3], back, pt, (0, -1, -.3)); tri_h(tip, e[4][:3], back, pt, (0, -1, .3))
+        return c, tip
 
     def lozenge_mesh():
         """Faceted gilded lozenge on each petal (a low four-sided pyramid). [P]"""
@@ -1232,7 +1231,7 @@ def build_parts(variant):
         return t
 
     o_mid, h_mid, t_mid = outer_mesh(False); o_dia, h_dia, _ = outer_mesh(True)
-    clad_mid, clad_dia, loz = cladding_mesh(False), cladding_mesh(True), lozenge_mesh()
+    (clad_mid, _), (clad_dia, clad_tip), loz = cladding_mesh(False), cladding_mesh(True), lozenge_mesh()
     EXT_Y = K_YOFF - .17
     E0 = np.array(K_A) + K_LI * np.array([math.cos(K_TH0), math.sin(K_TH0)])
     tip_r = float(E0[0] + _rot2(kd["phi0"], (K_LO, EXT_Y))[0])
@@ -1260,6 +1259,8 @@ def build_parts(variant):
         addn(tag + "_Outer_Hinge_Pins", O, h_dia if diag else h_mid, "gold_dark")
         addn(tag + "_Mosaic_Cladding", O, clad_dia if diag else clad_mid, "cladding")
         addn(tag + "_Gilded_Lozenge", O, loz, "gold")
+        if diag:
+            addn(tag + "_Cladding_Bronze_Tip", O, clad_tip, "bronze")
         addn(tag + "_Lower_Strut", LSN, lower, "steel"); addn(tag + "_Upper_Strut", USN, upper, "steel")
         if diag:
             addn(tag + "_Corner_Extension", X, ext, "steel"); addn(tag + "_Corner_Tip", X, ext_tip, "gold")
