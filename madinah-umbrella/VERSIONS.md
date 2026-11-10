@@ -11,5 +11,6 @@ Open a link to browse that version's files, or download them with the "Code → 
 | v4 | Carved ornament given the column's granite colour | [`d15b7b9`](https://github.com/almoobdea-cmyk/X-O-Game/tree/d15b7b9/madinah-umbrella) |
 | v5 | Folding mechanism, closed state, Close animation | [`b4bbf0c`](https://github.com/almoobdea-cmyk/X-O-Game/tree/b4bbf0c/madinah-umbrella) |
 | v6 | Closed casing refined: crown cap, ridged panels and pattern, fit onto the lantern | [`1f3f815`](https://github.com/almoobdea-cmyk/X-O-Game/tree/1f3f815/madinah-umbrella) |
+| v7 | Casing end reworked: wide tails between the lamps, bronze corner shoes | [`253c231`](https://github.com/almoobdea-cmyk/X-O-Game/tree/253c231/madinah-umbrella) |
 
 To get an old version back locally: `git checkout <commit> -- madinah-umbrella`.
