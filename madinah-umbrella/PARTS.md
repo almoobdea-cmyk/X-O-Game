@@ -1,6 +1,6 @@
 # Parts list
 
-46 different parts, 158 pieces in total. Sizes are bounding boxes in millimetres (length x height x width in the part's own frame).
+44 different parts, 154 pieces in total. Sizes are bounding boxes in millimetres (length x height x width in the part's own frame).
 Shapes are in the GLB files under the mesh name in the last column; `parts.json` has the same data.
 
 | Part | Qty | Moves | Size (mm) | Material and finish | Colour | Mesh name in GLB |
@@ -49,5 +49,3 @@ Shapes are in the GLB files under the mesh name in the last column; `parts.json`
 | PTFE Membrane 25.5m | 1 | yes | 25500 x 4350 x 25500 | PTFE fabric with blue tapes | #F4F0E6 / #2E447A | `PTFE_Membrane_25.5m` |
 | Membrane Collar Ring | 1 | no | 1170 x 90 x 1170 | Gold-plated / gilded metal | #D9A21C | `Membrane_Collar_Ring` |
 | Upper Canopy over Hub | 1 | yes | 6606.5 x 891.5 x 6606.5 | PTFE fabric with blue tapes | #F4F0E6 / #2E447A | `Upper_Canopy_over_Hub` |
-| Cooling Fan Housing | 2 | no | 1330 x 1480 x 520 | Fan housing, painted | #E6DBC7 | `Cooling_Fan_Housing` |
-| Cooling Fan Guard and Mist Ring | 2 | no | 1116 x 1116 x 490 | Fan guard and mist ring | #595449 | `Cooling_Fan_Guard_and_Mist_Ring` |

@@ -618,34 +618,6 @@
    "moving": true,
    "triangles": 672,
    "glb_mesh": "Upper_Canopy_over_Hub"
-  },
-  {
-   "part": "Cooling Fan Housing",
-   "qty": 2,
-   "material": "Fan housing, painted",
-   "colour": "#E6DBC7",
-   "size_mm": [
-    1330.0,
-    1480.0,
-    520.0
-   ],
-   "moving": false,
-   "triangles": 436,
-   "glb_mesh": "Cooling_Fan_Housing"
-  },
-  {
-   "part": "Cooling Fan Guard and Mist Ring",
-   "qty": 2,
-   "material": "Fan guard and mist ring",
-   "colour": "#595449",
-   "size_mm": [
-    1116.0,
-    1116.0,
-    490.0
-   ],
-   "moving": false,
-   "triangles": 1496,
-   "glb_mesh": "Cooling_Fan_Guard_and_Mist_Ring"
   }
  ]
 }

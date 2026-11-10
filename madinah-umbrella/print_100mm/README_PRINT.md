@@ -9,7 +9,7 @@ solid and the smallest wall is 0.9 mm. Made by `python3 print_model.py` (`--size
 | File | What | Size (mm) | How to place it |
 |---|---|---|---|
 | `canopy.stl` | Fabric, arms and mast | 100 x 100 x 20.9 | As supplied: upside down, arm tops flat on the bed, mast pointing up |
-| `column.stl` | Base, shaft, capital, lantern with 4 lamps, 2 fans | 11.9 x 10.5 x 38.9 | As supplied: standing on its base |
+| `column.stl` | Base, shaft, capital, lantern with 4 lamps | 10.5 x 10.5 x 38.9 | As supplied: standing on its base |
 | `cap.stl` | Small upper canopy, crown and finial | 25.7 x 25.7 x 13.8 | As supplied: flat base on the bed |
 | `assembled_preview_do_not_print.stl` | The three pieces together, to look at | 100 x 100 x 70.8 | Not for printing |
 
@@ -20,7 +20,7 @@ solid and the smallest wall is 0.9 mm. Made by `python3 print_model.py` (`--size
   umbrella cables hang the fabric below the arms; here each rib is a solid fin down to the fabric,
   which is what holds the shell up while printing.
 - The 24 seams and the ring of 24 diamonds are raised 0.3 mm on the underside.
-- Left out because they are below 0.4 mm at this scale: struts, hinges, carving, lamp glass, fan blades.
+- Left out because they are below 0.4 mm at this scale: struts, hinges, carving, lamp glass.
 - The arm ribs are flat and level so the canopy can sit on the bed; the real arms rise about 2 mm
   (at this scale) toward the mast.
 

@@ -183,7 +183,7 @@ def build(size_mm):
         body = [(x, y, z) for x in (.88, 1.26) for y in (8.25, B.H_LANT1) for z in (-.38, .38)] + [(.88, 7.82, -.34), (.88, 7.82, .34)]
         roof = [(x, y, z) for x in (.87, 1.345) for y in (B.H_LANT1, 9.395) for z in (-.47, .47)] + [(1.13, 9.74, 0)]
         col += [H(rot(body, kq)), H(rot(roof, kq))]
-    for kq in (0, 2):                                   # cooling fans: drum on a webbed bracket, pointed underside so it prints clean
+    for kq in ((0, 2) if B.INCLUDE_FANS else ()):       # cooling fans: drum on a webbed bracket, pointed underside so it prints clean
         drum = [(1.05 + .48 * math.cos(t), B.H_FAN + .48 * math.sin(t), z) for t in np.linspace(0, 2 * math.pi, 8, endpoint=False) for z in (-.25, .25)]
         col.append(H(rot(drum, kq)))
         col.append(H(rot([(1.0, 4.30, -.14), (1.0, 4.30, .14), (1.0, 3.62, -.14), (1.0, 3.62, .14), (.40, 3.02, -.14), (.40, 3.02, .14), (.40, 4.30, -.14), (.40, 4.30, .14)], kq)))   # bracket, 45 degree underside

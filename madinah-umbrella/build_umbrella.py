@@ -32,6 +32,7 @@ H_ARM_PIVOT = 14.15                  # [M] arm root hinge on the mast
 H_UPPER_PIVOT = 16.20                # [M] upper strut hinge
 H_LOWER_PIVOT = 10.86                # [M] lower strut hinge
 R_ELBOW = 6.60                       # [M] inner/outer arm hinge radius (middle arm)
+INCLUDE_FANS = False                 # the two misting fans on the shaft; left out on request, set True to bring them back
 H_FAN = 3.96                         # [M] evaporative cooling fan axis
 H_SHAFT0, H_SHAFT1 = 1.27, 5.50      # [M/P]
 H_FRIEZE0, H_FRIEZE1 = 6.78, 7.48    # [P] slate frieze band
@@ -1386,7 +1387,8 @@ def build_parts(variant):
         cyl(fd, (cx + .12 * math.cos(a), H_FAN + .12 * math.sin(a), dep / 2 - .02), (cx + .5 * math.cos(a), H_FAN + .5 * math.sin(a), dep / 2 - .02), .012, n=6, caps=False)
     beam(f, (A_SHAFT - .05, H_FAN + R + .19, 0), (cx + .30, H_FAN + R + .19, 0), .50, .26)           # bracket housing
     beam(f, (cx, H_FAN + R - .02, 0), (cx, H_FAN + R + .08, 0), .20, .20, up=(1, 0, 0))
-    add("Cooling_Fan_Housing", "Cooling", f, "fan", [0, 180]); add("Cooling_Fan_Guard_and_Mist_Ring", "Cooling", fd, "fan_dark", [0, 180])
+    if INCLUDE_FANS:
+        add("Cooling_Fan_Housing", "Cooling", f, "fan", [0, 180]); add("Cooling_Fan_Guard_and_Mist_Ring", "Cooling", fd, "fan_dark", [0, 180])
 
     # ---------------- piazza floor ------------------------------------------
     m = Mesh(); S = 13.5

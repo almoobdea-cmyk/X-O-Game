@@ -80,7 +80,7 @@ a structural and mechanical engineer; this model is a geometric basis for that w
 
 | Result | Check | Measured |
 |---|---|---|
-| PASS | All data blocks lie inside the file | 254 accessors, 59 meshes, 366 nodes |
+| PASS | All data blocks lie inside the file | 246 accessors, 57 meshes, 361 nodes |
 | PASS | Fabric is bound to the rig correctly | 58 joints; 0 bad weights, 0 bad joint ids |
 | PASS | Close animation present | 154 channels, 12 s |
 
@@ -95,7 +95,7 @@ a structural and mechanical engineer; this model is a geometric basis for that w
 
 | Result | Check | Measured |
 |---|---|---|
-| PASS | All data blocks lie inside the file | 241 accessors, 59 meshes, 366 nodes |
+| PASS | All data blocks lie inside the file | 233 accessors, 57 meshes, 361 nodes |
 | PASS | Fabric is bound to the rig correctly | 58 joints; 0 bad weights, 0 bad joint ids |
 | PASS | Static file carries no animation | none |
 
