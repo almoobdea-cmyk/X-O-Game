@@ -1,0 +1,156 @@
+<title>Green Dome Keychain</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one survey sheet. The model is the drawing; the measured schedule sits beneath it like a title block. */
+:root{
+  --paper:#f3f1ea; --ink:#16241b; --muted:#5d6b61; --line:#cfd3c6;
+  --dome:#2c6a3c; --dome-deep:#1d4a2a; --gilt:#b8862b; --panel:#ffffff;
+  --display:"Reem Kufi","Noto Kufi Arabic",system-ui,sans-serif;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#0f1612; --ink:#e7ece4; --muted:#9aa89d; --line:#2a362e;
+  --dome:#58a86b; --dome-deep:#2c6a3c; --gilt:#d9ab52; --panel:#16201a; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --paper:#0f1612; --ink:#e7ece4; --muted:#9aa89d; --line:#2a362e;
+  --dome:#58a86b; --dome-deep:#2c6a3c; --gilt:#d9ab52; --panel:#16201a; color-scheme:dark }
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55}
+.sheet{max-width:1080px;margin:0 auto;padding-block:20px 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 18px;border-bottom:2px solid var(--dome);padding-bottom:10px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(26px,5vw,40px);line-height:1.1;margin:0;text-wrap:balance}
+h1 span{color:var(--dome);font-weight:500;margin-left:.45em;display:inline-block}
+header p{margin:0;color:var(--muted);font-family:var(--mono);font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+.stage{position:relative;border:1px solid var(--line);border-radius:4px;overflow:hidden;background:#9fc0dc;aspect-ratio:4/3;max-height:74vh;width:100%;max-width:100%}
+.stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.stage canvas:active{cursor:grabbing}
+.hint{position:absolute;left:10px;bottom:8px;font-family:var(--mono);font-size:11px;color:#10231a;background:rgba(255,255,255,.72);padding:3px 8px;border-radius:3px;pointer-events:none}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.bar .grp{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.bar .lab{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-inline-end:2px}
+button{font:500 13px var(--body);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:7px 11px;cursor:pointer}
+button:hover{border-color:var(--dome)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--gilt);outline-offset:2px}
+button[aria-pressed="true"]{background:var(--dome-deep);border-color:var(--dome-deep);color:#fff}
+input[type=range]{accent-color:var(--dome);width:130px}
+h2{font-family:var(--display);font-weight:500;font-size:21px;margin:8px 0 0}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px 32px}
+.cols>*{min-width:0}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+th.n{text-align:right}
+p{margin:0 0 10px;max-width:66ch}
+ul{margin:0;padding-inline-start:18px;max-width:66ch}
+li{margin-bottom:6px}
+.note{border-inline-start:3px solid var(--gilt);padding:8px 12px;background:var(--panel);font-size:13.5px}
+a{color:var(--dome)}
+.err{padding:24px;font-family:var(--mono);font-size:13px;color:#10231a}
+</style>
+<div class="sheet">
+  <header>
+    <h1>Green Dome Keychain<span lang="ar" dir="rtl">ميدالية القبة الخضراء</span></h1>
+    <p>Version 2 · printable solid · 75 mm overall · units in millimetres</p>
+  </header>
+  <div class="stage" id="stage" style="background:#dfe3dc"><canvas id="c" aria-label="Interactive 3D preview of the keychain model"></canvas>
+    <div class="hint" id="hint">Loading model…</div></div>
+  <div class="bar">
+    <div class="grp"><span class="lab">View</span>
+      <button data-view="corner">Corner</button><button data-view="front">Front</button>
+      <button data-view="ring">Ring and finial</button><button data-view="under">Underside</button></div>
+    <div class="grp"><span class="lab">Finish</span>
+      <button id="bPaint" aria-pressed="true">Painted</button><button id="bMetal" aria-pressed="false">Cast metal</button>
+      <button id="bRot" aria-pressed="true">Turntable</button></div>
+  </div>
+  <div class="cols">
+    <section>
+      <h2>Keychain specification</h2>
+      <div class="tw"><table>
+        <tr><th>Item</th><th class="n">Value</th></tr>
+        <tr><td>Overall length, base to top of ring</td><td class="n">75.0</td></tr>
+        <tr><td>Footprint of the white base</td><td class="n">54.9 × 54.9</td></tr>
+        <tr><td>Scale against the real building</td><td class="n">1 : 267</td></tr>
+        <tr><td>Dome shell diameter</td><td class="n">32.3</td></tr>
+        <tr><td>Key ring eye: hole / wire / outer</td><td class="n">Ø 5.0 / 2.7 / 10.4</td></tr>
+        <tr><td>Finial core running through the globes</td><td class="n">Ø 2.8</td></tr>
+        <tr><td>Wall thickness, hollow file</td><td class="n">2.4 min</td></tr>
+        <tr><td>Material volume, hollow / solid</td><td class="n">24.7 / 71.1 cm³</td></tr>
+        <tr><td>Smallest raised detail (ribs, grilles)</td><td class="n">0.4 high · 0.4–0.6 wide</td></tr>
+      </table></div>
+    </section>
+    <section>
+      <h2>Where the ring went</h2>
+      <p>The real finial ends in a small crescent crest. On the keychain that crest is closed into a full loop, so the eye for the split ring is the top ornament itself and nothing is bolted onto the dome.</p>
+      <ul>
+        <li>The loop stands in the same vertical plane as the original crest and takes a standard split ring or a jump ring up to 2.5 mm wire.</li>
+        <li>The finial keeps its eight-lobed bulb and two of its three globes; a 2.8 mm core runs through them into the shell so the pull goes into the dome, not the thin neck.</li>
+        <li>Ribs, arcade arches, niches and window grilles are thickened to printable size. Their counts are unchanged: 64 ribs, 64 arches, 32 niches, 16 panels.</li>
+        <li>The ladder and the roof context of version 1 are left out.</li>
+      </ul>
+    </section>
+  </div>
+  <p class="note">Sized for resin printing or casting. On a filament printer the 0.4 mm details will soften; print with a 0.2 mm nozzle or scale the detail up. The hollow file is open underneath so resin drains.</p>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+const stage=document.getElementById('stage'),canvas=document.getElementById('c'),hint=document.getElementById('hint');
+if(!window.THREE){stage.innerHTML='<div class="err">The 3D library did not load, so the model cannot be drawn.</div>';return;}
+const T=THREE,PI=Math.PI,S=54/14.4;
+const renderer=new T.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));renderer.outputEncoding=T.sRGBEncoding;
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
+const scene=new T.Scene();scene.background=new T.Color(0xdfe3dc).convertSRGBToLinear();
+const camera=new T.PerspectiveCamera(30,4/3,1,2000);
+scene.add(new T.HemisphereLight(0xffffff,0xb9b3a4,.5));
+const sun=new T.DirectionalLight(0xfff6e8,.75);sun.position.set(90,150,110);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+Object.assign(sun.shadow.camera,{left:-70,right:70,top:90,bottom:-30,near:10,far:400});sun.shadow.bias=-.0005;sun.shadow.normalBias=.2;scene.add(sun);
+const fill=new T.DirectionalLight(0xdfe8f5,.2);fill.position.set(-80,40,-90);scene.add(fill);
+const up=new T.DirectionalLight(0xffffff,.12);up.position.set(0,-100,20);scene.add(up);
+const floor=new T.Mesh(new T.CircleGeometry(400,48),new T.ShadowMaterial({opacity:.22}));floor.rotation.x=-PI/2;floor.position.y=-.01;floor.receiveShadow=true;scene.add(floor);
+const lin=h=>new T.Color(h).convertSRGBToLinear();
+const mPaint=new T.MeshStandardMaterial({vertexColors:true,roughness:.6,metalness:.05,side:T.DoubleSide});
+const mMetal=new T.MeshStandardMaterial({color:lin(0xc9a24a),roughness:.34,metalness:.85,side:T.DoubleSide,emissive:lin(0x2a1c00)});
+let mesh=null;
+fetch('green-dome-keychain-hollow.stl').then(r=>{if(!r.ok)throw new Error(r.status);return r.arrayBuffer();}).then(buf=>{
+  const dv=new DataView(buf),n=dv.getUint32(80,true),pos=new Float32Array(n*9),nor=new Float32Array(n*9),col=new Float32Array(n*9);
+  const G=lin(0x2e7a42),W=lin(0xf6f2e8),Au=lin(0xd2a233),zWhite=(5.8-.14)*S,zGold=54-.75;
+  for(let i=0,o=84;i<n;i++,o+=50){const nx=dv.getFloat32(o,true),ny=dv.getFloat32(o+4,true),nz=dv.getFloat32(o+8,true);let zc=0,rc=0;
+    for(let k=0;k<3;k++){const x=dv.getFloat32(o+12+k*12,true),y=dv.getFloat32(o+16+k*12,true),z=dv.getFloat32(o+20+k*12,true),j=i*9+k*3;
+      pos[j]=x;pos[j+1]=z;pos[j+2]=-y;nor[j]=nx;nor[j+1]=nz;nor[j+2]=-ny;zc+=z/3;rc+=Math.hypot(x,y)/3;}
+    const c=zc>zGold&&(rc<3.3||zc>zGold+2.6)?Au:(zc<zWhite?W:G);for(let k=0;k<3;k++){const j=i*9+k*3;col[j]=c.r;col[j+1]=c.g;col[j+2]=c.b;}}
+  const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(pos,3));g.setAttribute('normal',new T.BufferAttribute(nor,3));g.setAttribute('color',new T.BufferAttribute(col,3));
+  mesh=new T.Mesh(g,mPaint);mesh.castShadow=mesh.receiveShadow=true;scene.add(mesh);hint.textContent='Drag to orbit · scroll or pinch to zoom';
+}).catch(e=>{hint.textContent='The model file could not be loaded ('+e.message+').';});
+const cam={th:.72,ph:1.25,r:230,ty:36};let goal=null,auto=true;
+const VIEWS={corner:{th:.72,ph:1.25,r:230,ty:36},front:{th:.0001,ph:1.45,r:220,ty:37},ring:{th:.5,ph:1.4,r:62,ty:65},under:{th:.6,ph:2.5,r:210,ty:25}};
+function place(){const s=Math.sin(cam.ph);camera.position.set(cam.r*s*Math.sin(cam.th),cam.ty+cam.r*Math.cos(cam.ph),cam.r*s*Math.cos(cam.th));camera.lookAt(0,cam.ty,0);}
+function setView(n,instant){const v=VIEWS[n];if(!v)return;floor.visible=n!=='under';if(instant){Object.assign(cam,v);goal=null;}else{goal=Object.assign({},v);let d=goal.th-cam.th;d=((d+PI)%(2*PI)+2*PI)%(2*PI)-PI;goal.th=cam.th+d;}if(n==='ring'||n==='under')setAuto(false);}
+const ptrs=new Map();let pinch=0;
+canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,[e.clientX,e.clientY]);goal=null;setAuto(false);});
+canvas.addEventListener('pointermove',e=>{if(!ptrs.has(e.pointerId))return;const p=ptrs.get(e.pointerId),dx=e.clientX-p[0],dy=e.clientY-p[1];ptrs.set(e.pointerId,[e.clientX,e.clientY]);
+  if(ptrs.size===1){cam.th-=dx*.006;cam.ph=Math.min(3.0,Math.max(.05,cam.ph-dy*.005));floor.visible=cam.ph<1.57;}
+  else if(ptrs.size===2){const a=[...ptrs.values()],d=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);if(pinch)cam.r=Math.min(600,Math.max(30,cam.r*pinch/d));pinch=d;}});
+const end=e=>{ptrs.delete(e.pointerId);pinch=0;};canvas.addEventListener('pointerup',end);canvas.addEventListener('pointercancel',end);
+canvas.addEventListener('wheel',e=>{e.preventDefault();goal=null;cam.r=Math.min(600,Math.max(30,cam.r*Math.exp(e.deltaY*.0012)));},{passive:false});
+const bRot=document.getElementById('bRot'),bPaint=document.getElementById('bPaint'),bMetal=document.getElementById('bMetal');
+function setAuto(v){auto=v;bRot.setAttribute('aria-pressed',v);}
+function finish(metal){if(mesh)mesh.material=metal?mMetal:mPaint;bMetal.setAttribute('aria-pressed',metal);bPaint.setAttribute('aria-pressed',!metal);}
+bRot.onclick=()=>setAuto(!auto);bPaint.onclick=()=>finish(false);bMetal.onclick=()=>finish(true);
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;camera.fov=w/h<1?40:30;camera.updateProjectionMatrix();}
+if(window.ResizeObserver)new ResizeObserver(resize).observe(stage);window.addEventListener('resize',resize);resize();
+if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)setAuto(false);
+let last=performance.now();
+function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;
+  if(goal){let done=true;for(const k in goal){const d=goal[k]-cam[k];if(Math.abs(d)>.002){cam[k]+=d*Math.min(1,dt*5);done=false;}else cam[k]=goal[k];}if(done)goal=null;}else if(auto)cam.th+=dt*.2;
+  place();renderer.render(scene,camera);requestAnimationFrame(frame);}
+place();requestAnimationFrame(frame);
+window.__model={setView,setAuto,finish};
+})();
+</script>
