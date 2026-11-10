@@ -1,0 +1,350 @@
+<title>Green Dome Study</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one survey sheet. The model is the drawing; the measured schedule sits beneath it like a title block. */
+:root{
+  --paper:#f3f1ea; --ink:#16241b; --muted:#5d6b61; --line:#cfd3c6;
+  --dome:#2c6a3c; --dome-deep:#1d4a2a; --gilt:#b8862b; --panel:#ffffff;
+  --display:"Reem Kufi","Noto Kufi Arabic",system-ui,sans-serif;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#0f1612; --ink:#e7ece4; --muted:#9aa89d; --line:#2a362e;
+  --dome:#58a86b; --dome-deep:#2c6a3c; --gilt:#d9ab52; --panel:#16201a; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --paper:#0f1612; --ink:#e7ece4; --muted:#9aa89d; --line:#2a362e;
+  --dome:#58a86b; --dome-deep:#2c6a3c; --gilt:#d9ab52; --panel:#16201a; color-scheme:dark }
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55}
+.sheet{max-width:1080px;margin:0 auto;padding-block:20px 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 18px;border-bottom:2px solid var(--dome);padding-bottom:10px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(26px,5vw,40px);line-height:1.1;margin:0;text-wrap:balance}
+h1 span{color:var(--dome);font-weight:500;margin-left:.45em;display:inline-block}
+header p{margin:0;color:var(--muted);font-family:var(--mono);font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+.stage{position:relative;border:1px solid var(--line);border-radius:4px;overflow:hidden;background:#9fc0dc;aspect-ratio:4/3;max-height:74vh;width:100%;max-width:100%}
+.stage canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.stage canvas:active{cursor:grabbing}
+.hint{position:absolute;left:10px;bottom:8px;font-family:var(--mono);font-size:11px;color:#10231a;background:rgba(255,255,255,.72);padding:3px 8px;border-radius:3px;pointer-events:none}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.bar .grp{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.bar .lab{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-inline-end:2px}
+button{font:500 13px var(--body);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:3px;padding:7px 11px;cursor:pointer}
+button:hover{border-color:var(--dome)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--gilt);outline-offset:2px}
+button[aria-pressed="true"]{background:var(--dome-deep);border-color:var(--dome-deep);color:#fff}
+input[type=range]{accent-color:var(--dome);width:130px}
+h2{font-family:var(--display);font-weight:500;font-size:21px;margin:8px 0 0}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px 32px}
+.cols>*{min-width:0}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+th.n{text-align:right}
+p{margin:0 0 10px;max-width:66ch}
+ul{margin:0;padding-inline-start:18px;max-width:66ch}
+li{margin-bottom:6px}
+.note{border-inline-start:3px solid var(--gilt);padding:8px 12px;background:var(--panel);font-size:13.5px}
+a{color:var(--dome)}
+.err{padding:24px;font-family:var(--mono);font-size:13px;color:#10231a}
+</style>
+
+<div class="sheet">
+  <header>
+    <h1>Green Dome Study<span lang="ar" dir="rtl">القبة الخضراء</span></h1>
+    <p>Al-Masjid an-Nabawi, Madinah · 3D reconstruction from photographs · units in metres</p>
+  </header>
+
+  <div class="stage" id="stage"><canvas id="c" aria-label="Interactive 3D model of the Green Dome and its white base"></canvas>
+    <div class="hint">Drag to orbit · scroll or pinch to zoom</div></div>
+
+  <div class="bar">
+    <div class="grp"><span class="lab">View</span>
+      <button data-view="corner">Corner</button><button data-view="front">Front face</button>
+      <button data-view="drum">Drum bands</button><button data-view="finial">Finial</button>
+      <button data-view="windows">Window pyramid</button><button data-view="top">Plan</button></div>
+    <div class="grp"><span class="lab">Show</span>
+      <button id="bRot" aria-pressed="true">Turntable</button>
+      <button id="bDim" aria-pressed="false">Dimensions</button>
+      <button id="bCtx" aria-pressed="true">Roof context</button></div>
+    <div class="grp"><label class="lab" for="sun">Sun</label><input id="sun" type="range" min="0" max="360" value="38"></div>
+  </div>
+
+  <div class="cols">
+    <section>
+      <h2>Measured schedule</h2>
+      <div class="tw"><table>
+        <tr><th>Element, bottom to top</th><th class="n">Width / Ø</th><th class="n">Height</th></tr>
+        <tr><td>White base: battered square block, chamfered corners</td><td class="n">13.7 → 11.4</td><td class="n">5.80</td></tr>
+        <tr><td>Window pyramid on the face: 3 arched (1.25 wide), then 2 and 1 round (Ø 1.20)</td><td class="n">Ø 1.20 · 1.25</td><td class="n">0.6 → 4.3</td></tr>
+        <tr><td>Green cornice ledge, 16-sided</td><td class="n">Ø 11.80</td><td class="n">0.35</td></tr>
+        <tr><td>Base band: 16 flat faces, one arched panel each</td><td class="n">Ø 10.10</td><td class="n">1.35</td></tr>
+        <tr><td>Drum: 32 arched niches in 16 pairs</td><td class="n">Ø 9.20</td><td class="n">1.05</td></tr>
+        <tr><td>Arcade band: 64 blind arches</td><td class="n">Ø 9.05</td><td class="n">0.78</td></tr>
+        <tr><td>Ribbed shell: 64 standing seams, pointed profile</td><td class="n">Ø 8.60 max</td><td class="n">5.07</td></tr>
+        <tr><td>Gilded finial: 8-lobed bulb, three globes, crest</td><td class="n">Ø 0.92 bulb</td><td class="n">2.20</td></tr>
+        <tr><td><strong>Roof to finial tip</strong></td><td class="n"></td><td class="n"><strong>16.6</strong></td></tr>
+      </table></div>
+    </section>
+    <section>
+      <h2>How the numbers were derived</h2>
+      <p>No measured survey of the outer dome is published, so every figure here is photogrammetric. The proportions are tight; the absolute scale is the soft part.</p>
+      <ul>
+        <li><strong>Profile.</strong> The silhouette was traced row by row from a 1500 × 2250 px telephoto image, sampling the green-to-sky edge every 10 px. The shell is not a hemisphere: it rises as a near-straight cone at about 53° from vertical, then turns through a knee into an almost vertical skirt.</li>
+        <li><strong>Counts.</strong> Facet edges on the base band give sin(π/N) = 0.19, so N = 16. Each face carries one panel and one pair of niches; four arcade arches and four ribs fit one face, giving 64.</li>
+        <li><strong>Scale.</strong> Anchored on the maintenance ladder against the white base (rung pitch about 0.28 m), which puts the cornice at 11.8 m across. Expect ±10 % on absolute sizes, ±3 % on ratios.</li>
+        <li><strong>Cross-check.</strong> The green part comes out 8.3 m from cornice to apex; Arabic sources give about 8.9 m for the dome up to the base of the crescent.</li>
+      </ul>
+    </section>
+  </div>
+  <p class="note">Modelled assumptions: the window pyramid is repeated on all four faces (the photographs confirm it on the faces they show), and the calligraphic roundels in the round windows are drawn as geometric rosettes rather than transcribed.</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+const stage=document.getElementById('stage'), canvas=document.getElementById('c');
+if(!window.THREE){ stage.innerHTML='<div class="err">The 3D library did not load, so the model cannot be drawn.</div>'; return; }
+const T=THREE, PI=Math.PI;
+
+/* ---------- survey constants (metres, y = 0 at roof level) ---------- */
+const Y_BASE=5.80, Y_BRIM=6.15, Y_POLY=7.50, Y_DRUM=8.55, Y_ARC=9.33, Y_APEX=14.40;
+const R_BRIM=6.0, R_POLY=5.12, R_DRUM=4.60, R_ARC=4.52, NF=16, NR=64;
+/* shell profile: [depth below apex, radius] traced from photograph */
+const PROFILE=[[0,.38],[.4,.90],[.72,1.31],[1.04,1.71],[1.36,2.14],[1.68,2.56],[2.0,2.99],[2.32,3.31],[2.64,3.55],
+ [2.96,3.73],[3.28,3.89],[3.6,4.03],[3.92,4.14],[4.24,4.21],[4.56,4.26],[4.88,4.29],[5.07,4.30]];
+
+const renderer=new T.WebGLRenderer({canvas,antialias:true,preserveDrawingBuffer:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+renderer.outputEncoding=T.sRGBEncoding; 
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=T.PCFSoftShadowMap;
+const scene=new T.Scene();
+const camera=new T.PerspectiveCamera(32,4/3,0.2,400);
+
+/* ---------- textures ---------- */
+function canvasTex(w,h,draw){const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'),w,h);const t=new T.CanvasTexture(c);t.anisotropy=8;return t;}
+scene.background=(function(){const t=canvasTex(8,256,(g,w,h)=>{const gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,'#4f7fb0');gr.addColorStop(.55,'#8fb5d8');gr.addColorStop(1,'#d5e2ea');g.fillStyle=gr;g.fillRect(0,0,w,h);});t.encoding=T.sRGBEncoding;return t;})();
+const grain=canvasTex(256,256,(g,w,h)=>{const d=g.createImageData(w,h);for(let i=0;i<d.data.length;i+=4){const v=110+Math.random()*90|0;d.data[i]=d.data[i+1]=d.data[i+2]=v;d.data[i+3]=255;}g.putImageData(d,0,0);});
+grain.wrapS=grain.wrapT=T.RepeatWrapping; grain.repeat.set(6,6);
+const rosette=canvasTex(256,256,(g,w)=>{const c=w/2;g.fillStyle='#143a20';g.fillRect(0,0,w,w);g.strokeStyle='#3f8f55';g.lineWidth=5;
+  for(let k=0;k<2;k++){g.beginPath();for(let i=0;i<=8;i++){const a=i*PI/4*3+k*PI/8,r=96;g.lineTo(c+r*Math.cos(a),c+r*Math.sin(a));}g.stroke();}
+  g.lineWidth=4;for(let i=0;i<16;i++){const a=i*PI/8;g.beginPath();g.moveTo(c+30*Math.cos(a),c+30*Math.sin(a));g.lineTo(c+112*Math.cos(a),c+112*Math.sin(a));g.stroke();}
+  [112,62,30].forEach(r=>{g.beginPath();g.arc(c,c,r,0,2*PI);g.stroke();});g.fillStyle='#3f8f55';g.beginPath();g.arc(c,c,10,0,2*PI);g.fill();});
+rosette.encoding=T.sRGBEncoding;
+const lattice=canvasTex(256,256,(g,w)=>{g.fillStyle='#1d5a30';g.fillRect(0,0,w,w);g.strokeStyle='#123a1f';g.lineWidth=5;
+  for(let i=-8;i<16;i++){g.beginPath();g.moveTo(i*32,0);g.lineTo(i*32+256,256);g.stroke();g.beginPath();g.moveTo(i*32+256,0);g.lineTo(i*32,256);g.stroke();}
+  g.strokeStyle='#2f7a45';g.lineWidth=8;g.strokeRect(4,4,w-8,w-8);g.beginPath();g.moveTo(w/2,0);g.lineTo(w/2,w);g.stroke();});
+lattice.encoding=T.sRGBEncoding;
+
+/* ---------- materials ---------- */
+const mGreen=new T.MeshStandardMaterial({color:0x2e7a42,roughness:.82,metalness:0,bumpMap:grain,bumpScale:.012,side:T.DoubleSide});
+const mGreenSeam=new T.MeshStandardMaterial({color:0x2a7240,roughness:.8});
+const mGreenDark=new T.MeshStandardMaterial({color:0x1c5a30,roughness:.9});
+const mGreenFlat=new T.MeshStandardMaterial({color:0x2c7640,roughness:.85,flatShading:true,bumpMap:grain,bumpScale:.01});
+const mWhite=new T.MeshStandardMaterial({color:0xfbf8f0,roughness:.9,flatShading:true,side:T.DoubleSide,bumpMap:grain,bumpScale:.006});
+const mWhiteS=new T.MeshStandardMaterial({color:0xfdfaf3,roughness:.85});
+const mGold=new T.MeshStandardMaterial({color:0xd9a233,roughness:.32,metalness:.9,emissive:0x3a2600,emissiveIntensity:.5});
+const mSilver=new T.MeshStandardMaterial({color:0xcfd4d8,roughness:.4,metalness:.55});
+const mRoof=new T.MeshStandardMaterial({color:0xbfbdb4,roughness:.95});
+const mWood=new T.MeshStandardMaterial({color:0x8a5a2b,roughness:.7});
+
+const model=new T.Group(); scene.add(model);
+const context=new T.Group(); scene.add(context);
+function add(g,m,p){const o=new T.Mesh(g,m);o.castShadow=o.receiveShadow=true;(p||model).add(o);return o;}
+
+/* ---------- helpers ---------- */
+function archShape(w,h){const s=new T.Shape(),r=w/2;s.moveTo(-r,0);s.lineTo(-r,h-r);s.absarc(0,h-r,r,PI,0,true);s.lineTo(r,0);s.lineTo(-r,0);return s;}
+function archFrame(w,h,t,depth){const s=archShape(w,h);const i=archShape(w-2*t,h-t);const hole=new T.Path(i.getPoints(20));s.holes.push(hole);
+  return new T.ExtrudeGeometry(s,{depth,bevelEnabled:false,curveSegments:20});}
+function onRing(obj,R,y,a,tilt){obj.position.set(R*Math.sin(a),y,R*Math.cos(a));obj.rotation.order='YXZ';obj.rotation.y=a;if(tilt)obj.rotation.x=tilt;return obj;}
+/* square with chamfered corners, lofted through levels [y, halfWidth, chamfer] */
+function loft(levels){const ring=(a,c,y)=>[[a,-(a-c)],[a,a-c],[a-c,a],[-(a-c),a],[-a,a-c],[-a,-(a-c)],[-(a-c),-a],[a-c,-a]].map(p=>new T.Vector3(p[0],y,p[1]));
+  const v=[];const quad=(a,b,c,d)=>{[a,b,c,a,c,d].forEach(p=>v.push(p.x,p.y,p.z));};
+  for(let l=0;l<levels.length-1;l++){const A=ring(levels[l][1],levels[l][2],levels[l][0]),B=ring(levels[l+1][1],levels[l+1][2],levels[l+1][0]);
+    for(let i=0;i<8;i++){const j=(i+1)%8;quad(A[i],B[i],B[j],A[j]);}}
+  const top=levels[levels.length-1],Tp=ring(top[1],top[2],top[0]),c=new T.Vector3(0,top[0],0);
+  for(let i=0;i<8;i++){const j=(i+1)%8;[c,Tp[j],Tp[i]].forEach(p=>v.push(p.x,p.y,p.z));}
+  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(v,3));g.computeVertexNormals();return g;}
+
+/* ---------- 1. white base ---------- */
+const BASE=[[0,6.85,1.25],[0.25,6.80,1.25],[3.9,6.12,1.4],[Y_BASE,5.72,2.35]];
+add(loft(BASE),mWhite);
+add(loft([[0,7.0,1.3],[0.22,7.0,1.3]]),mWhite);                      // plinth course
+const halfAt=y=>{for(let i=0;i<BASE.length-1;i++){const a=BASE[i],b=BASE[i+1];if(y<=b[0]){const t=(y-a[0])/(b[0]-a[0]);return a[1]+(b[1]-a[1])*t;}}return BASE[BASE.length-1][1];};
+const TILT1=-Math.atan((BASE[1][1]-BASE[2][1])/(BASE[2][0]-BASE[1][0]));   // batter of the lower wall
+
+// window pyramid on each of the four faces
+const gRingO=new T.TorusGeometry(.56,.055,12,40), gDisc=new T.CircleGeometry(.52,40);
+const gArchF=archFrame(1.25,.98,.09,.14), gArchP=new T.ShapeGeometry(archShape(1.09,.9),20);
+(function fixUV(g,w,h){const p=g.attributes.position,uv=g.attributes.uv;for(let i=0;i<p.count;i++)uv.setXY(i,p.getX(i)/w+.5,p.getY(i)/h);})(gArchP,1.09,.9);
+const mRos=new T.MeshStandardMaterial({map:rosette,roughness:.7}), mLat=new T.MeshStandardMaterial({map:lattice,roughness:.75});
+for(let f=0;f<4;f++){
+  const face=new T.Group();face.rotation.y=f*PI/2;model.add(face);
+  const put=(o,x,y,off)=>{o.position.set(x,y,halfAt(y)+off);o.rotation.x=TILT1;face.add(o);o.castShadow=o.receiveShadow=true;return o;};
+  [[0,3.73],[-.84,2.40],[.84,2.40]].forEach(([x,y])=>{
+    put(new T.Mesh(gRingO,mGreenSeam),x,y,.05); put(new T.Mesh(gDisc,mRos),x,y,.02);
+    const inner=put(new T.Mesh(new T.TorusGeometry(.60,.03,8,40),mWhiteS),x,y,.03);});
+  [-1.63,0,1.63].forEach(x=>{const y=.60;
+    put(new T.Mesh(gArchF,mGreenSeam),x,y+.14,-.03); const p=put(new T.Mesh(gArchP,mLat),x+.0,y+.16,.03);});
+  // thin string course at the foot of the windows
+  const sc=new T.Mesh(new T.BoxGeometry(9.4,.09,.12),mWhiteS);put(sc,0,.52,.03);
+}
+// corners: broach spurs flanking a recessed green window on each chamfer
+const gSpur=new T.ConeGeometry(1.35,2.6,4,1);
+for(let k=0;k<4;k++){
+  const corner=new T.Group();corner.rotation.y=PI/4+k*PI/2;model.add(corner);
+  const win=new T.Group();win.position.set(0,4.05,7.56);win.rotation.x=-.555;corner.add(win);
+  const fr=add(new T.BoxGeometry(1.2,1.3,.3),mGreenSeam,win);fr.position.y=.65;
+  const pn=add(new T.PlaneGeometry(.94,1.04),mLat,win);pn.position.set(0,.66,.155);
+  const pend=add(new T.ConeGeometry(.6,.6,4,1),mGreenDark,win);pend.rotation.set(PI,PI/4,0);pend.position.set(0,-.28,0);pend.scale.z=.4;
+  const hood=add(new T.BoxGeometry(1.5,.14,.5),mWhiteS,win);hood.position.set(0,1.37,.05);
+  [-1,1].forEach(s=>{const sp=add(gSpur,mWhite,corner);sp.position.set(s*2.45,4.5,6.0);sp.rotation.y=PI/4;});
+}
+
+/* ---------- 2. cornice + 16-sided base band ---------- */
+const ROT16=PI/NF;                                                     // put a flat face on each axis
+const soffit=add(new T.CylinderGeometry(R_BRIM-.25,R_BRIM-.55,.22,NF),mWhite);soffit.position.y=Y_BASE-.02;soffit.rotation.y=ROT16;
+const brim=add(new T.CylinderGeometry(R_BRIM,R_BRIM,.26,NF),mGreenFlat);brim.position.y=Y_BASE+.2;brim.rotation.y=ROT16;
+const brim2=add(new T.CylinderGeometry(R_POLY+.12,R_BRIM-.02,.1,NF),mGreenFlat);brim2.position.y=Y_BRIM+.03;brim2.rotation.y=ROT16;
+const polyH=Y_POLY-Y_BRIM-.22;
+const poly=add(new T.CylinderGeometry(R_POLY,R_POLY+.04,polyH,NF),mGreenFlat);poly.position.y=Y_BRIM+polyH/2;poly.rotation.y=ROT16;
+const polyTop=add(new T.CylinderGeometry(R_DRUM+.08,R_POLY,.22,NF),mGreenFlat);polyTop.position.y=Y_POLY-.11;polyTop.rotation.y=ROT16;
+const AP=R_POLY*Math.cos(PI/NF);
+const gPF=archFrame(.74,1.0,.06,.07), gPP=new T.ShapeGeometry(archShape(.62,.94),16);
+for(let i=0;i<NF;i++){const a=i*2*PI/NF;
+  onRing(add(gPF,mGreenSeam),AP+.005,Y_BRIM+.1,a);
+  onRing(add(gPP,mGreenDark),AP+.02,Y_BRIM+.1,a);
+  // two shutter rails inside each panel
+  [.38,.62].forEach(h=>onRing(add(new T.BoxGeometry(.6,.025,.02),mGreenSeam),AP+.03,Y_BRIM+.1+h,a));
+}
+
+/* ---------- 3. drum with 32 paired niches ---------- */
+const drum=add(new T.CylinderGeometry(R_DRUM-.03,R_DRUM,Y_DRUM-Y_POLY,96,1,true),mGreen);drum.position.y=(Y_DRUM+Y_POLY)/2;
+const gNF=archFrame(.36,.66,.05,.06), gNP=new T.ShapeGeometry(archShape(.28,.62),14);
+for(let i=0;i<NF;i++)for(const s of[-1,1]){const a=i*2*PI/NF+s*4.1*PI/180;
+  onRing(add(gNF,mGreenSeam),R_DRUM-.02,Y_POLY+.14,a);
+  onRing(add(gNP,mGreenDark),R_DRUM-.005,Y_POLY+.14,a);}
+for(let i=0;i<NR;i++){const a=(i+.5)*2*PI/NR;                           // sheet joints on the drum
+  onRing(add(new T.BoxGeometry(.035,Y_DRUM-Y_POLY-.95,.03),mGreenSeam),R_DRUM-.01,Y_DRUM-.1-(Y_DRUM-Y_POLY-.95)/2,a);}
+const ring=(R,y,t,m)=>{const o=add(new T.TorusGeometry(R,t,10,128),m||mGreenSeam);o.rotation.x=PI/2;o.position.y=y;return o;};
+ring(R_DRUM+.01,Y_DRUM-.03,.04); ring(R_DRUM+.0,Y_POLY+.02,.03);
+
+/* ---------- 4. arcade band with 64 blind arches ---------- */
+const arc=add(new T.CylinderGeometry(R_ARC-.12,R_ARC,Y_ARC-Y_DRUM,128,1,true),mGreen);arc.position.y=(Y_ARC+Y_DRUM)/2;
+const aTilt=-Math.atan(.12/(Y_ARC-Y_DRUM));
+const gAF=archFrame(.34,.5,.04,.05);
+for(let i=0;i<NR;i++){const a=i*2*PI/NR;
+  onRing(add(gAF,mGreenSeam),R_ARC-.035,Y_DRUM+.08,a,aTilt);
+  onRing(add(new T.BoxGeometry(.04,Y_ARC-Y_DRUM,.04),mGreenSeam),R_ARC-.06,(Y_ARC+Y_DRUM)/2,a+PI/NR,aTilt);}
+ring(R_ARC-.1,Y_ARC,.04);
+
+/* ---------- 5. ribbed shell ---------- */
+const prof=new T.CatmullRomCurve3(PROFILE.map(p=>new T.Vector3(p[1],Y_APEX-p[0],0)).reverse(),false,'catmullrom',.5);
+const shell=add(new T.LatheGeometry(prof.getPoints(80).map(p=>new T.Vector2(p.x,p.y)),192),mGreen);
+const gRib=new T.TubeGeometry(prof,70,.03,6,false);
+for(let i=0;i<NR;i++){const r=add(gRib,mGreenSeam);r.rotation.y=(i+.5)*2*PI/NR;r.scale.set(1.002,1,1);}
+// horizontal lead-sheet courses (faint lap joints)
+[.7,1.55,2.5,3.6].forEach(h=>{const y=Y_ARC+h;const pts=prof.getPoints(200);let R=4;for(const p of pts)if(Math.abs(p.y-y)<.03){R=p.x;break;}ring(R+.004,y,.014);});
+// drip edge where the shell laps over the arcade
+ring(4.31,Y_ARC+.06,.035);
+
+/* ---------- 6. gilded finial ---------- */
+const fin=new T.Group();fin.position.y=Y_APEX-.06;model.add(fin);
+(function(){
+  const lp=[[.40,0],[.45,.06],[.47,.14],[.44,.24],[.36,.34],[.24,.42],[.12,.48],[.07,.52]].map(p=>new T.Vector2(p[0],p[1]));
+  const g=new T.LatheGeometry(new T.SplineCurve(lp).getPoints(24),64),p=g.attributes.position;
+  for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i),y=p.getY(i),th=Math.atan2(z,x),k=.80+.20*Math.pow(Math.abs(Math.cos(4*th)),.55),m=1-(1-k)*Math.min(1,(.52-y)/.2+.15);p.setX(i,x*m);p.setZ(i,z*m);}
+  g.computeVertexNormals();add(g,mGold,fin);
+  add(new T.CylinderGeometry(.045,.06,1.45,12),mGold,fin).position.y=1.2;
+  [[.72,.155,1.12],[1.2,.15,1.1],[1.65,.135,1.1]].forEach(([y,r,s])=>{const o=add(new T.SphereGeometry(r,24,18),mGold,fin);o.position.y=y;o.scale.y=s;});
+  [.52,.96,1.43,1.86].forEach(y=>{const o=add(new T.SphereGeometry(.09,16,10),mGold,fin);o.position.y=y;o.scale.y=.35;});
+  const knot=add(new T.TorusGeometry(.065,.022,8,4),mGold,fin);knot.position.y=1.99;
+  const cres=add(new T.TorusGeometry(.085,.02,8,24,PI*1.25),mGold,fin);cres.position.y=2.14;cres.rotation.z=PI*.875;
+  [-1,1].forEach(s=>{const h=add(new T.ConeGeometry(.02,.1,8),mGold,fin);h.position.set(s*.085,2.2,0);h.rotation.z=-s*.5;});
+})();
+
+/* ---------- 7. maintenance ladder (the scale reference) ---------- */
+(function(){const L=new T.Group();const y1=Y_BASE+.36,z0=7.55,z1=5.95;const len=Math.hypot(y1,z0-z1);
+  [-.24,.24].forEach(x=>{const r=add(new T.CylinderGeometry(.025,.025,len,8),mWhiteS,L);r.position.set(x,len/2,0);});
+  for(let y=.3;y<len-.05;y+=.28){const r=add(new T.CylinderGeometry(.016,.016,.48,6),mWhiteS,L);r.rotation.z=PI/2;r.position.y=y;}
+  L.position.set(.42,0,z0);L.rotation.x=-Math.atan((z0-z1)/y1);model.add(L);})();
+
+/* ---------- 8. roof context ---------- */
+const roof=add(new T.CircleGeometry(60,64),mRoof,context);roof.rotation.x=-PI/2;roof.castShadow=false;
+(function(){
+  const sp=new T.SplineCurve([[1.55,0],[1.5,.5],[1.25,1.0],[.8,1.4],[.3,1.6],[.03,1.66]].map(p=>new T.Vector2(p[0],p[1]))).getPoints(20);
+  [[10.2,5.2],[10.6,1.2],[13.6,7.4]].forEach(([x,z])=>{const g=new T.Group();g.position.set(x,0,z);context.add(g);
+    const d=add(new T.CylinderGeometry(1.6,1.6,1.7,8),mWhite,g);d.position.y=.85;
+    const ea=add(new T.CylinderGeometry(1.75,1.75,.1,8),mWhiteS,g);ea.position.y=1.72;
+    const dm=add(new T.LatheGeometry(sp,16),mSilver,g);dm.position.y=1.75;dm.material=mSilver.clone();dm.material.flatShading=true;
+    const sp1=add(new T.ConeGeometry(.05,.45,8),mSilver,g);sp1.position.y=3.6;
+    for(let i=0;i<8;i++){const a=i*PI/4;onRing(add(new T.ShapeGeometry(archShape(.7,.95),12),mWood,g),1.6*Math.cos(PI/8)+.01,.5,a);}});
+})();
+
+/* ---------- 9. dimension overlay ---------- */
+const dims=new T.Group();dims.visible=false;scene.add(dims);
+(function(){const mL=new T.LineBasicMaterial({color:0xfff2c2,depthTest:false,transparent:true});
+  function label(txt){const t=canvasTex(512,128,(g)=>{g.font='600 54px ui-monospace,Menlo,monospace';g.textAlign='center';g.textBaseline='middle';const w=g.measureText(txt).width+40;
+    g.fillStyle='rgba(16,35,26,.86)';g.fillRect(256-w/2,24,w,80);g.fillStyle='#fff2c2';g.fillText(txt,256,66);});
+    const s=new T.Sprite(new T.SpriteMaterial({map:t,depthTest:false,transparent:true}));s.scale.set(4.4,1.1,1);s.renderOrder=10;return s;}
+  function dim(a,b,txt,off){const A=new T.Vector3(...a),B=new T.Vector3(...b);const dir=B.clone().sub(A).normalize();
+    const tick=new T.Vector3(dir.y?.25:0,dir.y?0:.25,0);const pts=[A,B,A.clone().add(tick),A.clone().sub(tick),B.clone().add(tick),B.clone().sub(tick)];
+    const g=new T.BufferGeometry().setFromPoints([pts[0],pts[1],pts[2],pts[3],pts[4],pts[5]]);const l=new T.LineSegments(g,mL);l.renderOrder=9;dims.add(l);
+    const s=label(txt);s.position.copy(A.clone().add(B).multiplyScalar(.5)).add(new T.Vector3(...(off||[0,0,0])));dims.add(s);}
+  const X=-8.6,Z=7.3;
+  dim([X,0,Z],[X,Y_BASE,Z],'5.80',[-1.6,0,0]); dim([X,Y_BASE,Z],[X,Y_ARC,Z],'3.53',[-1.6,0,0]);
+  dim([X,Y_ARC,Z],[X,Y_APEX,Z],'5.07',[-1.6,0,0]); dim([X,Y_APEX,Z],[X,16.6,Z],'2.20',[-1.6,0,0]);
+  dim([-6.85,-.6,Z],[6.85,-.6,Z],'13.70',[0,-.7,0]); dim([-5.9,Y_BASE+.2,Z],[5.9,Y_BASE+.2,Z],'11.80',[3.4,.7,0]);
+  dim([-4.3,Y_ARC+.85,4.4],[4.3,Y_ARC+.85,4.4],'Ø 8.60',[0,.7,0]); dim([9.2,0,Z],[9.2,16.6,Z],'16.60',[1.8,0,0]);
+})();
+
+/* r128 has no colour management: convert authored sRGB colours to linear once */
+(function(){const seen=new Set();scene.traverse(o=>{const m=o.material;if(m&&m.color&&!seen.has(m)&&!m.isLineBasicMaterial&&!m.isSpriteMaterial){seen.add(m);m.color.convertSRGBToLinear();if(m.emissive)m.emissive.convertSRGBToLinear();}});})();
+/* ---------- lights ---------- */
+scene.add(new T.HemisphereLight(0xdcebf8,0xb8b09a,.42));
+const sun=new T.DirectionalLight(0xfff4e2,.78);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+Object.assign(sun.shadow.camera,{left:-16,right:16,top:20,bottom:-6,near:1,far:90});sun.shadow.bias=-.0006;sun.shadow.normalBias=.03;
+scene.add(sun);scene.add(sun.target);sun.target.position.set(0,6,0);
+const fill=new T.DirectionalLight(0xbcd4ee,.12);fill.position.set(-20,12,-14);scene.add(fill);
+function setSun(deg){const a=deg*PI/180;sun.position.set(34*Math.sin(a),30,34*Math.cos(a));}
+
+/* ---------- orbit camera ---------- */
+const cam={th:.72,ph:1.32,r:42,tx:0,ty:7.6,tz:0};let goal=null,auto=true;
+const VIEWS={low:{th:.9,ph:1.5,r:70,ty:9},corner:{th:.72,ph:1.32,r:42,ty:7.6},front:{th:0.0001,ph:1.42,r:40,ty:7.8},drum:{th:.35,ph:1.42,r:15,ty:8.1},
+  finial:{th:.5,ph:1.5,r:8.5,ty:15.2},windows:{th:.22,ph:1.38,r:17,ty:2.9},top:{th:0,ph:.02,r:46,ty:6}};
+function place(){const s=Math.sin(cam.ph);camera.position.set(cam.tx+cam.r*s*Math.sin(cam.th),cam.ty+cam.r*Math.cos(cam.ph),cam.tz+cam.r*s*Math.cos(cam.th));camera.lookAt(cam.tx,cam.ty,cam.tz);}
+function setView(n,instant){const v=VIEWS[n];if(!v)return;if(instant){Object.assign(cam,v);goal=null;}else{goal=Object.assign({},v);
+  let d=goal.th-cam.th;d=((d+PI)%(2*PI)+2*PI)%(2*PI)-PI;goal.th=cam.th+d;} if(n!=='corner'&&n!=='front')setAuto(false);}
+const ptrs=new Map();let pinch=0;
+canvas.addEventListener('pointerdown',e=>{canvas.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,[e.clientX,e.clientY]);goal=null;setAuto(false);});
+canvas.addEventListener('pointermove',e=>{if(!ptrs.has(e.pointerId))return;const p=ptrs.get(e.pointerId),dx=e.clientX-p[0],dy=e.clientY-p[1];ptrs.set(e.pointerId,[e.clientX,e.clientY]);
+  if(ptrs.size===1){cam.th-=dx*.006;cam.ph=Math.min(1.56,Math.max(.03,cam.ph-dy*.005));}
+  else if(ptrs.size===2){const a=[...ptrs.values()],d=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);if(pinch)cam.r=Math.min(90,Math.max(4,cam.r*pinch/d));pinch=d;}});
+const up=e=>{ptrs.delete(e.pointerId);pinch=0;};canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);
+canvas.addEventListener('wheel',e=>{e.preventDefault();goal=null;cam.r=Math.min(90,Math.max(4,cam.r*Math.exp(e.deltaY*.0012)));},{passive:false});
+
+/* ---------- controls ---------- */
+const bRot=document.getElementById('bRot'),bDim=document.getElementById('bDim'),bCtx=document.getElementById('bCtx'),sunIn=document.getElementById('sun');
+function setAuto(v){auto=v;bRot.setAttribute('aria-pressed',v);}
+bRot.onclick=()=>setAuto(!auto);
+bDim.onclick=()=>{dims.visible=!dims.visible;bDim.setAttribute('aria-pressed',dims.visible);if(dims.visible){setAuto(false);setView('front');}};
+bCtx.onclick=()=>{context.visible=!context.visible;bCtx.setAttribute('aria-pressed',context.visible);};
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));
+sunIn.oninput=()=>setSun(+sunIn.value);setSun(+sunIn.value);
+
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;camera.fov=w/h<1?44:32;camera.updateProjectionMatrix();}
+if(window.ResizeObserver)new ResizeObserver(resize).observe(stage);window.addEventListener('resize',resize);resize();
+const still=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;if(still)setAuto(false);
+let last=performance.now();
+function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;
+  if(goal){let done=true;for(const k in goal){const d=goal[k]-cam[k];if(Math.abs(d)>.002){cam[k]+=d*Math.min(1,dt*5);done=false;}else cam[k]=goal[k];}if(done)goal=null;}
+  else if(auto)cam.th+=dt*.12;
+  place();renderer.render(scene,camera);requestAnimationFrame(frame);}
+place();requestAnimationFrame(frame);
+window.__dome={setView,setAuto,cam,setSun,dims};
+})();
+</script>
