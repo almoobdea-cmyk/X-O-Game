@@ -9,6 +9,7 @@ Prophet's Mosque in Madinah (SL Rasch "U26 Piazza", 250 units, completed 2010–
 | `madinah_umbrella_high.glb` | Open umbrella, arm tips at 15.3 m (the neighbour that overlaps the low one) |
 | `madinah_umbrella_closed.glb` | Folded umbrella, 21.7 m tall, static |
 | `stl/` | STL files for Blender: open (low, high) and closed, each whole and split by material (`export_stl.py` makes them) |
+| `print_100mm/` | 3D-printable miniature for a 0.4 mm nozzle: three watertight pieces, 100 mm across (`print_model.py` makes them) |
 | `viewer.html` | Self-contained interactive viewer (both models embedded; needs internet once for three.js) |
 | `build_umbrella.py` | The generator — every dimension is a named constant at the top |
 | `textures/` | Generated textures (membrane ornament, stone, carved capital, frieze, mosaic, glass, floor) |
