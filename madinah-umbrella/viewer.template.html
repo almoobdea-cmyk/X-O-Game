@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Madinah Piazza Umbrella</title>
+<style>
+  :root {
+    --bg: #eef1f4; --panel: rgba(255,255,255,.88); --ink: #1c2530; --muted: #5d6b7a;
+    --line: #cfd6de; --accent: #1f4e96; --accent-ink: #ffffff; --gold: #a97a1c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0c1118; --panel: rgba(18,24,33,.86); --ink: #e8edf3; --muted: #9aa8b8;
+      --line: #2a3544; --accent: #6fa0ea; --accent-ink: #0b1220; --gold: #e2b65a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0c1118; --panel: rgba(18,24,33,.86); --ink: #e8edf3; --muted: #9aa8b8;
+    --line: #2a3544; --accent: #6fa0ea; --accent-ink: #0b1220; --gold: #e2b65a;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; overflow: hidden; }
+  #stage { position: fixed; inset: 0; }
+  canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+  .panel { position: fixed; background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+           backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  header.panel { top: 16px; left: 16px; padding: 12px 14px; max-width: min(340px, calc(100vw - 32px)); }
+  h1 { font-size: 16px; margin: 0 0 2px; letter-spacing: .01em; }
+  header p { margin: 0; color: var(--muted); font-size: 12.5px; }
+  #bar { left: 16px; right: 16px; bottom: 16px; padding: 8px; display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  button { font: inherit; color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 8px;
+           padding: 7px 11px; cursor: pointer; white-space: nowrap; }
+  button:hover { border-color: var(--accent); }
+  button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .sep { width: 1px; background: var(--line); margin: 2px 4px; }
+  #specs { top: 16px; right: 16px; padding: 12px 14px; width: 270px; max-height: calc(100vh - 120px); overflow: auto; font-size: 12.5px; }
+  #specs h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--gold); margin: 0 0 6px; }
+  #specs table { border-collapse: collapse; width: 100%; }
+  #specs td { padding: 3px 0; vertical-align: top; border-bottom: 1px solid var(--line); }
+  #specs td:last-child { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; padding-left: 8px; }
+  #specs small { color: var(--muted); display: block; margin-top: 8px; }
+  .lbl { position: fixed; transform: translate(-50%, -50%); background: var(--panel); border: 1px solid var(--line);
+         border-radius: 6px; padding: 1px 6px; font-size: 12px; font-variant-numeric: tabular-nums; pointer-events: none; white-space: nowrap; }
+  #load { position: fixed; inset: 0; display: grid; place-items: center; color: var(--muted); }
+  @media (max-width: 760px) {
+    #specs { display: none; }
+    #specs.open { display: block; top: auto; bottom: 120px; left: 16px; right: 16px; width: auto; max-height: 45vh; }
+    header.panel { padding: 9px 12px; }
+    button { padding: 7px 9px; font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<div id="load">Building the umbrella…</div>
+
+<header class="panel">
+  <h1>Madinah Piazza Umbrella</h1>
+  <p>Parametric model of the 25.5 m convertible shade at the Prophet’s Mosque. Drag to orbit, scroll or pinch to zoom, right-drag to pan.</p>
+</header>
+
+<aside id="specs" class="panel">
+  <h2>Modelled dimensions</h2>
+  <table>
+    <tr><td>Membrane, square</td><td>25.5 × 25.5 m</td></tr>
+    <tr><td>Corner to corner</td><td>36.1 m</td></tr>
+    <tr><td>Arm-tip height (low / high)</td><td>14.5 / 15.3 m</td></tr>
+    <tr><td>Folded height</td><td>21.7 m</td></tr>
+    <tr><td>Finial tip when open</td><td>19.45 m</td></tr>
+    <tr><td>Membrane collar</td><td>10.3 m</td></tr>
+    <tr><td>Lantern zone</td><td>7.9 – 9.35 m</td></tr>
+    <tr><td>Cooling-fan axis</td><td>3.96 m</td></tr>
+    <tr><td>Column shaft, across flats</td><td>1.10 m</td></tr>
+    <tr><td>Base plinth</td><td>1.88 m</td></tr>
+    <tr><td>Arms: middle / diagonal / passive</td><td>4 / 4 / 16</td></tr>
+    <tr><td>Grid spacing in the piazza</td><td>≈ 24 m</td></tr>
+  </table>
+  <small>Heights and the 25.5 m span follow the designer’s data and section drawing. Ornament, lantern and fan detail are interpreted from photographs.</small>
+</aside>
+
+<nav id="bar" class="panel" aria-label="Viewer controls">
+  <button data-view="hero">Overview</button>
+  <button data-view="under">Underside</button>
+  <button data-view="lantern">Lantern</button>
+  <button data-view="top">From above</button>
+  <button data-view="crown">Crown</button>
+  <span class="sep"></span>
+  <button id="night" aria-pressed="false">Night lighting</button>
+  <button id="dims" aria-pressed="true">Dimensions</button>
+  <button id="group" aria-pressed="false">Group of 4</button>
+  <button id="spin" aria-pressed="false">Rotate</button>
+  <button id="info" aria-pressed="false">Specs</button>
+</nav>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const GLB = { low: "__GLB_LOW__", high: "__GLB_HIGH__" };
+const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0)).buffer;
+
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+stage.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 600);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.maxDistance = 160; controls.minDistance = 1.5;
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+const hemi = new THREE.HemisphereLight(0xdfeaff, 0xcbb89a, 1.0); scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xfff1dc, 3.2);
+sun.position.set(26, 44, 18); sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.05;
+Object.assign(sun.shadow.camera, { left: -45, right: 45, top: 45, bottom: -45, near: 1, far: 140 });
+scene.add(sun);
+
+// extended piazza paving so the model does not float in a void
+const ground = new THREE.Mesh(new THREE.CircleGeometry(220, 64), new THREE.MeshStandardMaterial({ color: 0xd9d4ca, roughness: 0.5 }));
+ground.rotation.x = -Math.PI / 2; ground.position.y = -0.02; ground.receiveShadow = true; scene.add(ground);
+
+const umbrellas = [];           // {root, lights[], glass[], membrane[]}
+const loader = new GLTFLoader();
+function load(kind) {
+  return new Promise((res, rej) => loader.parse(b64(GLB[kind]), '', g => {
+    const u = { root: g.scene, up: [], down: [], glass: [], membrane: [] };
+    g.scene.traverse(o => {
+      if (o.isMesh) {
+        const n = o.material.name;
+        o.castShadow = n !== 'glass'; o.receiveShadow = true;
+        if (n === 'membrane') {             // PTFE fabric transmits daylight: fake it with a little self-light
+          o.material.emissive = new THREE.Color(0xffffff); o.material.emissiveMap = o.material.map;
+          u.membrane.push(o.material);
+        }
+        if (n === 'glass') u.glass.push(o.material);
+        if (o.material.map) o.material.map.anisotropy = 8;
+      }
+      if (o.isSpotLight) { (o.parent.name.startsWith('Membrane') || o.name.startsWith('Membrane') ? u.up : u.down).push(o); o.castShadow = false; o.penumbra = 0.9; o.decay = 1.6;
+        o.target.position.set(0, 0, -1); o.add(o.target); }   // aim along the glTF node's -Z
+    });
+    res(u);
+  }, rej));
+}
+
+let night = false;
+function applyLighting() {
+  const dark = night;
+  scene.background = new THREE.Color(dark ? 0x070b14 : 0xbfd7ee);
+  scene.fog = new THREE.Fog(scene.background, 140, 420);
+  hemi.intensity = dark ? 0.10 : 1.0; sun.intensity = dark ? 0 : 3.2;
+  scene.environmentIntensity = dark ? 0.25 : 1.0;
+  renderer.toneMappingExposure = dark ? 1.0 : 0.95;
+  ground.material.color.set(dark ? 0x6f6c66 : 0xd9d4ca);
+  ground.material.roughness = dark ? 0.22 : 0.5;
+  for (const u of umbrellas) {
+    u.up.forEach(l => l.intensity = dark ? 26 : 0);
+    u.down.forEach(l => l.intensity = dark ? 60 : 0);
+    u.glass.forEach(m => m.emissiveIntensity = dark ? 2.2 : 0.35);
+    u.membrane.forEach(m => m.emissiveIntensity = dark ? 0.05 : 0.45);
+    u.root.traverse(o => { if (o.isMesh && o.material.envMapIntensity !== undefined) o.material.envMapIntensity = (o.material.name.startsWith('gold') ? 2.2 : 1.0) * (dark ? 0.3 : 1.0); });
+  }
+}
+
+// ---- dimension lines ------------------------------------------------------
+const dimGroup = new THREE.Group(); scene.add(dimGroup);
+const labels = [];
+function dim(a, b, text) {
+  const mat = new THREE.LineBasicMaterial({ color: 0xc0392b, depthTest: false });
+  const pts = [new THREE.Vector3(...a), new THREE.Vector3(...b)];
+  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat); line.renderOrder = 10; dimGroup.add(line);
+  const dir = pts[1].clone().sub(pts[0]).normalize();
+  const side = Math.abs(dir.y) > 0.9 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0);
+  for (const p of pts) {
+    const t = new THREE.Line(new THREE.BufferGeometry().setFromPoints([p.clone().addScaledVector(side, -0.4), p.clone().addScaledVector(side, 0.4)]), mat);
+    t.renderOrder = 10; dimGroup.add(t);
+  }
+  const el = document.createElement('div'); el.className = 'lbl'; el.textContent = text; document.body.appendChild(el);
+  labels.push({ el, pos: pts[0].clone().lerp(pts[1], 0.5) });
+}
+dim([-12.75, 0.05, 13.6], [12.75, 0.05, 13.6], '25.5 m');
+dim([13.6, 0, -12.75], [13.6, 14.5, -12.75], '14.5 m tip');
+dim([-13.6, 0, 0], [-13.6, 19.45, 0], '19.45 m finial');
+dim([2.2, 0, 2.2], [2.2, 7.9, 2.2], '7.9 m lantern');
+dim([-2.4, 0, 2.4], [-2.4, 3.96, 2.4], '3.96 m fan');
+let showDims = true;
+function updateLabels() {
+  const w = innerWidth, h = innerHeight, v = new THREE.Vector3();
+  for (const l of labels) {
+    v.copy(l.pos).project(camera);
+    const vis = showDims && v.z < 1 && Math.abs(v.x) < 1 && Math.abs(v.y) < 1;
+    l.el.style.display = vis ? '' : 'none';
+    if (vis) { l.el.style.left = ((v.x * .5 + .5) * w) + 'px'; l.el.style.top = ((-v.y * .5 + .5) * h) + 'px'; }
+  }
+  dimGroup.visible = showDims;
+}
+
+// ---- scale figure, 1.75 m -------------------------------------------------
+const fig = new THREE.Group();
+const fm = new THREE.MeshStandardMaterial({ color: 0xf2f0ea, roughness: 0.9 });
+const body = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.27, 1.45, 14), fm); body.position.y = 0.725;
+const head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 14, 10), new THREE.MeshStandardMaterial({ color: 0xb98a66, roughness: 0.8 })); head.position.y = 1.63;
+fig.add(body, head); fig.position.set(3.2, 0, 1.6); fig.traverse(o => { if (o.isMesh) o.castShadow = true; }); scene.add(fig);
+
+// ---- camera presets -------------------------------------------------------
+const VIEWS = {
+  hero:    [[37, 15, 39], [0, 9.0, 0]],
+  under:   [[9.5, 1.7, 8], [0, 12.2, 0]],
+  lantern: [[4.6, 7.6, 4.2], [0, 8.4, 0]],
+  top:     [[14, 46, 20], [0, 13, 0]],
+  crown:   [[5.5, 19.5, 5.5], [0, 16.6, 0]],
+};
+let tween = null;
+function go(name, instant) {
+  const [p, t] = VIEWS[name];
+  const P = new THREE.Vector3(...p), T = new THREE.Vector3(...t);
+  if (innerWidth < innerHeight && name === 'hero') P.sub(T).multiplyScalar(1.45).add(T);   // portrait screens: step back
+  if (instant) { camera.position.copy(P); controls.target.copy(T); controls.update(); return; }
+  tween = { p0: camera.position.clone(), t0: controls.target.clone(), P, T, s: performance.now() };
+}
+
+function resize() {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.fov = w < h ? 58 : 42; camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize); resize();
+
+let groupOn = false; const extra = [];
+async function toggleGroup() {
+  groupOn = !groupOn;
+  if (groupOn && !extra.length) {
+    // neighbours alternate low/high so the membranes overlap into one canopy; real grid pitch ~24 m
+    const S = 24.1, layout = [['high', S, 0], ['high', 0, S], ['low', S, S]];
+    for (const [k, x, z] of layout) {
+      const u = await load(k); u.root.position.set(x, 0, z);
+      u.root.traverse(o => { if (o.name && o.name.startsWith('Piazza_Floor')) o.visible = false; });
+      scene.add(u.root); umbrellas.push(u); extra.push(u);
+    }
+  }
+  extra.forEach(u => u.root.visible = groupOn);
+  applyLighting();
+  if (groupOn) { VIEWS.hero = [[58, 22, 62], [12, 9, 12]]; } else { VIEWS.hero = [[37, 15, 39], [0, 9.0, 0]]; }
+  go('hero');
+}
+
+const press = (id, v) => document.getElementById(id).setAttribute('aria-pressed', v);
+document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => go(b.dataset.view));
+document.getElementById('night').onclick = () => { night = !night; press('night', night); applyLighting(); };
+document.getElementById('dims').onclick = () => { showDims = !showDims; press('dims', showDims); };
+document.getElementById('group').onclick = async () => { await toggleGroup(); press('group', groupOn); };
+document.getElementById('spin').onclick = () => { controls.autoRotate = !controls.autoRotate; press('spin', controls.autoRotate); };
+document.getElementById('info').onclick = () => { const s = document.getElementById('specs'); const on = s.classList.toggle('open'); press('info', on);
+  if (innerWidth > 760) s.style.display = on ? '' : 'none'; };
+if (innerWidth > 760) { press('info', true); document.getElementById('specs').classList.add('open'); }
+
+load('low').then(u => {
+  scene.add(u.root); umbrellas.push(u); applyLighting(); go('hero', true);
+  document.getElementById('load').remove();
+  window.__ready = true;
+});
+window.__api = { go: n => go(n, true), night: v => { night = v; applyLighting(); }, dims: v => { showDims = v; }, group: toggleGroup, camera, controls };
+
+renderer.setAnimationLoop(() => {
+  if (tween) {
+    const k = Math.min((performance.now() - tween.s) / 900, 1), e = k * k * (3 - 2 * k);
+    camera.position.lerpVectors(tween.p0, tween.P, e); controls.target.lerpVectors(tween.t0, tween.T, e);
+    if (k >= 1) tween = null;
+  }
+  controls.update(); updateLabels(); renderer.render(scene, camera);
+});
+</script>
+</body>
+</html>
