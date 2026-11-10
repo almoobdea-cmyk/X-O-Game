@@ -35,7 +35,7 @@ height; cross-checked against the +15.3 and +14.5 level marks and the 1.75 m fig
 
 | Item | Value |
 |---|---|
-| Base plinth width / height | 1.88 m / 1.40 m to the shaft |
+| Base pedestal | 1.84 m square, 0.70 m high; shaft starts at 1.27 m |
 | Lower column shaft | 0.90 m across flats, 1.40 → 5.50 m |
 | Cooling-fan axis | 3.96 m, drum Ø 1.12 m |
 | Capital | 5.69 → 6.67 m, 0.90 m wide at the shaft, 1.72 m at the top |
@@ -50,15 +50,19 @@ height; cross-checked against the +15.3 and +14.5 level marks and the 1.75 m fig
 
 **[P] Interpreted from photographs** — these are plausible, not surveyed
 
-- Octagonal column with granite-like cladding, torus base mouldings, three roll mouldings under the capital
+- Base (from the close-up photo): square granite pedestal 1.84 m wide and 0.70 m high, its corners
+  broached up to an octagonal top, a clipped-corner sunk panel on each face, then a low course,
+  a scotia and one large roll under the octagonal shaft
+- Three roll mouldings under the capital
 - Capital (modelled as real relief, from the close-up photos): octagon at the shaft widening to a
   chamfered square; each main face has a shield medallion with a sphere boss and scrollwork on a
   quilted diamond lattice; each corner face has an arabesque panel with a bud above it
 - Slate-blue frieze: bevelled sunk panel with three eight-pointed stars per main face, light chamfer faces
 - Dog-tooth cornice under the lantern block
 - Granite lantern block with re-entrant corner notches that end in pointed stops
-- Four gilded lamps: engraved header, arched side panels sweeping back to a strip at the wall,
-  tapered glass prism with bevelled bottom, stepped base with three studs, hipped roof
+- Four gilded lamps: polished back frame, engraved header with plain borders, engraved side panels
+  cut to a quarter-arch with a polished bead, clear glass box bevelled back at the bottom over a
+  ribbed reflector, stud band with three studs over a scotia and bottom band, deep eave and hipped roof
 - Faceted (antiprism) gold crown from which the membrane pleats emerge
 - Lotus ornament on the membrane: two inner petal tiers, a ring of 24 large blue diamonds,
   a ring of small diamonds, tall outer arches, blue scalloped edge trim; 6 scallops per side
@@ -73,7 +77,7 @@ The lantern does two jobs, as labelled on the section drawing ("Piazza – and F
   works as a large soft reflector (`Membrane_Uplight_0…7`, warm white)
 - 4 downlights, one per bay lantern, light the piazza floor (`Piazza_Downlight_0…3`)
 - 1 small point light above the crown lifts the gathered pleats (`Collar_Glow`)
-- The bay glass is an emissive material
+- The ribbed reflector behind the clear lamp glass is the emissive (glowing) material
 
 They are stored in the GLB as `KHR_lights_punctual` lights. The viewer's
 "Night lighting" button switches them on.

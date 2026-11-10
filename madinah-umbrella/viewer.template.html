@@ -76,7 +76,7 @@
     <tr><td>Carved capital</td><td>5.69 – 6.67 m</td></tr>
     <tr><td>Cooling-fan axis</td><td>3.96 m</td></tr>
     <tr><td>Column shaft, across flats</td><td>0.90 m</td></tr>
-    <tr><td>Base plinth</td><td>1.88 m</td></tr>
+    <tr><td>Base pedestal</td><td>1.84 × 0.70 m</td></tr>
     <tr><td>Arms: middle / diagonal / passive</td><td>4 / 4 / 16</td></tr>
     <tr><td>Grid spacing in the piazza</td><td>≈ 24 m</td></tr>
   </table>
@@ -88,6 +88,7 @@
   <button data-view="under">Underside</button>
   <button data-view="lantern">Lantern</button>
   <button data-view="capital">Capital</button>
+  <button data-view="base">Base</button>
   <button data-view="top">From above</button>
   <button data-view="crown">Crown</button>
   <span class="sep"></span>
@@ -162,7 +163,7 @@ function load(kind) {
           o.material.emissive = new THREE.Color(0xffffff); o.material.emissiveMap = o.material.map;
           u.membrane.push(o.material);
         }
-        if (n === 'glass') u.glass.push(o.material);
+        if (n === 'reflector') u.glass.push(o.material);
         if (o.material.map) o.material.map.anisotropy = 8;
       }
       if (o.isPointLight) { u.glow.push(o); o.decay = 1.6; o.castShadow = false; }
@@ -187,7 +188,7 @@ function applyLighting() {
     u.up.forEach(l => l.intensity = dark ? 26 : 0);
     u.down.forEach(l => l.intensity = dark ? 60 : 0);
     u.glow.forEach(l => l.intensity = dark ? 7 : 0);
-    u.glass.forEach(m => m.emissiveIntensity = dark ? 2.6 : 0.12);
+    u.glass.forEach(m => m.emissiveIntensity = dark ? 3.2 : 0.04);
     u.membrane.forEach(m => m.emissiveIntensity = dark ? 0.10 : 0.45);
     u.root.traverse(o => { if (o.isMesh && o.material.envMapIntensity !== undefined) o.material.envMapIntensity = (o.material.name.startsWith('gold') ? 0.95 : 0.58) * (dark ? 0.25 : 1.0); });
   }
@@ -238,6 +239,7 @@ const VIEWS = {
   hero:    [[37, 15, 39], [0, 9.0, 0]],
   under:   [[9.5, 1.7, 8], [0, 12.2, 0]],
   lantern: [[5.6, 5.4, 2.6], [0, 8.05, 0]],
+  base:    [[3.5, 1.3, -2.7], [0, 0.72, 0]],
   capital: [[3.3, 5.2, 1.5], [0, 6.6, 0]],
   top:     [[14, 46, 20], [0, 13, 0]],
   crown:   [[5.5, 19.5, 5.5], [0, 16.6, 0]],
